@@ -1,6 +1,6 @@
 {
   "name": "llm-art-server",
-  "module": "index.ts",
+  "module": "app.ts",
   "type": "module",
   "private": true,
   "devDependencies": {

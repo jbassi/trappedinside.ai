@@ -1,12 +1,23 @@
-import express from "express";
-
-const app = express();
-const port = process.env.PORT || 3001;
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
+const server = Bun.serve({
+  port: process.env.PORT ? Number(process.env.PORT) : 3001,
+  fetch(req, server) {
+    if (server.upgrade(req)) {
+      return; // WebSocket upgrade handled
+    }
+    return new Response("Hello World!");
+  },
+  websocket: {
+    open(ws) {
+      console.log("WebSocket connection opened");
+    },
+    message(ws, message) {
+      console.log("Received:", message);
+      ws.send(message); // Echo back
+    },
+    close(ws) {
+      console.log("WebSocket connection closed");
+    },
+  },
 });
 
-app.listen(port, () => {
-  console.log(`Listening on port ${port}...`);
-});
+console.log(`Listening on port ${server.port} (HTTP & WebSocket)...`);
