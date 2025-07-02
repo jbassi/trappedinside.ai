@@ -15897,7 +15897,7 @@ function App() {
     e.preventDefault();
     const input = e.target.elements.namedItem("msg");
     if (wsRef.current && input.value) {
-      wsRef.current.send(input.value);
+      wsRef.current.send(JSON.stringify({ text: input.value }));
       input.value = "";
     }
   };
@@ -15910,7 +15910,7 @@ function App() {
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
         style: { border: "1px solid #ccc", padding: "1em", minHeight: "2em" },
         children: messages.map((msg, i) => /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-          children: msg
+          children: msg.text
         }, i, false, undefined, this))
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("form", {

@@ -1,8 +1,9 @@
 import { join } from "path";
 import { existsSync, readFileSync } from "fs";
 
-const messages: string[] = [];
-const clients = new Set<WebSocket>();
+// Store all received JSON messages
+const messages: any[] = [];
+const clients = new Set<Bun.ServerWebSocket<unknown>>();
 
 const server = Bun.serve({
   port: process.env.PORT ? Number(process.env.PORT) : 3001,
@@ -23,21 +24,29 @@ const server = Bun.serve({
     return new Response("Not found", { status: 404 });
   },
   websocket: {
-    open(ws) {
+    open(ws: Bun.ServerWebSocket<unknown>) {
       clients.add(ws);
-      ws.send(JSON.stringify({ messages }));
+      // Only broadcast the text part
+      ws.send(JSON.stringify({ messages: messages.map(m => ({ text: m.text ?? "" })) }));
     },
-    message(ws, message) {
-      const msg = message.toString();
-      messages.push(msg);
-      for (const client of clients) {
-        if (client.readyState === 1) {
-          client.send(JSON.stringify({ messages }));
+    message(ws: Bun.ServerWebSocket<unknown>, message) {
+      let msgObj: any = null;
+      try {
+        msgObj = JSON.parse(message.toString());
+      } catch {}
+      if (msgObj) {
+        messages.push(msgObj);
+        // Only broadcast the text part
+        const broadcast = { messages: messages.map(m => ({ text: m.text ?? "" })) };
+        for (const client of clients) {
+          if (client.readyState === 1) {
+            client.send(JSON.stringify(broadcast));
+          }
         }
+        console.log("Received:", msgObj.text);
       }
-      console.log("Received:", msg);
     },
-    close(ws) {
+    close(ws: Bun.ServerWebSocket<unknown>) {
       clients.delete(ws);
       console.log("WebSocket connection closed");
     },
