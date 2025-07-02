@@ -33,13 +33,13 @@ const server = Bun.serve({
   },
   websocket: {
     open(ws: Bun.ServerWebSocket<unknown>) {
-      // Mark as not authenticated until JWT is verified
       (ws as any).isAuthenticated = false;
       clients.add(ws);
+      // Always send the message list to any client
       ws.send(JSON.stringify({ messages: messages.map(m => ({ text: m.text ?? "" })) }));
     },
     message(ws: Bun.ServerWebSocket<unknown>, message) {
-      // If not authenticated, expect the first message to be the JWT
+      // Only require JWT for sending messages
       if (!(ws as any).isAuthenticated) {
         let token: string | null = null;
         try {
@@ -47,7 +47,8 @@ const server = Bun.serve({
           token = data.token;
         } catch {}
         if (!token) {
-          ws.send(JSON.stringify({ error: "Missing JWT" }));
+          // Not authenticated, drop the connection if trying to send
+          ws.send(JSON.stringify({ error: "Missing JWT: connection will be closed" }));
           ws.close();
           return;
         }

@@ -15879,10 +15879,8 @@ var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
 var WS_URL = `ws://${window.location.host}`;
 function App() {
   const [messages, setMessages] = import_react.useState([]);
-  const wsRef = import_react.useRef(null);
   import_react.useEffect(() => {
     const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -15893,42 +15891,18 @@ function App() {
     };
     return () => ws.close();
   }, []);
-  const sendMessage = (e) => {
-    e.preventDefault();
-    const input = e.target.elements.namedItem("msg");
-    if (wsRef.current && input.value) {
-      wsRef.current.send(JSON.stringify({ text: input.value }));
-      input.value = "";
-    }
-  };
   return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
     style: { fontFamily: "sans-serif", margin: "2em" },
     children: [
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("h1", {
-        children: "React WebSocket Messages"
+        children: "LLM Art"
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
         style: { border: "1px solid #ccc", padding: "1em", minHeight: "2em" },
         children: messages.map((msg, i) => /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
           children: msg.text
         }, i, false, undefined, this))
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime.jsxDEV("form", {
-        onSubmit: sendMessage,
-        style: { marginTop: "1em" },
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime.jsxDEV("input", {
-            name: "msg",
-            type: "text",
-            placeholder: "Type a message...",
-            autoComplete: "off"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime.jsxDEV("button", {
-            type: "submit",
-            children: "Send"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
