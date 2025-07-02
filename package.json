@@ -4,12 +4,21 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "scripts": {
+    "build:frontend": "bun build public/index.tsx --outdir=public --splitting",
+    "start": "bun run app.ts",
+    "dev": "bun run build:frontend && bun --hot run app.ts"
   }
 }
