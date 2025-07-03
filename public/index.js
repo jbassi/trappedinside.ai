@@ -16,7 +16,7 @@ var __toESM = (mod, isNodeMode, target) => {
 };
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
 
-// ../node_modules/react/cjs/react.development.js
+// node_modules/react/cjs/react.development.js
 var require_react_development = __commonJS((exports, module) => {
   (function() {
     function defineDeprecationWarning(methodName, info) {
@@ -803,7 +803,7 @@ See https://react.dev/link/invalid-hook-call for tips about how to debug and fix
   })();
 });
 
-// ../node_modules/react/index.js
+// node_modules/react/index.js
 var require_react = __commonJS((exports, module) => {
   var react_development = __toESM(require_react_development(), 1);
   if (false) {} else {
@@ -811,7 +811,7 @@ var require_react = __commonJS((exports, module) => {
   }
 });
 
-// ../node_modules/scheduler/cjs/scheduler.development.js
+// node_modules/scheduler/cjs/scheduler.development.js
 var require_scheduler_development = __commonJS((exports) => {
   (function() {
     function performWorkUntilDeadline() {
@@ -1066,7 +1066,7 @@ var require_scheduler_development = __commonJS((exports) => {
   })();
 });
 
-// ../node_modules/scheduler/index.js
+// node_modules/scheduler/index.js
 var require_scheduler = __commonJS((exports, module) => {
   var scheduler_development = __toESM(require_scheduler_development(), 1);
   if (false) {} else {
@@ -1074,7 +1074,7 @@ var require_scheduler = __commonJS((exports, module) => {
   }
 });
 
-// ../node_modules/react-dom/cjs/react-dom.development.js
+// node_modules/react-dom/cjs/react-dom.development.js
 var require_react_dom_development = __commonJS((exports) => {
   var React = __toESM(require_react(), 1);
   (function() {
@@ -1257,7 +1257,7 @@ See https://react.dev/link/invalid-hook-call for tips about how to debug and fix
   })();
 });
 
-// ../node_modules/react-dom/index.js
+// node_modules/react-dom/index.js
 var require_react_dom = __commonJS((exports, module) => {
   var react_dom_development = __toESM(require_react_dom_development(), 1);
   if (false) {} else {
@@ -1265,7 +1265,7 @@ var require_react_dom = __commonJS((exports, module) => {
   }
 });
 
-// ../node_modules/react-dom/cjs/react-dom-client.development.js
+// node_modules/react-dom/cjs/react-dom-client.development.js
 var require_react_dom_client_development = __commonJS((exports) => {
   var Scheduler = __toESM(require_scheduler(), 1);
   var React = __toESM(require_react(), 1);
@@ -15642,7 +15642,7 @@ You might need to use a local HTTP server (instead of file://): https://react.de
   })();
 });
 
-// ../node_modules/react-dom/client.js
+// node_modules/react-dom/client.js
 var require_client = __commonJS((exports, module) => {
   var react_dom_client_development = __toESM(require_react_dom_client_development(), 1);
   if (false) {} else {
@@ -15650,7 +15650,7 @@ var require_client = __commonJS((exports, module) => {
   }
 });
 
-// ../node_modules/react/cjs/react-jsx-dev-runtime.development.js
+// node_modules/react/cjs/react-jsx-dev-runtime.development.js
 var require_react_jsx_dev_runtime_development = __commonJS((exports) => {
   var React = __toESM(require_react(), 1);
   (function() {
@@ -15864,7 +15864,7 @@ React keys must be passed directly to JSX without using spread:
   })();
 });
 
-// ../node_modules/react/jsx-dev-runtime.js
+// node_modules/react/jsx-dev-runtime.js
 var require_jsx_dev_runtime = __commonJS((exports, module) => {
   var react_jsx_dev_runtime_development = __toESM(require_react_jsx_dev_runtime_development(), 1);
   if (false) {} else {
