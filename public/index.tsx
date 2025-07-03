@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
-const WS_URL = `ws://${window.location.host}`;
+const WS_URL = window.location.protocol === "https:"
+  ? `wss://${window.location.host}`
+  : `ws://${window.location.host}`;
 
 type Message = { text: string };
 

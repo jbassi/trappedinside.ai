@@ -15876,7 +15876,7 @@ var require_jsx_dev_runtime = __commonJS((exports, module) => {
 var import_react = __toESM(require_react(), 1);
 var import_client = __toESM(require_client(), 1);
 var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
-var WS_URL = `ws://${window.location.host}`;
+var WS_URL = window.location.protocol === "https:" ? `wss://${window.location.host}` : `ws://${window.location.host}`;
 function App() {
   const [messages, setMessages] = import_react.useState([]);
   import_react.useEffect(() => {
