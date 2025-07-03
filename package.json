@@ -17,8 +17,8 @@
     "react-dom": "^18.0.0"
   },
   "scripts": {
-    "build:frontend": "bun build public/index.tsx --outdir=public --splitting",
+    "build": "bun build public/index.tsx --outdir=public --splitting",
     "start": "bun run app.ts",
-    "dev": "bun run build:frontend && bun --hot run app.ts"
+    "dev": "bun run build && bun --hot run app.ts"
   }
 }
