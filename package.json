@@ -17,7 +17,7 @@
     "react-dom": "^19.1.0"
   },
   "scripts": {
-    "build": "bun build public/index.tsx --outdir=public --splitting && bun install",
+    "build": "bun build public/index.tsx --outdir=public --splitting",
     "start": "bun run app.ts",
     "dev": "bun run build && bun --hot run app.ts"
   }
