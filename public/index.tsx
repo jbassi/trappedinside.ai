@@ -1,11 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { z } from "zod";
 
 const WS_URL = window.location.protocol === "https:"
   ? `wss://${window.location.host}`
   : `ws://${window.location.host}`;
 
 type Message = { text: string };
+
+const ServerMessageSchema = z.object({
+  messages: z.array(z.object({ text: z.string() })),
+});
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -16,8 +21,9 @@ function App() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (Array.isArray(data.messages)) {
-          setMessages(data.messages);
+        const result = ServerMessageSchema.safeParse(data);
+        if (result.success) {
+          setMessages(result.data.messages);
         }
       } catch {}
     };

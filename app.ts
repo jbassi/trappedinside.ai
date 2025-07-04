@@ -1,6 +1,14 @@
 import { join } from "path";
 import { existsSync, readFileSync } from "fs";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
+
+const IncomingMessageSchema = z.object({
+  text: z.string(),
+});
+const AuthMessageSchema = z.object({
+  token: z.string(),
+});
 
 // Store all received JSON messages
 const messages: any[] = [];
@@ -39,19 +47,23 @@ const server = Bun.serve({
       ws.send(JSON.stringify({ messages: messages.map(m => ({ text: m.text ?? "" })) }));
     },
     message(ws: Bun.ServerWebSocket<unknown>, message) {
+      let parsed: any;
+      try {
+        parsed = JSON.parse(message.toString());
+      } catch {
+        ws.send(JSON.stringify({ error: "Invalid JSON" }));
+        ws.close();
+        return;
+      }
       // Only require JWT for sending messages
       if (!(ws as any).isAuthenticated) {
-        let token: string | null = null;
-        try {
-          const data = JSON.parse(message.toString());
-          token = data.token;
-        } catch {}
-        if (!token) {
-          // Not authenticated, drop the connection if trying to send
-          ws.send(JSON.stringify({ error: "Missing JWT: connection will be closed" }));
+        const authResult = AuthMessageSchema.safeParse(parsed);
+        if (!authResult.success) {
+          ws.send(JSON.stringify({ error: "Missing or invalid JWT" }));
           ws.close();
           return;
         }
+        const token = authResult.data.token;
         try {
           const payload = jwt.verify(token, JWT_SECRET) as any;
           if (payload.device !== ALLOWED_DEVICE_ID) {
@@ -67,22 +79,21 @@ const server = Bun.serve({
         }
         return;
       }
-
       // Only allow sending messages if authenticated
-      let msgObj: any = null;
-      try {
-        msgObj = JSON.parse(message.toString());
-      } catch {}
-      if (msgObj && typeof msgObj.text === "string") {
-        messages.push(msgObj);
-        const broadcast = { messages: messages.map(m => ({ text: m.text ?? "" })) };
-        for (const client of clients) {
-          if (client.readyState === 1) {
-            client.send(JSON.stringify(broadcast));
-          }
-        }
-        console.log("Received:", msgObj.text);
+      const msgResult = IncomingMessageSchema.safeParse(parsed);
+      if (!msgResult.success) {
+        ws.send(JSON.stringify({ error: "Invalid message format" }));
+        return;
       }
+      const msgObj = msgResult.data;
+      messages.push(msgObj);
+      const broadcast = { messages: messages.map(m => ({ text: m.text ?? "" })) };
+      for (const client of clients) {
+        if (client.readyState === 1) {
+          client.send(JSON.stringify(broadcast));
+        }
+      }
+      console.log("Received:", msgObj.text);
     },
     close(ws: Bun.ServerWebSocket<unknown>) {
       clients.delete(ws);
