@@ -28,13 +28,14 @@ if (!JWT_SECRET || !ALLOWED_DEVICE_ID) {
 }
 
 const server = Bun.serve({
-  port: process.env.PORT ? Number(process.env.PORT) : 3001,
+  port: 3002,
   fetch(req, server) {
-    if (server.upgrade(req)) {
+    const url = new URL(req.url);
+    // Only upgrade to WebSocket on /ws
+    if (url.pathname === "/ws" && server.upgrade(req)) {
       return;
     }
     // Serve static files from public/
-    const url = new URL(req.url);
     let filePath = `public${url.pathname}`;
     if (url.pathname === "/") filePath = "public/index.html";
     try {

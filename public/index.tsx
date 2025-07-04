@@ -2,9 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { z } from "zod";
 
-const WS_URL = window.location.protocol === "https:"
-  ? `wss://${window.location.host}`
-  : `ws://${window.location.host}`;
+const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
 
 type Memory = {
   available_mb: number;

@@ -7,8 +7,9 @@
     "@types/bun": "latest",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
     "tailwindcss": "^4.1.11",
-    "tailwindcss-cli": "^0.1.2"
+    "vite": "^7.0.2"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -20,10 +21,8 @@
     "zod": "^3.25.74"
   },
   "scripts": {
-    "build:css": "bunx tailwindcss-cli -i ./src/index.css -o ./public/index.css --minify",
-    "dev:css": "bunx tailwindcss-cli -i ./src/index.css -o ./public/index.css --watch",
-    "build:js": "bun build public/index.tsx --outdir=public --splitting",
-    "build": "bun run build:css && bun run build:js",
-    "dev": "bun run dev:css & bun --hot run app.ts"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }
