@@ -27,17 +27,22 @@ if (!JWT_SECRET || !ALLOWED_DEVICE_ID) {
   throw new Error("JWT_SECRET and ALLOWED_DEVICE_ID must be set in environment variables or .env file");
 }
 
+// Determine environment
+const isProd = process.env.NODE_ENV === "production";
+const staticDir = isProd ? "dist" : "public";
+const port = process.env.PORT ? Number(process.env.PORT) : (isProd ? 3000 : 3002);
+
 const server = Bun.serve({
-  port: 3002,
+  port,
   fetch(req, server) {
     const url = new URL(req.url);
     // Only upgrade to WebSocket on /ws
     if (url.pathname === "/ws" && server.upgrade(req)) {
       return;
     }
-    // Serve static files from public/
-    let filePath = `public${url.pathname}`;
-    if (url.pathname === "/") filePath = "public/index.html";
+    // Serve static files from the appropriate directory
+    let filePath = `${staticDir}${url.pathname}`;
+    if (url.pathname === "/") filePath = `${staticDir}/index.html`;
     try {
       const file = Bun.file(filePath);
       if (file.size > 0) {
@@ -109,4 +114,5 @@ const server = Bun.serve({
   },
 });
 
-console.log(`Listening on port ${server.port} (HTTP & WebSocket)...`);
+console.log(`Listening on port ${port} (HTTP & WebSocket)...`);
+console.log(`Serving static files from: ${staticDir}/`);

@@ -61,25 +61,28 @@ function App() {
   }, [allText]);
 
   return (
-    <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 grid grid-rows-[min-content_1fr_min-content] h-screen m-0 p-0">
+    <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col h-screen m-0 p-0">
       {/* Header */}
       <h1
-        className="m-0 p-2 bg-gradient-to-r from-indigo-100 to-purple-200 text-lg text-center font-extrabold shadow rounded-b-lg tracking-wide"
-        style={{ color: '#000', opacity: 1 }}
+        className="m-0 bg-gradient-to-r from-indigo-100 to-purple-200 text-lg text-center font-extrabold shadow rounded-b-lg tracking-wide flex items-center justify-center"
+        style={{ color: '#000', opacity: 1, height: '48px', minHeight: '48px', maxHeight: '48px' }}
       >
         Musings of a LLM
       </h1>
       {/* Scrollable text area */}
       <div
         ref={textRef}
-        className="box-border w-full max-w-3xl mx-auto overflow-y-auto border border-gray-200 rounded-xl p-4 pt-2 text-base bg-white/90 whitespace-pre-line break-words shadow mt-3 mb-2 flex-1"
+        className="box-border w-full max-w-3xl mx-auto overflow-y-auto border border-gray-200 rounded-xl p-4 pt-2 text-base bg-white/90 whitespace-pre-line break-words shadow flex-1"
         style={{ minHeight: 0 }}
       >
         {allText}
       </div>
       {/* Memory progress bar at the bottom */}
-      <div className="w-full bg-white/80 text-black text-center text-xs py-2 z-10 shadow-inner rounded-t-lg">
-        <div className="mx-auto max-w-md">
+      <div
+        className="w-full bg-white/80 text-black text-center text-xs z-10 shadow-inner rounded-t-lg flex items-center justify-center"
+        style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
+      >
+        <div className="mx-auto max-w-md w-full">
           <div className="mb-0.5 font-semibold tracking-wide text-black">{percentUsed !== undefined ? `Memory Used: ${percentUsed.toFixed(1)}%` : "Memory Used: --"}</div>
           <div className="w-full h-3 bg-gray-300 rounded-lg overflow-hidden shadow">
             <div
