@@ -3,8 +3,14 @@ import { existsSync, readFileSync } from "fs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 
+const MemorySchema = z.object({
+  available_mb: z.number(),
+  percent_used: z.number(),
+  total_mb: z.number(),
+});
 const IncomingMessageSchema = z.object({
   text: z.string(),
+  memory: MemorySchema.optional(),
 });
 const AuthMessageSchema = z.object({
   token: z.string(),
@@ -44,7 +50,7 @@ const server = Bun.serve({
       (ws as any).isAuthenticated = false;
       clients.add(ws);
       // Always send the message list to any client
-      ws.send(JSON.stringify({ messages: messages.map(m => ({ text: m.text ?? "" })) }));
+      ws.send(JSON.stringify({ messages: messages.map(m => ({ text: m.text ?? "", memory: m.memory })) }));
     },
     message(ws: Bun.ServerWebSocket<unknown>, message) {
       let parsed: any;
@@ -87,13 +93,13 @@ const server = Bun.serve({
       }
       const msgObj = msgResult.data;
       messages.push(msgObj);
-      const broadcast = { messages: messages.map(m => ({ text: m.text ?? "" })) };
+      const broadcast = { messages: messages.map(m => ({ text: m.text ?? "", memory: m.memory })) };
       for (const client of clients) {
         if (client.readyState === 1) {
           client.send(JSON.stringify(broadcast));
         }
       }
-      console.log("Received:", msgObj.text);
+      console.log("Received:", msgObj.text, msgObj.memory ? JSON.stringify(msgObj.memory) : "");
     },
     close(ws: Bun.ServerWebSocket<unknown>) {
       clients.delete(ws);

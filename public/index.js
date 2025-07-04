@@ -19862,7 +19862,14 @@ var NEVER = INVALID;
 var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
 var WS_URL = window.location.protocol === "https:" ? `wss://${window.location.host}` : `ws://${window.location.host}`;
 var ServerMessageSchema = exports_external.object({
-  messages: exports_external.array(exports_external.object({ text: exports_external.string() }))
+  messages: exports_external.array(exports_external.object({
+    text: exports_external.string(),
+    memory: exports_external.object({
+      available_mb: exports_external.number(),
+      percent_used: exports_external.number(),
+      total_mb: exports_external.number()
+    }).optional()
+  }))
 });
 function App() {
   const [messages, setMessages] = import_react.useState([]);
@@ -19881,16 +19888,34 @@ function App() {
     return () => ws.close();
   }, []);
   const allText = messages.map((msg) => msg.text).join("");
+  const lastMemory = [...messages].reverse().find((msg) => msg.memory && typeof msg.memory.percent_used === "number");
+  const percentUsed = lastMemory?.memory?.percent_used;
   import_react.useEffect(() => {
     if (textRef.current) {
       textRef.current.scrollTop = textRef.current.scrollHeight;
     }
   }, [allText]);
   return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-    style: { fontFamily: "sans-serif", margin: 0, padding: 0, minHeight: "100vh", background: "#fafafa" },
+    style: {
+      fontFamily: "sans-serif",
+      margin: 0,
+      padding: 0,
+      minHeight: "100vh",
+      background: "#fafafa",
+      display: "grid",
+      gridTemplateRows: "auto 1fr auto",
+      height: "100vh"
+    },
     children: [
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("h1", {
-        style: { margin: 0, padding: "1em", background: "#222", color: "#fff", fontSize: "1.5em", textAlign: "center" },
+        style: {
+          margin: 0,
+          padding: "1em",
+          background: "#222",
+          color: "#fff",
+          fontSize: "1.5em",
+          textAlign: "center"
+        },
         children: "Musings of a LLM"
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
@@ -19898,7 +19923,6 @@ function App() {
         style: {
           boxSizing: "border-box",
           width: "100vw",
-          height: "calc(100vh - 4em)",
           overflowY: "auto",
           border: "none",
           padding: "2em 1em 1em 1em",
@@ -19908,6 +19932,52 @@ function App() {
           wordBreak: "break-word"
         },
         children: allText
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
+        style: {
+          width: "100vw",
+          background: "#222",
+          color: "#fff",
+          textAlign: "center",
+          fontSize: "1.1em",
+          padding: "0.7em 0 1.2em 0",
+          letterSpacing: "0.05em",
+          zIndex: 1000
+        },
+        children: /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
+          style: { margin: "0 auto", maxWidth: 400 },
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
+              style: { marginBottom: 4 },
+              children: percentUsed !== undefined ? `Memory Used: ${percentUsed.toFixed(1)}%` : "Memory Used: --"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
+              style: {
+                width: "100%",
+                height: 18,
+                background: "#444",
+                borderRadius: 8,
+                overflow: "hidden",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.08)"
+              },
+              children: /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
+                style: {
+                  width: percentUsed !== undefined ? `${percentUsed}%` : "0%",
+                  height: "100%",
+                  background: percentUsed !== undefined && percentUsed > 80 ? "#e74c3c" : "#4caf50",
+                  transition: "width 0.3s cubic-bezier(.4,2,.6,1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: 13
+                },
+                children: percentUsed !== undefined ? `${percentUsed.toFixed(1)}%` : ""
+              }, undefined, false, undefined, this)
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
