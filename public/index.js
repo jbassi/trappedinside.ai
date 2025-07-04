@@ -15879,6 +15879,7 @@ var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
 var WS_URL = window.location.protocol === "https:" ? `wss://${window.location.host}` : `ws://${window.location.host}`;
 function App() {
   const [messages, setMessages] = import_react.useState([]);
+  const textRef = import_react.useRef(null);
   import_react.useEffect(() => {
     const ws = new WebSocket(WS_URL);
     ws.onmessage = (event) => {
@@ -15892,14 +15893,32 @@ function App() {
     return () => ws.close();
   }, []);
   const allText = messages.map((msg) => msg.text).join("");
+  import_react.useEffect(() => {
+    if (textRef.current) {
+      textRef.current.scrollTop = textRef.current.scrollHeight;
+    }
+  }, [allText]);
   return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-    style: { fontFamily: "sans-serif", margin: "2em" },
+    style: { fontFamily: "sans-serif", margin: 0, padding: 0, minHeight: "100vh", background: "#fafafa" },
     children: [
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("h1", {
+        style: { margin: 0, padding: "1em", background: "#222", color: "#fff", fontSize: "1.5em", textAlign: "center" },
         children: "LLM Art"
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-        style: { border: "1px solid #ccc", padding: "1em", minHeight: "2em", whiteSpace: "pre-line" },
+        ref: textRef,
+        style: {
+          boxSizing: "border-box",
+          width: "100vw",
+          height: "calc(100vh - 4em)",
+          overflowY: "auto",
+          border: "none",
+          padding: "2em 1em 1em 1em",
+          fontSize: "1.2em",
+          background: "#fff",
+          whiteSpace: "pre-line",
+          wordBreak: "break-word"
+        },
         children: allText
       }, undefined, false, undefined, this)
     ]
