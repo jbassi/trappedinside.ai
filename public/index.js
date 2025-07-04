@@ -19896,81 +19896,36 @@ function App() {
     }
   }, [allText]);
   return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-    style: {
-      fontFamily: "sans-serif",
-      margin: 0,
-      padding: 0,
-      minHeight: "100vh",
-      background: "#fafafa",
-      display: "grid",
-      gridTemplateRows: "auto 1fr auto",
-      height: "100vh"
-    },
+    className: "font-sans min-h-screen bg-[#fafafa] grid grid-rows-[auto_1fr_auto] h-screen m-0 p-0",
     children: [
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("h1", {
-        style: {
-          margin: 0,
-          padding: "1em",
-          background: "#222",
-          color: "#fff",
-          fontSize: "1.5em",
-          textAlign: "center"
-        },
+        className: "m-0 p-4 bg-[#222] text-white text-[1.5em] text-center font-bold",
         children: "Musings of a LLM"
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
         ref: textRef,
-        style: {
-          boxSizing: "border-box",
-          width: "100vw",
-          overflowY: "auto",
-          border: "none",
-          padding: "2em 1em 1em 1em",
-          fontSize: "1.2em",
-          background: "#fff",
-          whiteSpace: "pre-line",
-          wordBreak: "break-word"
-        },
+        className: "box-border w-screen overflow-y-auto border-none pt-8 pb-4 px-4 text-[1.2em] bg-white whitespace-pre-line break-words",
         children: allText
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-        style: {
-          width: "100vw",
-          background: "#222",
-          color: "#fff",
-          textAlign: "center",
-          fontSize: "1.1em",
-          padding: "0.7em 0 1.2em 0",
-          letterSpacing: "0.05em",
-          zIndex: 1000
-        },
+        className: "w-screen bg-[#222] text-white text-center text-[1.1em] py-[0.7em] pb-[1.2em] tracking-wider z-50",
         children: /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-          style: { margin: "0 auto", maxWidth: 400 },
+          className: "mx-auto max-w-md",
           children: [
             /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-              style: { marginBottom: 4 },
+              className: "mb-1",
               children: percentUsed !== undefined ? `Memory Used: ${percentUsed.toFixed(1)}%` : "Memory Used: --"
             }, undefined, false, undefined, this),
             /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-              style: {
-                width: "100%",
-                height: 18,
-                background: "#444",
-                borderRadius: 8,
-                overflow: "hidden",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.08)"
-              },
+              className: "w-full",
+              style: { height: 18, background: "#444", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" },
               children: /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
+                className: "flex items-center justify-center text-white font-semibold",
                 style: {
                   width: percentUsed !== undefined ? `${percentUsed}%` : "0%",
                   height: "100%",
                   background: percentUsed !== undefined && percentUsed > 80 ? "#e74c3c" : "#4caf50",
                   transition: "width 0.3s cubic-bezier(.4,2,.6,1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontWeight: 600,
                   fontSize: 13
                 },
                 children: percentUsed !== undefined ? `${percentUsed.toFixed(1)}%` : ""

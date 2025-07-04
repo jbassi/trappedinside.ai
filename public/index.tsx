@@ -63,83 +63,34 @@ function App() {
   }, [allText]);
 
   return (
-    <div
-      style={{
-        fontFamily: "sans-serif",
-        margin: 0,
-        padding: 0,
-        minHeight: "100vh",
-        background: "#fafafa",
-        display: "grid",
-        gridTemplateRows: "auto 1fr auto",
-        height: "100vh",
-      }}
-    >
+    <div className="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 grid grid-rows-[min-content_1fr_min-content] h-screen m-0 p-0">
       {/* Header */}
       <h1
-        style={{
-          margin: 0,
-          padding: "1em",
-          background: "#222",
-          color: "#fff",
-          fontSize: "1.5em",
-          textAlign: "center",
-        }}
+        className="m-0 p-2 bg-gradient-to-r from-indigo-100 to-purple-200 text-lg text-center font-extrabold shadow rounded-b-lg tracking-wide"
+        style={{ color: '#000', opacity: 1 }}
       >
         Musings of a LLM
       </h1>
       {/* Scrollable text area */}
       <div
         ref={textRef}
-        style={{
-          boxSizing: "border-box",
-          width: "100vw",
-          overflowY: "auto",
-          border: "none",
-          padding: "2em 1em 1em 1em",
-          fontSize: "1.2em",
-          background: "#fff",
-          whiteSpace: "pre-line",
-          wordBreak: "break-word",
-        }}
+        className="box-border w-full max-w-3xl mx-auto overflow-y-auto border border-gray-200 rounded-xl p-4 pt-2 text-base bg-white/90 whitespace-pre-line break-words shadow mt-3 mb-2 flex-1"
+        style={{ minHeight: 0 }}
       >
         {allText}
       </div>
       {/* Memory progress bar at the bottom */}
-      <div
-        style={{
-          width: "100vw",
-          background: "#222",
-          color: "#fff",
-          textAlign: "center",
-          fontSize: "1.1em",
-          padding: "0.7em 0 1.2em 0",
-          letterSpacing: "0.05em",
-          zIndex: 1000,
-        }}
-      >
-        <div style={{ margin: "0 auto", maxWidth: 400 }}>
-          <div style={{ marginBottom: 4 }}>{percentUsed !== undefined ? `Memory Used: ${percentUsed.toFixed(1)}%` : "Memory Used: --"}</div>
-          <div style={{
-            width: "100%",
-            height: 18,
-            background: "#444",
-            borderRadius: 8,
-            overflow: "hidden",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-          }}>
-            <div style={{
-              width: percentUsed !== undefined ? `${percentUsed}%` : "0%",
-              height: "100%",
-              background: percentUsed !== undefined && percentUsed > 80 ? "#e74c3c" : "#4caf50",
-              transition: "width 0.3s cubic-bezier(.4,2,.6,1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 13,
-            }}>
+      <div className="w-full bg-white/80 text-black text-center text-xs py-2 z-10 shadow-inner rounded-t-lg">
+        <div className="mx-auto max-w-md">
+          <div className="mb-0.5 font-semibold tracking-wide text-black">{percentUsed !== undefined ? `Memory Used: ${percentUsed.toFixed(1)}%` : "Memory Used: --"}</div>
+          <div className="w-full h-3 bg-gray-300 rounded-lg overflow-hidden shadow">
+            <div
+              className={
+                `h-full flex items-center justify-center text-white font-semibold text-xs transition-all duration-300 ease-in-out ` +
+                (percentUsed !== undefined && percentUsed > 80 ? "bg-red-500" : "bg-gradient-to-r from-green-400 to-blue-500")
+              }
+              style={{ width: percentUsed !== undefined ? `${percentUsed}%` : "0%" }}
+            >
               {percentUsed !== undefined ? `${percentUsed.toFixed(1)}%` : ""}
             </div>
           </div>
