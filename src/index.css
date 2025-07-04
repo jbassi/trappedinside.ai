@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen;
+    @apply bg-gray-50 min-h-screen;
     color: #222;
   }
 }
