@@ -22,13 +22,14 @@ function App() {
     return () => ws.close();
   }, []);
 
+  // Concatenate all message texts into a single string
+  const allText = messages.map((msg) => msg.text).join("");
+
   return (
     <div style={{ fontFamily: "sans-serif", margin: "2em" }}>
       <h1>LLM Art</h1>
-      <div style={{ border: "1px solid #ccc", padding: "1em", minHeight: "2em" }}>
-        {messages.map((msg, i) => (
-          <div key={i}>{msg.text}</div>
-        ))}
+      <div style={{ border: "1px solid #ccc", padding: "1em", minHeight: "2em", whiteSpace: "pre-line" }}>
+        {allText}
       </div>
     </div>
   );

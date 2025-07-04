@@ -15891,6 +15891,7 @@ function App() {
     };
     return () => ws.close();
   }, []);
+  const allText = messages.map((msg) => msg.text).join("");
   return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
     style: { fontFamily: "sans-serif", margin: "2em" },
     children: [
@@ -15898,10 +15899,8 @@ function App() {
         children: "LLM Art"
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-        style: { border: "1px solid #ccc", padding: "1em", minHeight: "2em" },
-        children: messages.map((msg, i) => /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-          children: msg.text
-        }, i, false, undefined, this))
+        style: { border: "1px solid #ccc", padding: "1em", minHeight: "2em", whiteSpace: "pre-line" },
+        children: allText
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
