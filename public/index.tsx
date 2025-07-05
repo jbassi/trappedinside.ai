@@ -61,7 +61,7 @@ function App() {
   }, [allText]);
 
   return (
-    <div className="font-sans min-h-screen bg-gray-50 flex flex-col h-screen m-0 p-0 gap-y-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col h-screen m-0 p-0 gap-y-8">
       {/* Header */}
       <h1
         className="m-0 text-lg text-center font-extrabold shadow rounded-b-lg tracking-wide flex items-center justify-center"
@@ -72,7 +72,7 @@ function App() {
       {/* Scrollable text area */}
       <div
         ref={textRef}
-        className="box-border w-full max-w-3xl mx-auto overflow-y-auto rounded-xl p-4 pt-2 text-base whitespace-pre-line break-words shadow flex-1"
+        className="box-border w-full max-w-3xl mx-auto overflow-y-auto rounded-xl p-4 pt-2 text-base bg-white/40 backdrop-blur-xl border border-white/40 whitespace-pre-line break-words shadow flex-1"
         style={{ minHeight: 0 }}
       >
         {allText}
