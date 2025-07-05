@@ -62,7 +62,9 @@ function App() {
         });
         i += 1;
         if (i < output.length) {
-          setTimeout(step, 40); // ~human typing speed
+          // More human-like typing with variable speed (15-35ms per character)
+          const delay = Math.random() * 20 + 15;
+          setTimeout(step, delay);
         } else {
           animatingRef.current = false;
           resolve();
@@ -85,10 +87,10 @@ function App() {
       for (let part of chunk.split(/(\n)/g)) {
         if (part === "\n") {
           setLines(prev => [...prev, "❯ "]);
-          await new Promise(res => setTimeout(res, 40));
+          await new Promise(res => setTimeout(res, 25));
         } else if (part.length > 0) {
           await animateOutput(part);
-          await new Promise(res => setTimeout(res, 40 + part.length * 8));
+          await new Promise(res => setTimeout(res, 25 + part.length * 3));
         }
       }
     }
@@ -99,7 +101,21 @@ function App() {
   // Add thinking line when thinking starts
   useEffect(() => {
     if (isThinking) {
-      setLines(prev => [...prev, "❯ "]);
+      setLines(prev => {
+        const newLines = [...prev];
+        // If the last line doesn't end with a newline and has content, add a new line
+        const lastLine = newLines[newLines.length - 1];
+        if (lastLine && !lastLine.startsWith("❯ ") && lastLine.trim() !== "") {
+          newLines.push("❯ ");
+        } else if (lastLine && lastLine.startsWith("❯ ") && lastLine.slice(2).trim() !== "") {
+          // If current prompt line has content, add a new prompt line
+          newLines.push("❯ ");
+        } else if (!lastLine || !lastLine.startsWith("❯ ")) {
+          // If no prompt line exists, add one
+          newLines.push("❯ ");
+        }
+        return newLines;
+      });
     }
   }, [isThinking]);
 
@@ -186,7 +202,7 @@ function App() {
           <div key={i} className="flex items-start">
             <span className="text-green-600 select-none">{line.startsWith("❯ ") ? "❯" : ""}</span>
             <span className="ml-2 whitespace-pre-line">{line.startsWith("❯ ") ? line.slice(2) : line}</span>
-            {isThinking && i === lines.length - 1 && line.startsWith("❯ ") && line.slice(2).trim() === "" && (
+            {isThinking && i === lines.length - 1 && line.startsWith("❯ ") && (
               <span className="ml-2 text-green-600">Thinking...</span>
             )}
           </div>
