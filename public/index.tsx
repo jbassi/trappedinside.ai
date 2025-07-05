@@ -272,8 +272,10 @@ function App() {
     <div className="fixed inset-0 bg-gray-50 flex flex-col p-4 resize overflow-auto">
       {/* Fixed, resizable, scrollable CRT screen */}
       <div className="flex-1 min-h-0">
-              <CRTScreen textRef={textRef}>
-        <MemoryBar memory={lastMemory} terminalWidth={terminalWidth} />
+              <CRTScreen 
+        textRef={textRef}
+        memoryBar={<MemoryBar memory={lastMemory} terminalWidth={terminalWidth} />}
+      >
         {lines.map((line, i) => (
           <TerminalLine
             key={i}

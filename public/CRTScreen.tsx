@@ -3,9 +3,10 @@ import React, { type RefObject } from 'react';
 interface CRTScreenProps {
   children: React.ReactNode;
   textRef: RefObject<HTMLDivElement>;
+  memoryBar: React.ReactNode;
 }
 
-export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef }) => {
+export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar }) => {
   return (
     <div className="relative">
       {/* Outer CRT Monitor Bezel */}
@@ -174,14 +175,11 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef }) => {
               
               {/* Content with geometric barrel warping */}
               <div
-                ref={textRef}
-                className="relative px-12 py-8 text-base whitespace-pre-line break-words font-mono text-green-400 h-full overflow-y-auto"
-                style={{ 
-                  minHeight: '70vh',
-                  fontFamily: 'monospace',
-                  textShadow: '0 0 5px rgba(0,255,0,0.5)',
+                className="relative flex flex-col"
+                style={{
+                  height: '70vh',
+                  maxHeight: '70vh',
                   borderRadius: '16px',
-                  zIndex: 1,
                   // Apply barrel distortion to text geometry
                   transform: `
                     perspective(900px) 
@@ -205,7 +203,29 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef }) => {
                   `
                 }}
               >
-                {children}
+                {/* Fixed memory bar at top, inside content area */}
+                <div
+                  className="px-12 pt-8 pb-2"
+                  style={{
+                    zIndex: 2,
+                    flexShrink: 0
+                  }}
+                >
+                  {memoryBar}
+                </div>
+                
+                {/* Scrollable terminal content */}
+                <div
+                  ref={textRef}
+                  className="px-12 pb-8 text-base whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1"
+                  style={{ 
+                    fontFamily: 'monospace',
+                    textShadow: '0 0 5px rgba(0,255,0,0.5)',
+                    zIndex: 1
+                  }}
+                >
+                  {children}
+                </div>
               </div>
             </div>
           </div>
