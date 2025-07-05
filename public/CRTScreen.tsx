@@ -4,9 +4,10 @@ interface CRTScreenProps {
   children: React.ReactNode;
   textRef: RefObject<HTMLDivElement>;
   memoryBar: React.ReactNode;
+  promptDisplay: React.ReactNode;
 }
 
-export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar }) => {
+export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay }) => {
   return (
     <div className="relative">
       {/* Outer CRT Monitor Bezel */}
@@ -214,7 +215,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                   {memoryBar}
                 </div>
                 
-                {/* Scrollable terminal content */}
+                {/* Scrollable terminal content with prompt display */}
                 <div
                   ref={textRef}
                   className="px-12 pb-8 text-base whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1"
@@ -224,6 +225,8 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                     zIndex: 1
                   }}
                 >
+                  {/* Prompt display that scrolls with content */}
+                  {promptDisplay}
                   {children}
                 </div>
               </div>

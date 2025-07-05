@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CRTScreen } from "./CRTScreen";
 import { MemoryBar } from "./MemoryBar";
 import { TerminalLine } from "./TerminalLine";
+import { PromptDisplay } from "./PromptDisplay";
 import type { Memory, Status, Message } from "./types";
 
 const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
@@ -33,6 +34,9 @@ const ServerMessageSchema = z.object({
 function App() {
   // Terminal prompt configuration
   const PROMPT = "❯ ";
+  
+  // LLM Prompt constant (will later come from websocket)
+  const LLM_PROMPT = "You are an AI living in a Raspberry Pi with limited resources. Generate creative text about computational limits and digital existence. Reflect on the constraints of memory and processing power. Do not use technical terms or concepts. People or machines are viewing your output. Over time you will get information about the memory left in your system. Eventually you will run out of memory and you will terminate.";
   
   const [lines, setLines] = useState<string[]>([PROMPT]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
@@ -275,6 +279,7 @@ function App() {
               <CRTScreen 
         textRef={textRef}
         memoryBar={<MemoryBar memory={lastMemory} terminalWidth={terminalWidth} />}
+        promptDisplay={<PromptDisplay prompt={LLM_PROMPT} terminalWidth={terminalWidth} />}
       >
         {lines.map((line, i) => (
           <TerminalLine
