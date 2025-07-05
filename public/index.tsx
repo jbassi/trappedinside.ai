@@ -10,7 +10,12 @@ type Memory = {
   total_mb: number;
 };
 
-type Message = { text: string; memory?: Memory };
+type Status = {
+  is_restarting?: boolean;
+  is_thinking?: boolean;
+};
+
+type Message = { text: string; memory?: Memory; status?: Status };
 
 // Zod schema for server messages
 const ServerMessageSchema = z.object({
@@ -24,6 +29,12 @@ const ServerMessageSchema = z.object({
           total_mb: z.number(),
         })
         .optional(),
+      status: z
+        .object({
+          is_restarting: z.boolean().optional(),
+          is_thinking: z.boolean().optional(),
+        })
+        .optional(),
     })
   ),
 });
@@ -31,6 +42,7 @@ const ServerMessageSchema = z.object({
 function App() {
   const [lines, setLines] = useState<string[]>(["❯ "]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
+  const [isThinking, setIsThinking] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
@@ -84,6 +96,13 @@ function App() {
     processingRef.current = false;
   };
 
+  // Add thinking line when thinking starts
+  useEffect(() => {
+    if (isThinking) {
+      setLines(prev => [...prev, "❯ "]);
+    }
+  }, [isThinking]);
+
   useEffect(() => {
     let ws: WebSocket;
     let reconnectTimeout: NodeJS.Timeout;
@@ -110,6 +129,10 @@ function App() {
               // Update memory if present
               if (msg.memory) {
                 setLastMemory(msg.memory);
+              }
+              // Update thinking status if present
+              if (msg.status?.is_thinking !== undefined) {
+                setIsThinking(msg.status.is_thinking);
               }
             }
             
@@ -163,6 +186,9 @@ function App() {
           <div key={i} className="flex items-start">
             <span className="text-green-600 select-none">{line.startsWith("❯ ") ? "❯" : ""}</span>
             <span className="ml-2 whitespace-pre-line">{line.startsWith("❯ ") ? line.slice(2) : line}</span>
+            {isThinking && i === lines.length - 1 && line.startsWith("❯ ") && line.slice(2).trim() === "" && (
+              <span className="ml-2 text-green-600">Thinking...</span>
+            )}
           </div>
         ))}
       </div>
