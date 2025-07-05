@@ -103,18 +103,19 @@ function App() {
     if (isThinking) {
       setLines(prev => {
         const newLines = [...prev];
-        // If the last line doesn't end with a newline and has content, add a new line
         const lastLine = newLines[newLines.length - 1];
-        if (lastLine && !lastLine.startsWith("❯ ") && lastLine.trim() !== "") {
+        
+        // Add empty prompt line first, then thinking line
+        if (lastLine && lastLine.startsWith("❯ ") && lastLine.slice(2).trim() === "") {
+          // If the last line is already an empty prompt, add another for thinking
           newLines.push("❯ ");
-        } else if (lastLine && lastLine.startsWith("❯ ") && lastLine.slice(2).trim() !== "") {
-          // If current prompt line has content, add a new prompt line
+          return newLines;
+        } else {
+          // Add empty prompt line, then thinking prompt line
           newLines.push("❯ ");
-        } else if (!lastLine || !lastLine.startsWith("❯ ")) {
-          // If no prompt line exists, add one
           newLines.push("❯ ");
+          return newLines;
         }
-        return newLines;
       });
     }
   }, [isThinking]);
