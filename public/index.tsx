@@ -47,6 +47,34 @@ function App() {
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
   const processingRef = useRef(false);
+  const [terminalWidth, setTerminalWidth] = useState(80);
+  const [, forceUpdate] = useState({});
+
+  // Memory component that looks like htop
+  const MemoryBar = ({ memory }: { memory?: Memory }) => {
+    // Always show the bar, use default values when no data
+    const usedMB = memory ? memory.total_mb - memory.available_mb : 0;
+    const usedGB = (usedMB / 1024).toFixed(2);
+    const totalGB = memory ? (memory.total_mb / 1024).toFixed(2) : '0.00';
+    const percentUsed = memory ? memory.percent_used : 0.0;
+    
+    // Calculate dynamic bar length based on terminal width
+    const textPortion = `Mem[] Used ${percentUsed.toFixed(1)}% (${usedGB}G/${totalGB}G)`;
+    const textLength = textPortion.length;
+    const availableForBar = Math.max(15, terminalWidth - textLength - 3); // Reduced buffer to 3 chars
+    const barLength = Math.min(availableForBar, 120); // Increased cap to 120 chars
+    
+    const filledLength = Math.round((percentUsed / 100) * barLength);
+    const emptyLength = barLength - filledLength;
+    const filledBar = '|'.repeat(filledLength);
+    const emptyBar = '.'.repeat(emptyLength);
+    
+    return (
+      <div className="text-green-400 font-mono mb-2 select-none w-full overflow-hidden whitespace-nowrap">
+        <span>Mem[{filledBar}{emptyBar}] Used {percentUsed.toFixed(1)}% ({usedGB}G/{totalGB}G)</span>
+      </div>
+    );
+  };
 
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
@@ -189,10 +217,33 @@ function App() {
     }
   }, [lines]);
 
+  // Calculate terminal width based on container
+  useEffect(() => {
+    const calculateWidth = () => {
+      if (textRef.current) {
+        const containerWidth = textRef.current.clientWidth;
+        const paddingLeft = parseFloat(getComputedStyle(textRef.current).paddingLeft) || 0;
+        const paddingRight = parseFloat(getComputedStyle(textRef.current).paddingRight) || 0;
+        const availableWidth = containerWidth - paddingLeft - paddingRight;
+        
+        // Use a more conservative character width estimate for monospace
+        const charWidth = 9.6; // More accurate for typical monospace fonts
+        const estimatedChars = Math.floor(availableWidth / charWidth);
+        setTerminalWidth(estimatedChars);
+        // Force re-render of memory bar when width changes
+        forceUpdate({});
+      }
+    };
+
+    calculateWidth();
+    window.addEventListener('resize', calculateWidth);
+    return () => window.removeEventListener('resize', calculateWidth);
+  }, []);
+
   const percentUsed = lastMemory?.percent_used;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col h-screen m-0 p-4 gap-y-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col h-screen m-0 p-4">
       {/* Scrollable text area */}
       <div
         ref={textRef}
@@ -211,6 +262,7 @@ function App() {
           `
         }}
       >
+        <MemoryBar memory={lastMemory} />
         {lines.map((line, i) => (
           <div key={i} className="flex items-start">
             <span className="text-green-400 select-none">{line.startsWith("❯ ") ? "❯" : ""}</span>
@@ -220,26 +272,6 @@ function App() {
             )}
           </div>
         ))}
-      </div>
-      {/* Memory progress bar at the bottom */}
-      <div
-        className="w-full text-black text-center text-xs z-10 shadow-inner rounded-t-lg flex items-center justify-center"
-        style={{ height: '36px', minHeight: '36px', maxHeight: '36px' }}
-      >
-        <div className="mx-auto max-w-md w-full">
-          <div className="mb-0.5 font-semibold tracking-wide text-black">{percentUsed !== undefined ? `Memory Used: ${percentUsed.toFixed(1)}%` : "Memory Used: --"}</div>
-          <div className="w-full h-3 bg-gray-300 rounded-lg overflow-hidden shadow">
-            <div
-              className={
-                `h-full flex items-center justify-center text-white font-semibold text-xs transition-all duration-300 ease-in-out ` +
-                (percentUsed !== undefined && percentUsed > 80 ? "bg-red-500" : "bg-gradient-to-r from-green-400 to-blue-500")
-              }
-              style={{ width: percentUsed !== undefined ? `${percentUsed}%` : "0%" }}
-            >
-              {percentUsed !== undefined ? `${percentUsed.toFixed(1)}%` : ""}
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
