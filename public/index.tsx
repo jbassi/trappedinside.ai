@@ -44,6 +44,8 @@ function App() {
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
   const [isThinking, setIsThinking] = useState(false);
   const [cursorVisible, setCursorVisible] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
@@ -52,7 +54,7 @@ function App() {
   const [terminalWidth, setTerminalWidth] = useState(80);
   const [, forceUpdate] = useState({});
 
-  // Cursor blinking effect
+  // Cursor blinking effect - controlled by animation state
   useEffect(() => {
     // Clear any existing interval
     if (cursorIntervalRef.current) {
@@ -60,17 +62,22 @@ function App() {
       cursorIntervalRef.current = null;
     }
 
-    // Start cursor blinking when idle
-    cursorIntervalRef.current = setInterval(() => {
-      setCursorVisible(prev => !prev);
-    }, 500); // Blink every 500ms
+    // Only start blinking when not animating or processing
+    if (!isAnimating && !isProcessing) {
+      cursorIntervalRef.current = setInterval(() => {
+        setCursorVisible(prev => !prev);
+      }, 500); // Blink every 500ms
+    } else {
+      // Keep cursor visible during animation
+      setCursorVisible(true);
+    }
 
     return () => {
       if (cursorIntervalRef.current) {
         clearInterval(cursorIntervalRef.current);
       }
     };
-  }, []);
+  }, [isAnimating, isProcessing]); // Re-run when animation state changes
 
   // CRT Screen Component with CSS Bulge Distortion
   const CRTScreen = ({ children }: { children: React.ReactNode }) => {
@@ -313,6 +320,7 @@ function App() {
   const animateOutput = (output: string) => {
     return new Promise<void>((resolve) => {
       animatingRef.current = true;
+      setIsAnimating(true);
       setCursorVisible(true); // Keep cursor visible during animation
       let i = 0;
       function step() {
@@ -329,6 +337,7 @@ function App() {
           setTimeout(step, delay);
         } else {
           animatingRef.current = false;
+          setIsAnimating(false);
           resolve();
         }
       }
@@ -340,6 +349,7 @@ function App() {
   const processQueue = async () => {
     if (processingRef.current) return;
     processingRef.current = true;
+    setIsProcessing(true);
     setCursorVisible(true); // Keep cursor visible during processing
     
     while (queueRef.current.length > 0) {
@@ -359,6 +369,7 @@ function App() {
     }
     
     processingRef.current = false;
+    setIsProcessing(false);
   };
 
   // Add thinking line when thinking starts
@@ -487,7 +498,7 @@ function App() {
           const isPromptLine = line.startsWith("❯ ");
           const lineContent = isPromptLine ? line.slice(2) : line;
           const showThinking = isThinking && isLastLine && isPromptLine;
-          const showCursor = isLastLine && !showThinking;
+          const showCursor = isLastLine; // Always show cursor on last line
           
           return (
             <div key={i} className="flex items-start">
