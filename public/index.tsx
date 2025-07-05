@@ -1,21 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { z } from "zod";
+import { CRTScreen } from "./CRTScreen";
+import { MemoryBar } from "./MemoryBar";
+import { TerminalLine } from "./TerminalLine";
+import type { Memory, Status, Message } from "./types";
 
 const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
-
-type Memory = {
-  available_mb: number;
-  percent_used: number;
-  total_mb: number;
-};
-
-type Status = {
-  is_restarting?: boolean;
-  is_thinking?: boolean;
-};
-
-type Message = { text: string; memory?: Memory; status?: Status };
 
 // Zod schema for server messages
 const ServerMessageSchema = z.object({
@@ -81,243 +72,6 @@ function App() {
       }
     };
   }, [isAnimating, isProcessing]); // Re-run when animation state changes
-
-  // CRT Screen Component with CSS Bulge Distortion
-  const CRTScreen = ({ children }: { children: React.ReactNode }) => {
-    return (
-      <div className="relative">
-        {/* Outer CRT Monitor Bezel */}
-        <div
-          className="relative mx-auto"
-          style={{ 
-            border: '20px solid #d4c4a0',
-            borderRadius: '20px',
-            boxShadow: `
-              inset 0 0 0 8px #1a1a1a,
-              inset 0 0 0 12px #0a0a0a,
-              inset 0 0 0 16px #1a1a1a,
-              inset 0 0 0 20px #0a0a0a,
-              0 8px 16px rgba(0, 0, 0, 0.3)
-            `
-          }}
-        >
-          {/* CRT Screen with True Barrel Distortion */}
-          <div
-            className="relative bg-black overflow-hidden"
-            style={{
-              borderRadius: '16px',
-              background: `
-                radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.95) 100%),
-                linear-gradient(45deg, rgba(0,255,0,0.02) 0%, transparent 50%, rgba(0,255,0,0.02) 100%)
-              `,
-              boxShadow: `
-                inset 0 0 100px rgba(0,255,0,0.1),
-                inset 0 0 20px rgba(0,0,0,0.8)
-              `
-            }}
-          >
-            {/* True Barrel Distortion Container */}
-            <div
-              className="relative"
-              style={{
-                borderRadius: '16px',
-                // Apply barrel distortion using CSS filter
-                filter: `
-                  contrast(1.05) 
-                  brightness(1.02)
-                `,
-                // Geometric barrel distortion using transform
-                transform: `
-                  perspective(800px) 
-                  rotateX(2deg) 
-                  rotateY(0deg) 
-                  scale3d(1.02, 1.02, 1)
-                `,
-                transformOrigin: 'center center',
-                transformStyle: 'preserve-3d'
-              }}
-            >
-              {/* Content with barrel distortion warping */}
-              <div
-                className="relative"
-                style={{
-                  borderRadius: '16px',
-                  // True barrel distortion using CSS transforms
-                  transform: `
-                    perspective(600px) 
-                    rotateX(-1deg) 
-                    scale3d(0.98, 0.98, 1)
-                  `,
-                  transformOrigin: 'center center',
-                  // Apply barrel distortion using CSS clip-path for geometric warping
-                  clipPath: `
-                    polygon(
-                      1% 0%, 5% 0%, 95% 0%, 99% 0%, 
-                      100% 1%, 100% 5%, 100% 95%, 100% 99%, 
-                      99% 100%, 95% 100%, 5% 100%, 1% 100%, 
-                      0% 99%, 0% 95%, 0% 5%, 0% 1%
-                    )
-                  `
-                }}
-              >
-                {/* Barrel distortion overlay with geometric warping */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    // Apply counter-distortion to create barrel effect
-                    transform: `
-                      perspective(500px) 
-                      rotateX(1.5deg) 
-                      scale3d(1.03, 1.03, 1)
-                    `,
-                    transformOrigin: 'center center',
-                    borderRadius: '16px'
-                  }}
-                >
-                  {/* Scanlines that follow the barrel curvature */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: `repeating-linear-gradient(
-                        0deg,
-                        transparent 0px,
-                        transparent 2px,
-                        rgba(0,255,0,0.03) 2px,
-                        rgba(0,255,0,0.03) 4px
-                      )`,
-                      borderRadius: '16px',
-                      zIndex: 10,
-                      // Make scanlines follow the barrel curve
-                      transform: `
-                        perspective(700px) 
-                        rotateX(-0.5deg) 
-                        scale3d(1.01, 1.01, 1)
-                      `,
-                      transformOrigin: 'center center'
-                    }}
-                  />
-                  
-                  {/* Barrel distortion vignette */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: `
-                        radial-gradient(ellipse 90% 90% at 50% 50%, 
-                          transparent 0%, 
-                          transparent 60%, 
-                          rgba(0,0,0,0.05) 70%, 
-                          rgba(0,0,0,0.15) 80%, 
-                          rgba(0,0,0,0.3) 90%, 
-                          rgba(0,0,0,0.5) 95%, 
-                          rgba(0,0,0,0.7) 100%
-                        )
-                      `,
-                      borderRadius: '16px',
-                      zIndex: 5,
-                      // Vignette follows barrel distortion
-                      transform: `
-                        perspective(600px) 
-                        rotateX(-0.8deg) 
-                        scale3d(1.015, 1.015, 1)
-                      `,
-                      transformOrigin: 'center center'
-                    }}
-                  />
-
-                  {/* Center bulge highlight */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: `
-                        radial-gradient(ellipse 15% 15% at 50% 50%, 
-                          rgba(255,255,255,0.2) 0%, 
-                          rgba(255,255,255,0.12) 40%, 
-                          rgba(255,255,255,0.06) 60%, 
-                          rgba(255,255,255,0.03) 80%, 
-                          transparent 100%
-                        )
-                      `,
-                      borderRadius: '16px',
-                      zIndex: 15,
-                      // Center highlight emphasizes the barrel bulge
-                      transform: `
-                        perspective(400px) 
-                        rotateX(-1.2deg) 
-                        scale3d(1.025, 1.025, 1)
-                      `,
-                      transformOrigin: 'center center'
-                    }}
-                  />
-                </div>
-                
-                {/* Content with geometric barrel warping */}
-                <div
-                  ref={textRef}
-                  className="relative px-12 py-8 text-base whitespace-pre-line break-words font-mono text-green-400 h-full overflow-y-auto"
-                  style={{ 
-                    minHeight: '70vh',
-                    fontFamily: 'monospace',
-                    textShadow: '0 0 5px rgba(0,255,0,0.5)',
-                    borderRadius: '16px',
-                    zIndex: 1,
-                    // Apply barrel distortion to text geometry
-                    transform: `
-                      perspective(900px) 
-                      rotateX(-0.8deg) 
-                      scale3d(1.008, 1.008, 1)
-                    `,
-                    transformOrigin: 'center center',
-                    // Additional barrel distortion using CSS filters
-                    filter: `
-                      contrast(1.02) 
-                      brightness(1.01)
-                    `,
-                    // Subtle geometric warping of text container
-                    clipPath: `
-                      polygon(
-                        0.5% 0%, 99.5% 0%, 
-                        100% 0.5%, 100% 99.5%, 
-                        99.5% 100%, 0.5% 100%, 
-                        0% 99.5%, 0% 0.5%
-                      )
-                    `
-                  }}
-                >
-                  {children}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Memory component that looks like htop
-  const MemoryBar = ({ memory }: { memory?: Memory }) => {
-    // Always show the bar, use default values when no data
-    const usedMB = memory ? memory.total_mb - memory.available_mb : 0;
-    const usedGB = (usedMB / 1024).toFixed(2);
-    const totalGB = memory ? (memory.total_mb / 1024).toFixed(2) : '0.00';
-    const percentUsed = memory ? memory.percent_used : 0.0;
-    
-    // Calculate dynamic bar length based on terminal width
-    const textPortion = `Memory[] Used ${percentUsed.toFixed(1)}% (${usedGB}G/${totalGB}G)`;
-    const textLength = textPortion.length;
-    const availableForBar = Math.max(15, terminalWidth - textLength - 3); // Reduced buffer to 3 chars
-    const barLength = Math.min(availableForBar, 120); // Increased cap to 120 chars
-    
-    const filledLength = Math.round((percentUsed / 100) * barLength);
-    const emptyLength = barLength - filledLength;
-    const filledBar = '|'.repeat(filledLength);
-    const emptyBar = '.'.repeat(emptyLength);
-    
-    return (
-      <div className="text-black font-mono mb-2 select-none w-full overflow-hidden whitespace-nowrap bg-green-400 py-1 px-2 flex justify-center">
-        <span>Memory[{filledBar}{emptyBar}] Used {percentUsed.toFixed(1)}% ({usedGB}G/{totalGB}G)</span>
-      </div>
-    );
-  };
 
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
@@ -518,31 +272,19 @@ function App() {
     <div className="fixed inset-0 bg-gray-50 flex flex-col p-4 resize overflow-auto">
       {/* Fixed, resizable, scrollable CRT screen */}
       <div className="flex-1 min-h-0">
-        <CRTScreen>
-          <MemoryBar memory={lastMemory} />
-          {lines.map((line, i) => {
-          const isLastLine = i === lines.length - 1;
-          const isPromptLine = line.startsWith(PROMPT);
-          const lineContent = isPromptLine ? line.slice(PROMPT.length) : line;
-          const showThinking = isThinking && isLastLine && isPromptLine && lineContent.trim() === "";
-          const showCursor = isLastLine; // Always show cursor on last line
-          
-          return (
-            <div key={i} className="flex items-start min-h-[1.5em]">
-              <span className="text-green-400 select-none">{isPromptLine ? PROMPT.trim() : ""}</span>
-              <span className="ml-2 whitespace-pre-line text-green-400">
-                {lineContent}
-                {showThinking && "Thinking..."}
-                {showCursor && (
-                  <span className={`text-green-400 ${cursorVisible ? 'opacity-100' : 'opacity-0'}`}>
-                    █
-                  </span>
-                )}
-              </span>
-            </div>
-          );
-        })}
-        </CRTScreen>
+              <CRTScreen textRef={textRef}>
+        <MemoryBar memory={lastMemory} terminalWidth={terminalWidth} />
+        {lines.map((line, i) => (
+          <TerminalLine
+            key={i}
+            line={line}
+            isLastLine={i === lines.length - 1}
+            isThinking={isThinking}
+            cursorVisible={cursorVisible}
+            prompt={PROMPT}
+          />
+        ))}
+      </CRTScreen>
       </div>
     </div>
   );
