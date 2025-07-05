@@ -40,7 +40,10 @@ const ServerMessageSchema = z.object({
 });
 
 function App() {
-  const [lines, setLines] = useState<string[]>(["❯ "]);
+  // Terminal prompt configuration
+  const PROMPT = "❯ ";
+  
+  const [lines, setLines] = useState<string[]>([PROMPT]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
   const [isThinking, setIsThinking] = useState(false);
   const [cursorVisible, setCursorVisible] = useState(true);
@@ -299,7 +302,7 @@ function App() {
     const percentUsed = memory ? memory.percent_used : 0.0;
     
     // Calculate dynamic bar length based on terminal width
-    const textPortion = `Mem[] Used ${percentUsed.toFixed(1)}% (${usedGB}G/${totalGB}G)`;
+    const textPortion = `Memory[] Used ${percentUsed.toFixed(1)}% (${usedGB}G/${totalGB}G)`;
     const textLength = textPortion.length;
     const availableForBar = Math.max(15, terminalWidth - textLength - 3); // Reduced buffer to 3 chars
     const barLength = Math.min(availableForBar, 120); // Increased cap to 120 chars
@@ -311,7 +314,7 @@ function App() {
     
     return (
       <div className="text-black font-mono mb-2 select-none w-full overflow-hidden whitespace-nowrap bg-green-400 py-1 px-2 flex justify-center">
-        <span>Mem[{filledBar}{emptyBar}] Used {percentUsed.toFixed(1)}% ({usedGB}G/{totalGB}G)</span>
+        <span>Memory[{filledBar}{emptyBar}] Used {percentUsed.toFixed(1)}% ({usedGB}G/{totalGB}G)</span>
       </div>
     );
   };
@@ -359,7 +362,7 @@ function App() {
       // If chunk contains newlines, split and animate each part
       for (let part of chunk.split(/(\n)/g)) {
         if (part === "\n") {
-          setLines(prev => [...prev, "❯ "]);
+          setLines(prev => [...prev, PROMPT]);
           await new Promise(res => setTimeout(res, 50));
         } else if (part.length > 0) {
           await animateOutput(part);
@@ -380,12 +383,12 @@ function App() {
         const lastLine = newLines[newLines.length - 1];
         
         // Add empty prompt line if the last line has content
-        if (lastLine && lastLine.startsWith("❯ ") && lastLine.slice(2).trim() !== "") {
-          newLines.push("❯ ");
+        if (lastLine && lastLine.startsWith(PROMPT) && lastLine.slice(PROMPT.length).trim() !== "") {
+          newLines.push(PROMPT);
         }
         
         // Add thinking prompt line
-        newLines.push("❯ ");
+        newLines.push(PROMPT);
         
         return newLines;
       });
@@ -396,13 +399,13 @@ function App() {
         const lastLine = newLines[newLines.length - 1];
         
         // Remove the last line if it's an empty prompt (the thinking line)
-        if (lastLine && lastLine === "❯ ") {
+        if (lastLine && lastLine === PROMPT) {
           newLines.pop();
         }
         
         // Ensure we always have at least one prompt line
         if (newLines.length === 0) {
-          newLines.push("❯ ");
+          newLines.push(PROMPT);
         }
         
         return newLines;
@@ -413,9 +416,9 @@ function App() {
   // Ensure we always have at least one prompt line
   useEffect(() => {
     if (lines.length === 0) {
-      setLines(["❯ "]);
+      setLines([PROMPT]);
     }
-  }, [lines]);
+  }, [lines, PROMPT]);
 
   useEffect(() => {
     let ws: WebSocket;
@@ -512,20 +515,21 @@ function App() {
   const percentUsed = lastMemory?.percent_used;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col h-screen m-0 p-4">
-      {/* Scrollable text area */}
-      <CRTScreen>
-        <MemoryBar memory={lastMemory} />
-        {lines.map((line, i) => {
+    <div className="fixed inset-0 bg-gray-50 flex flex-col p-4 resize overflow-auto">
+      {/* Fixed, resizable, scrollable CRT screen */}
+      <div className="flex-1 min-h-0">
+        <CRTScreen>
+          <MemoryBar memory={lastMemory} />
+          {lines.map((line, i) => {
           const isLastLine = i === lines.length - 1;
-          const isPromptLine = line.startsWith("❯ ");
-          const lineContent = isPromptLine ? line.slice(2) : line;
+          const isPromptLine = line.startsWith(PROMPT);
+          const lineContent = isPromptLine ? line.slice(PROMPT.length) : line;
           const showThinking = isThinking && isLastLine && isPromptLine && lineContent.trim() === "";
           const showCursor = isLastLine; // Always show cursor on last line
           
           return (
             <div key={i} className="flex items-start min-h-[1.5em]">
-              <span className="text-green-400 select-none">{isPromptLine ? "❯" : ""}</span>
+              <span className="text-green-400 select-none">{isPromptLine ? PROMPT.trim() : ""}</span>
               <span className="ml-2 whitespace-pre-line text-green-400">
                 {lineContent}
                 {showThinking && "Thinking..."}
@@ -538,7 +542,8 @@ function App() {
             </div>
           );
         })}
-      </CRTScreen>
+        </CRTScreen>
+      </div>
     </div>
   );
 }
