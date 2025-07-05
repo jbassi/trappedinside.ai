@@ -34,8 +34,7 @@ function App() {
   const textRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
-  const isFirstConnectionRef = useRef(true);
-  const processedMessagesRef = useRef<Set<string>>(new Set());
+  const processingRef = useRef(false);
 
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
@@ -63,10 +62,13 @@ function App() {
 
   // Animation queue processor
   const processQueue = async () => {
-    if (animatingRef.current) return;
+    if (processingRef.current) return;
+    processingRef.current = true;
+    
     while (queueRef.current.length > 0) {
       const chunk = queueRef.current.shift();
       if (!chunk) continue;
+      
       // If chunk contains newlines, split and animate each part
       for (let part of chunk.split(/(\n)/g)) {
         if (part === "\n") {
@@ -78,6 +80,8 @@ function App() {
         }
       }
     }
+    
+    processingRef.current = false;
   };
 
   useEffect(() => {
@@ -88,14 +92,7 @@ function App() {
       ws = new WebSocket(WS_URL);
       
       ws.onopen = () => {
-        // Reset terminal state on each new connection (except the very first one)
-        if (!isFirstConnectionRef.current) {
-          setLines(["❯ "]);
-          queueRef.current = [];
-          animatingRef.current = false;
-          processedMessagesRef.current.clear();
-        }
-        isFirstConnectionRef.current = false;
+        console.log("WebSocket connected");
       };
       
       ws.onmessage = (event) => {
@@ -105,34 +102,33 @@ function App() {
           if (result.success) {
             const messages = result.data.messages;
             
-            // Process only new messages that we haven't seen before
+            // Process each message chunk
             for (const msg of messages) {
-              const msgKey = msg.text + JSON.stringify(msg.memory || {});
-              if (!processedMessagesRef.current.has(msgKey) && msg.text) {
-                processedMessagesRef.current.add(msgKey);
+              if (msg.text) {
                 queueRef.current.push(msg.text);
+              }
+              // Update memory if present
+              if (msg.memory) {
+                setLastMemory(msg.memory);
               }
             }
             
-            if (queueRef.current.length > 0) {
-              processQueue();
-            }
-
-            // Update lastMemory for the memory bar
-            const lastMsgWithMemory = [...messages].reverse().find((msg) => msg.memory && typeof msg.memory.percent_used === "number");
-            if (lastMsgWithMemory?.memory) {
-              setLastMemory(lastMsgWithMemory.memory);
-            }
+            // Process queue without overlapping
+            processQueue();
           }
-        } catch {}
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+        }
       };
       
       ws.onclose = () => {
+        console.log("WebSocket closed, reconnecting...");
         // Automatically reconnect after a short delay
         reconnectTimeout = setTimeout(connect, 100);
       };
       
-      ws.onerror = () => {
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
         ws.close();
       };
     };

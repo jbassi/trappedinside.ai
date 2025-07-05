@@ -55,10 +55,8 @@ const server = Bun.serve({
     open(ws: Bun.ServerWebSocket<unknown>) {
       (ws as any).isAuthenticated = false;
       clients.add(ws);
-      // Send existing messages only to the first client or when there are no other clients
-      if (clients.size === 1 && messages.length > 0) {
-        ws.send(JSON.stringify({ messages: messages.map(m => ({ text: m.text ?? "", memory: m.memory })) }));
-      }
+      // Don't send any historical messages to new connections
+      // The message sender creates new connections for each chunk
     },
     message(ws: Bun.ServerWebSocket<unknown>, message) {
       let parsed: any;
