@@ -46,19 +46,22 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
       fontFamily: 'monospace',
       textShadow: '0 0 5px rgba(0,255,0,0.5)'
     }}>
-      {/* Header line with full-width # border and centered P R O M P T */}
-      <div className="w-full relative overflow-hidden whitespace-nowrap">
-        <div className="absolute inset-0">
-          {"#".repeat(200)}
-        </div>
-        <div className="relative z-10 flex justify-center">
-          <span className="px-1" style={{ 
-            fontFamily: 'monospace',
-            textShadow: '0 0 5px rgba(0,255,0,0.5)',
-            backgroundColor: 'rgba(0,0,0,1)',
-            color: '#00ff00'
-          }}> P R O M P T </span>
-        </div>
+      {/* Header line with centered P R O M P T */}
+      <div className="w-full overflow-hidden whitespace-nowrap">
+        <span className="text-green-400" style={{ 
+          fontFamily: 'monospace',
+          textShadow: '0 0 5px rgba(0,255,0,0.5)'
+        }}>
+          {(() => {
+            const promptText = " P R O M P T ";
+            const totalWidth = Math.max(60, terminalWidth);
+            const promptLength = promptText.length;
+            const remainingSpace = totalWidth - promptLength;
+            const leftPadding = Math.floor(remainingSpace / 2);
+            const rightPadding = remainingSpace - leftPadding;
+            return "#".repeat(leftPadding) + promptText + "#".repeat(rightPadding);
+          })()}
+        </span>
       </div>
       
       {/* Content lines with # borders on left and right only */}
