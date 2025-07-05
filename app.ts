@@ -55,8 +55,10 @@ const server = Bun.serve({
     open(ws: Bun.ServerWebSocket<unknown>) {
       (ws as any).isAuthenticated = false;
       clients.add(ws);
-      // Always send the message list to any client
-      ws.send(JSON.stringify({ messages: messages.map(m => ({ text: m.text ?? "", memory: m.memory })) }));
+      // Send existing messages only to the first client or when there are no other clients
+      if (clients.size === 1 && messages.length > 0) {
+        ws.send(JSON.stringify({ messages: messages.map(m => ({ text: m.text ?? "", memory: m.memory })) }));
+      }
     },
     message(ws: Bun.ServerWebSocket<unknown>, message) {
       let parsed: any;
@@ -99,7 +101,8 @@ const server = Bun.serve({
       }
       const msgObj = msgResult.data;
       messages.push(msgObj);
-      const broadcast = { messages: messages.map(m => ({ text: m.text ?? "", memory: m.memory })) };
+      // Only broadcast the new message, not the entire history
+      const broadcast = { messages: [{ text: msgObj.text ?? "", memory: msgObj.memory }] };
       for (const client of clients) {
         if (client.readyState === 1) {
           client.send(JSON.stringify(broadcast));

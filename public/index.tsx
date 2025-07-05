@@ -32,9 +32,10 @@ function App() {
   const [lines, setLines] = useState<string[]>(["❯ "]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
   const textRef = useRef<HTMLDivElement>(null);
-  const [allText, setAllText] = useState("");
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
+  const isFirstConnectionRef = useRef(true);
+  const processedMessagesRef = useRef<Set<string>>(new Set());
 
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
@@ -80,28 +81,68 @@ function App() {
   };
 
   useEffect(() => {
-    const ws = new WebSocket(WS_URL);
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const result = ServerMessageSchema.safeParse(data);
-        if (result.success) {
-          const messages = result.data.messages;
-          // Since backend sends only new chunks, animate each message directly
-          for (const msg of messages) {
-            if (msg.text) {
-              queueRef.current.push(msg.text);
+    let ws: WebSocket;
+    let reconnectTimeout: NodeJS.Timeout;
+    
+    const connect = () => {
+      ws = new WebSocket(WS_URL);
+      
+      ws.onopen = () => {
+        // Reset terminal state on each new connection (except the very first one)
+        if (!isFirstConnectionRef.current) {
+          setLines(["❯ "]);
+          queueRef.current = [];
+          animatingRef.current = false;
+          processedMessagesRef.current.clear();
+        }
+        isFirstConnectionRef.current = false;
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const result = ServerMessageSchema.safeParse(data);
+          if (result.success) {
+            const messages = result.data.messages;
+            
+            // Process only new messages that we haven't seen before
+            for (const msg of messages) {
+              const msgKey = msg.text + JSON.stringify(msg.memory || {});
+              if (!processedMessagesRef.current.has(msgKey) && msg.text) {
+                processedMessagesRef.current.add(msgKey);
+                queueRef.current.push(msg.text);
+              }
+            }
+            
+            if (queueRef.current.length > 0) {
+              processQueue();
+            }
+
+            // Update lastMemory for the memory bar
+            const lastMsgWithMemory = [...messages].reverse().find((msg) => msg.memory && typeof msg.memory.percent_used === "number");
+            if (lastMsgWithMemory?.memory) {
+              setLastMemory(lastMsgWithMemory.memory);
             }
           }
-          processQueue();
-
-          // Update lastMemory for the memory bar
-          const lastMsgWithMemory = [...messages].reverse().find((msg) => msg.memory && typeof msg.memory.percent_used === "number");
-          setLastMemory(lastMsgWithMemory?.memory);
-        }
-      } catch {}
+        } catch {}
+      };
+      
+      ws.onclose = () => {
+        // Automatically reconnect after a short delay
+        reconnectTimeout = setTimeout(connect, 100);
+      };
+      
+      ws.onerror = () => {
+        ws.close();
+      };
     };
-    return () => ws.close();
+    
+    connect();
+    
+    return () => {
+      clearTimeout(reconnectTimeout);
+      ws?.close();
+    };
     // eslint-disable-next-line
   }, []);
 
