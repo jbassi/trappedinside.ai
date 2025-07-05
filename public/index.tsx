@@ -70,7 +70,7 @@ function App() {
     const emptyBar = '.'.repeat(emptyLength);
     
     return (
-      <div className="text-green-400 font-mono mb-2 select-none w-full overflow-hidden whitespace-nowrap">
+      <div className="text-black font-mono mb-2 select-none w-full overflow-hidden whitespace-nowrap bg-green-400 py-1 px-2 flex justify-center">
         <span>Mem[{filledBar}{emptyBar}] Used {percentUsed.toFixed(1)}% ({usedGB}G/{totalGB}G)</span>
       </div>
     );
