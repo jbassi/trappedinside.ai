@@ -195,15 +195,15 @@ function App() {
       {/* Scrollable text area */}
       <div
         ref={textRef}
-        className="box-border w-full max-w-3xl mx-auto overflow-y-auto rounded-xl p-4 pt-2 text-base bg-white/40 backdrop-blur-xl border border-white/40 whitespace-pre-line break-words shadow flex-1 font-mono text-black"
+        className="box-border w-full max-w-3xl mx-auto overflow-y-auto rounded-xl p-4 pt-2 text-base bg-black border-2 border-green-500 whitespace-pre-line break-words shadow-2xl flex-1 font-mono text-green-400"
         style={{ minHeight: 0, fontFamily: 'monospace' }}
       >
         {lines.map((line, i) => (
           <div key={i} className="flex items-start">
-            <span className="text-green-600 select-none">{line.startsWith("❯ ") ? "❯" : ""}</span>
-            <span className="ml-2 whitespace-pre-line">{line.startsWith("❯ ") ? line.slice(2) : line}</span>
+            <span className="text-green-400 select-none">{line.startsWith("❯ ") ? "❯" : ""}</span>
+            <span className="ml-2 whitespace-pre-line text-green-400">{line.startsWith("❯ ") ? line.slice(2) : line}</span>
             {isThinking && i === lines.length - 1 && line.startsWith("❯ ") && (
-              <span className="ml-2 text-green-600">Thinking...</span>
+              <span className="ml-2 text-green-400">Thinking...</span>
             )}
           </div>
         ))}
