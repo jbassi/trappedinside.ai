@@ -35,6 +35,7 @@ function App() {
   const [allText, setAllText] = useState("");
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
+  const lastFullTextRef = useRef("");
 
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
@@ -42,9 +43,10 @@ function App() {
       animatingRef.current = true;
       let i = 0;
       function step() {
+        const char = output.slice(i, i + 1);
         setLines(prev => {
           const newLines = [...prev];
-          newLines[newLines.length - 1] += output.slice(i, i + 1);
+          newLines[newLines.length - 1] += char;
           return newLines;
         });
         i += 1;
@@ -66,8 +68,7 @@ function App() {
       const chunk = queueRef.current.shift();
       if (!chunk) continue;
       // If chunk contains newlines, split and animate each part
-      const parts = chunk.split(/(\n)/g);
-      for (let part of parts) {
+      for (let part of chunk.split(/(\n)/g)) {
         if (part === "\n") {
           setLines(prev => [...prev, "❯ "]);
           await new Promise(res => setTimeout(res, 40));
@@ -80,35 +81,39 @@ function App() {
   };
 
   useEffect(() => {
-    let prevText = "";
     const ws = new WebSocket(WS_URL);
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         const result = ServerMessageSchema.safeParse(data);
         if (result.success) {
-          // Join all text fields from the message array
-          const currentText = result.data.messages.map((msg) => msg.text).join("");
-          // Find the new chunk by diffing with previous text
+          const messages = result.data.messages;
+          // Get the full concatenated text
+          const fullText = messages.map(msg => msg.text).join("");
+          
+          // Find what's new since last time
           let newChunk = "";
-          if (currentText.startsWith(prevText)) {
-            newChunk = currentText.slice(prevText.length);
+          if (fullText.startsWith(lastFullTextRef.current)) {
+            newChunk = fullText.slice(lastFullTextRef.current.length);
           } else {
-            // If out of sync, just use the whole text (fallback)
-            newChunk = currentText;
+            // Reset if out of sync
+            setLines(["❯ "]);
+            newChunk = fullText;
           }
-          setAllText(currentText);
-          prevText = currentText;
+          
+          // Update tracking
+          setAllText(fullText);
+          lastFullTextRef.current = fullText;
+          
+          // Queue the new chunk for animation
+          if (newChunk) {
+            queueRef.current.push(newChunk);
+            processQueue();
+          }
 
           // Update lastMemory for the memory bar
-          const lastMsgWithMemory = [...result.data.messages].reverse().find((msg) => msg.memory && typeof msg.memory.percent_used === "number");
+          const lastMsgWithMemory = [...messages].reverse().find((msg) => msg.memory && typeof msg.memory.percent_used === "number");
           setLastMemory(lastMsgWithMemory?.memory);
-
-          if (!newChunk) return;
-
-          // Add only the new chunk to the queue and process
-          queueRef.current.push(newChunk);
-          processQueue();
         }
       } catch {}
     };
