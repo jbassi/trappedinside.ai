@@ -379,20 +379,43 @@ function App() {
         const newLines = [...prev];
         const lastLine = newLines[newLines.length - 1];
         
-        // Add empty prompt line first, then thinking line
-        if (lastLine && lastLine.startsWith("❯ ") && lastLine.slice(2).trim() === "") {
-          // If the last line is already an empty prompt, add another for thinking
+        // Add empty prompt line if the last line has content
+        if (lastLine && lastLine.startsWith("❯ ") && lastLine.slice(2).trim() !== "") {
           newLines.push("❯ ");
-          return newLines;
-        } else {
-          // Add empty prompt line, then thinking prompt line
-          newLines.push("❯ ");
-          newLines.push("❯ ");
-          return newLines;
         }
+        
+        // Add thinking prompt line
+        newLines.push("❯ ");
+        
+        return newLines;
+      });
+    } else {
+      // When thinking stops, remove empty thinking line if it exists
+      setLines(prev => {
+        const newLines = [...prev];
+        const lastLine = newLines[newLines.length - 1];
+        
+        // Remove the last line if it's an empty prompt (the thinking line)
+        if (lastLine && lastLine === "❯ ") {
+          newLines.pop();
+        }
+        
+        // Ensure we always have at least one prompt line
+        if (newLines.length === 0) {
+          newLines.push("❯ ");
+        }
+        
+        return newLines;
       });
     }
   }, [isThinking]);
+
+  // Ensure we always have at least one prompt line
+  useEffect(() => {
+    if (lines.length === 0) {
+      setLines(["❯ "]);
+    }
+  }, [lines]);
 
   useEffect(() => {
     let ws: WebSocket;
@@ -497,11 +520,11 @@ function App() {
           const isLastLine = i === lines.length - 1;
           const isPromptLine = line.startsWith("❯ ");
           const lineContent = isPromptLine ? line.slice(2) : line;
-          const showThinking = isThinking && isLastLine && isPromptLine;
+          const showThinking = isThinking && isLastLine && isPromptLine && lineContent.trim() === "";
           const showCursor = isLastLine; // Always show cursor on last line
           
           return (
-            <div key={i} className="flex items-start">
+            <div key={i} className="flex items-start min-h-[1.5em]">
               <span className="text-green-400 select-none">{isPromptLine ? "❯" : ""}</span>
               <span className="ml-2 whitespace-pre-line text-green-400">
                 {lineContent}
