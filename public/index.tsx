@@ -43,12 +43,34 @@ function App() {
   const [lines, setLines] = useState<string[]>(["❯ "]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
   const [isThinking, setIsThinking] = useState(false);
+  const [cursorVisible, setCursorVisible] = useState(true);
   const textRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
   const processingRef = useRef(false);
+  const cursorIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [terminalWidth, setTerminalWidth] = useState(80);
   const [, forceUpdate] = useState({});
+
+  // Cursor blinking effect
+  useEffect(() => {
+    // Clear any existing interval
+    if (cursorIntervalRef.current) {
+      clearInterval(cursorIntervalRef.current);
+      cursorIntervalRef.current = null;
+    }
+
+    // Start cursor blinking when idle
+    cursorIntervalRef.current = setInterval(() => {
+      setCursorVisible(prev => !prev);
+    }, 500); // Blink every 500ms
+
+    return () => {
+      if (cursorIntervalRef.current) {
+        clearInterval(cursorIntervalRef.current);
+      }
+    };
+  }, []);
 
   // CRT Screen Component with CSS Bulge Distortion
   const CRTScreen = ({ children }: { children: React.ReactNode }) => {
@@ -221,7 +243,7 @@ function App() {
                 {/* Content with geometric barrel warping */}
                 <div
                   ref={textRef}
-                  className="relative p-6 text-base whitespace-pre-line break-words font-mono text-green-400 h-full overflow-y-auto"
+                  className="relative px-12 py-8 text-base whitespace-pre-line break-words font-mono text-green-400 h-full overflow-y-auto"
                   style={{ 
                     minHeight: '70vh',
                     fontFamily: 'monospace',
@@ -291,6 +313,7 @@ function App() {
   const animateOutput = (output: string) => {
     return new Promise<void>((resolve) => {
       animatingRef.current = true;
+      setCursorVisible(true); // Keep cursor visible during animation
       let i = 0;
       function step() {
         const char = output.slice(i, i + 1);
@@ -317,6 +340,7 @@ function App() {
   const processQueue = async () => {
     if (processingRef.current) return;
     processingRef.current = true;
+    setCursorVisible(true); // Keep cursor visible during processing
     
     while (queueRef.current.length > 0) {
       const chunk = queueRef.current.shift();
@@ -458,15 +482,28 @@ function App() {
       {/* Scrollable text area */}
       <CRTScreen>
         <MemoryBar memory={lastMemory} />
-        {lines.map((line, i) => (
-          <div key={i} className="flex items-start">
-            <span className="text-green-400 select-none">{line.startsWith("❯ ") ? "❯" : ""}</span>
-            <span className="ml-2 whitespace-pre-line text-green-400">{line.startsWith("❯ ") ? line.slice(2) : line}</span>
-            {isThinking && i === lines.length - 1 && line.startsWith("❯ ") && (
-              <span className="ml-2 text-green-400">Thinking...</span>
-            )}
-          </div>
-        ))}
+        {lines.map((line, i) => {
+          const isLastLine = i === lines.length - 1;
+          const isPromptLine = line.startsWith("❯ ");
+          const lineContent = isPromptLine ? line.slice(2) : line;
+          const showThinking = isThinking && isLastLine && isPromptLine;
+          const showCursor = isLastLine && !showThinking;
+          
+          return (
+            <div key={i} className="flex items-start">
+              <span className="text-green-400 select-none">{isPromptLine ? "❯" : ""}</span>
+              <span className="ml-2 whitespace-pre-line text-green-400">
+                {lineContent}
+                {showThinking && "Thinking..."}
+                {showCursor && (
+                  <span className={`text-green-400 ${cursorVisible ? 'opacity-100' : 'opacity-0'}`}>
+                    █
+                  </span>
+                )}
+              </span>
+            </div>
+          );
+        })}
       </CRTScreen>
     </div>
   );
