@@ -35,7 +35,6 @@ function App() {
   const [allText, setAllText] = useState("");
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
-  const lastFullTextRef = useRef("");
 
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
@@ -88,28 +87,13 @@ function App() {
         const result = ServerMessageSchema.safeParse(data);
         if (result.success) {
           const messages = result.data.messages;
-          // Get the full concatenated text
-          const fullText = messages.map(msg => msg.text).join("");
-          
-          // Find what's new since last time
-          let newChunk = "";
-          if (fullText.startsWith(lastFullTextRef.current)) {
-            newChunk = fullText.slice(lastFullTextRef.current.length);
-          } else {
-            // Reset if out of sync
-            setLines(["❯ "]);
-            newChunk = fullText;
+          // Since backend sends only new chunks, animate each message directly
+          for (const msg of messages) {
+            if (msg.text) {
+              queueRef.current.push(msg.text);
+            }
           }
-          
-          // Update tracking
-          setAllText(fullText);
-          lastFullTextRef.current = fullText;
-          
-          // Queue the new chunk for animation
-          if (newChunk) {
-            queueRef.current.push(newChunk);
-            processQueue();
-          }
+          processQueue();
 
           // Update lastMemory for the memory bar
           const lastMsgWithMemory = [...messages].reverse().find((msg) => msg.memory && typeof msg.memory.percent_used === "number");
@@ -131,14 +115,7 @@ function App() {
   const percentUsed = lastMemory?.percent_used;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col h-screen m-0 p-0 gap-y-8">
-      {/* Header */}
-      <h1
-        className="m-0 text-lg text-center font-extrabold shadow rounded-b-lg tracking-wide flex items-center justify-center"
-        style={{ color: '#000', opacity: 1, height: '48px', minHeight: '48px', maxHeight: '48px' }}
-      >
-        Musings of a LLM
-      </h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col h-screen m-0 p-4 gap-y-8">
       {/* Scrollable text area */}
       <div
         ref={textRef}
