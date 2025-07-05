@@ -62,8 +62,8 @@ function App() {
         });
         i += 1;
         if (i < output.length) {
-          // More human-like typing with variable speed (15-35ms per character)
-          const delay = Math.random() * 20 + 15;
+          // More human-like typing with variable speed (25-50ms per character)
+          const delay = Math.random() * 25 + 25;
           setTimeout(step, delay);
         } else {
           animatingRef.current = false;
@@ -87,10 +87,10 @@ function App() {
       for (let part of chunk.split(/(\n)/g)) {
         if (part === "\n") {
           setLines(prev => [...prev, "❯ "]);
-          await new Promise(res => setTimeout(res, 25));
+          await new Promise(res => setTimeout(res, 50));
         } else if (part.length > 0) {
           await animateOutput(part);
-          await new Promise(res => setTimeout(res, 25 + part.length * 3));
+          await new Promise(res => setTimeout(res, 50 + part.length * 5));
         }
       }
     }
@@ -196,8 +196,20 @@ function App() {
       {/* Scrollable text area */}
       <div
         ref={textRef}
-        className="box-border w-full max-w-3xl mx-auto overflow-y-auto rounded-xl p-4 pt-2 text-base bg-black border-2 border-green-500 whitespace-pre-line break-words shadow-2xl flex-1 font-mono text-green-400"
-        style={{ minHeight: 0, fontFamily: 'monospace' }}
+        className="box-border w-full max-w-3xl mx-auto overflow-y-auto p-6 text-base bg-black whitespace-pre-line break-words flex-1 font-mono text-green-400"
+        style={{ 
+          minHeight: 0, 
+          fontFamily: 'monospace',
+          border: '20px solid #d4c4a0',
+          borderRadius: '20px',
+          boxShadow: `
+            inset 0 0 0 12px #2a2a2a,
+            inset 0 0 0 14px #1a1a1a,
+            inset 0 0 0 16px #333,
+            inset 0 0 0 18px #1a1a1a,
+            0 8px 16px rgba(0, 0, 0, 0.3)
+          `
+        }}
       >
         {lines.map((line, i) => (
           <div key={i} className="flex items-start">
