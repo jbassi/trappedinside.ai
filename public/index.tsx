@@ -50,6 +50,98 @@ function App() {
   const [terminalWidth, setTerminalWidth] = useState(80);
   const [, forceUpdate] = useState({});
 
+  // CRT Screen Component
+  const CRTScreen = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <div className="relative">
+        {/* Outer CRT Monitor Bezel */}
+        <div
+          className="relative mx-auto"
+          style={{ 
+            border: '20px solid #d4c4a0',
+            borderRadius: '20px',
+            boxShadow: `
+              inset 0 0 0 12px #2a2a2a,
+              inset 0 0 0 14px #1a1a1a,
+              inset 0 0 0 16px #333,
+              inset 0 0 0 18px #1a1a1a,
+              0 8px 16px rgba(0, 0, 0, 0.3)
+            `
+          }}
+        >
+          {/* CRT Screen with Glass Effect */}
+          <div
+            className="relative bg-black overflow-hidden"
+            style={{
+              borderRadius: '8px',
+              background: `
+                radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%),
+                linear-gradient(45deg, rgba(0,255,0,0.02) 0%, transparent 50%, rgba(0,255,0,0.02) 100%)
+              `,
+              boxShadow: `
+                inset 0 0 100px rgba(0,255,0,0.1),
+                inset 0 0 20px rgba(0,0,0,0.8)
+              `
+            }}
+          >
+            {/* Scanlines Effect */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `repeating-linear-gradient(
+                  0deg,
+                  transparent 0px,
+                  transparent 2px,
+                  rgba(0,255,0,0.03) 2px,
+                  rgba(0,255,0,0.03) 4px
+                )`,
+                zIndex: 10
+              }}
+            />
+            
+            {/* Screen Curvature Effect */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse at center, transparent 0%, transparent 85%, rgba(0,0,0,0.3) 100%)`,
+                zIndex: 5
+              }}
+            />
+            
+            {/* Content Container */}
+            <div
+              ref={textRef}
+              className="relative p-6 text-base whitespace-pre-line break-words font-mono text-green-400 h-full overflow-y-auto"
+              style={{ 
+                minHeight: '70vh',
+                fontFamily: 'monospace',
+                textShadow: '0 0 5px rgba(0,255,0,0.5)',
+                zIndex: 1
+              }}
+            >
+              {children}
+            </div>
+            
+            {/* Glass Reflection Effect */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `linear-gradient(
+                  135deg,
+                  rgba(255,255,255,0.1) 0%,
+                  transparent 20%,
+                  transparent 80%,
+                  rgba(255,255,255,0.05) 100%
+                )`,
+                zIndex: 15
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Memory component that looks like htop
   const MemoryBar = ({ memory }: { memory?: Memory }) => {
     // Always show the bar, use default values when no data
@@ -245,23 +337,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col h-screen m-0 p-4">
       {/* Scrollable text area */}
-      <div
-        ref={textRef}
-        className="box-border w-full max-w-3xl mx-auto overflow-y-auto p-6 text-base bg-black whitespace-pre-line break-words flex-1 font-mono text-green-400"
-        style={{ 
-          minHeight: 0, 
-          fontFamily: 'monospace',
-          border: '20px solid #d4c4a0',
-          borderRadius: '20px',
-          boxShadow: `
-            inset 0 0 0 12px #2a2a2a,
-            inset 0 0 0 14px #1a1a1a,
-            inset 0 0 0 16px #333,
-            inset 0 0 0 18px #1a1a1a,
-            0 8px 16px rgba(0, 0, 0, 0.3)
-          `
-        }}
-      >
+      <CRTScreen>
         <MemoryBar memory={lastMemory} />
         {lines.map((line, i) => (
           <div key={i} className="flex items-start">
@@ -272,7 +348,7 @@ function App() {
             )}
           </div>
         ))}
-      </div>
+      </CRTScreen>
     </div>
   );
 }
