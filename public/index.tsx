@@ -41,6 +41,7 @@ function App() {
   const [lines, setLines] = useState<string[]>([PROMPT]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
   const [isThinking, setIsThinking] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
   const [cursorVisible, setCursorVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,6 +49,7 @@ function App() {
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
   const processingRef = useRef(false);
+  const restartingRef = useRef(false);
   const cursorIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [terminalWidth, setTerminalWidth] = useState(80);
   const [, forceUpdate] = useState({});
@@ -60,13 +62,13 @@ function App() {
       cursorIntervalRef.current = null;
     }
 
-    // Only start blinking when not animating or processing
-    if (!isAnimating && !isProcessing) {
+    // Only start blinking when not animating, processing, or restarting
+    if (!isAnimating && !isProcessing && !isRestarting) {
       cursorIntervalRef.current = setInterval(() => {
         setCursorVisible(prev => !prev);
       }, 500); // Blink every 500ms
     } else {
-      // Keep cursor visible during animation
+      // Keep cursor visible during animation, processing, or restarting
       setCursorVisible(true);
     }
 
@@ -75,7 +77,7 @@ function App() {
         clearInterval(cursorIntervalRef.current);
       }
     };
-  }, [isAnimating, isProcessing]); // Re-run when animation state changes
+  }, [isAnimating, isProcessing, isRestarting]); // Re-run when animation or restarting state changes
 
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
@@ -85,6 +87,14 @@ function App() {
       setCursorVisible(true); // Keep cursor visible during animation
       let i = 0;
       function step() {
+        // Stop animation immediately if restarting
+        if (restartingRef.current) {
+          animatingRef.current = false;
+          setIsAnimating(false);
+          resolve();
+          return;
+        }
+        
         const char = output.slice(i, i + 1);
         setLines(prev => {
           const newLines = [...prev];
@@ -114,11 +124,25 @@ function App() {
     setCursorVisible(true); // Keep cursor visible during processing
     
     while (queueRef.current.length > 0) {
+      // Stop processing immediately if restarting
+      if (restartingRef.current) {
+        processingRef.current = false;
+        setIsProcessing(false);
+        return;
+      }
+      
       const chunk = queueRef.current.shift();
       if (!chunk) continue;
       
       // If chunk contains newlines, split and animate each part
       for (let part of chunk.split(/(\n)/g)) {
+        // Check for restart before each part
+        if (restartingRef.current) {
+          processingRef.current = false;
+          setIsProcessing(false);
+          return;
+        }
+        
         if (part === "\n") {
           setLines(prev => [...prev, PROMPT]);
           await new Promise(res => setTimeout(res, 50));
@@ -171,6 +195,29 @@ function App() {
     }
   }, [isThinking]);
 
+  // Clear terminal and reset state when restarting
+  useEffect(() => {
+    restartingRef.current = isRestarting;
+    
+    if (isRestarting) {
+      // Clear all lines and reset to initial state
+      setLines([PROMPT]);
+      // Clear the animation queue
+      queueRef.current = [];
+      // Reset animation states
+      animatingRef.current = false;
+      processingRef.current = false;
+      setIsAnimating(false);
+      setIsProcessing(false);
+      // Clear memory
+      setLastMemory(undefined);
+      // Reset thinking state
+      setIsThinking(false);
+      // Make cursor visible
+      setCursorVisible(true);
+    }
+  }, [isRestarting]);
+
   // Ensure we always have at least one prompt line
   useEffect(() => {
     if (lines.length === 0) {
@@ -208,6 +255,10 @@ function App() {
               // Update thinking status if present
               if (msg.status?.is_thinking !== undefined) {
                 setIsThinking(msg.status.is_thinking);
+              }
+              // Update restarting status if present
+              if (msg.status?.is_restarting !== undefined) {
+                setIsRestarting(msg.status.is_restarting);
               }
             }
             
