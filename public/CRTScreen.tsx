@@ -207,7 +207,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
               >
                 {/* Fixed memory bar at top, inside content area */}
                 <div
-                  className="px-12 pt-8 pb-2"
+                  className="px-12 pt-8 pb-4"
                   style={{
                     zIndex: 2,
                     flexShrink: 0

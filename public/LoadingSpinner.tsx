@@ -66,7 +66,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
         <div className="w-full flex items-center mb-1 sm:mb-2">
           <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
           <span className={`flex-1 px-1 sm:px-2 text-center ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
-            {terminalWidth < 50 ? `[${spinnerChars[spinnerFrame]}] LOAD${'.'.repeat(dotsCount)}` : `[${spinnerChars[spinnerFrame]}] LOADING${'.'.repeat(dotsCount)}`}
+            {`[${spinnerChars[spinnerFrame]}] LOADING${'.'.repeat(dotsCount)}`}
           </span>
           <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
         </div>
