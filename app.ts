@@ -10,7 +10,6 @@ const MemorySchema = z.object({
 });
 const StatusSchema = z.object({
   is_restarting: z.boolean().optional(),
-  is_thinking: z.boolean().optional(),
 });
 const IncomingMessageSchema = z.object({
   text: z.string(),

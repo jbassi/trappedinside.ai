@@ -5,7 +5,7 @@ import { CRTScreen } from "./CRTScreen";
 import { MemoryBar } from "./MemoryBar";
 import { TerminalLine } from "./TerminalLine";
 import { PromptDisplay } from "./PromptDisplay";
-import type { Memory, Status, Message } from "./types";
+import type { Memory } from "./types";
 
 const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
 
@@ -24,7 +24,6 @@ const ServerMessageSchema = z.object({
       status: z
         .object({
           is_restarting: z.boolean().optional(),
-          is_thinking: z.boolean().optional(),
         })
         .optional(),
     })
@@ -40,7 +39,6 @@ function App() {
   
   const [lines, setLines] = useState<string[]>([PROMPT]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
-  const [isThinking, setIsThinking] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
   const [cursorVisible, setCursorVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -157,44 +155,6 @@ function App() {
     setIsProcessing(false);
   };
 
-  // Add thinking line when thinking starts
-  useEffect(() => {
-    if (isThinking) {
-      setLines(prev => {
-        const newLines = [...prev];
-        const lastLine = newLines[newLines.length - 1];
-        
-        // Add empty prompt line if the last line has content
-        if (lastLine && lastLine.startsWith(PROMPT) && lastLine.slice(PROMPT.length).trim() !== "") {
-          newLines.push(PROMPT);
-        }
-        
-        // Add thinking prompt line
-        newLines.push(PROMPT);
-        
-        return newLines;
-      });
-    } else {
-      // When thinking stops, remove empty thinking line if it exists
-      setLines(prev => {
-        const newLines = [...prev];
-        const lastLine = newLines[newLines.length - 1];
-        
-        // Remove the last line if it's an empty prompt (the thinking line)
-        if (lastLine && lastLine === PROMPT) {
-          newLines.pop();
-        }
-        
-        // Ensure we always have at least one prompt line
-        if (newLines.length === 0) {
-          newLines.push(PROMPT);
-        }
-        
-        return newLines;
-      });
-    }
-  }, [isThinking]);
-
   // Clear terminal and reset state when restarting
   useEffect(() => {
     restartingRef.current = isRestarting;
@@ -211,8 +171,6 @@ function App() {
       setIsProcessing(false);
       // Clear memory
       setLastMemory(undefined);
-      // Reset thinking state
-      setIsThinking(false);
       // Make cursor visible
       setCursorVisible(true);
     }
@@ -251,10 +209,6 @@ function App() {
               // Update memory if present
               if (msg.memory) {
                 setLastMemory(msg.memory);
-              }
-              // Update thinking status if present
-              if (msg.status?.is_thinking !== undefined) {
-                setIsThinking(msg.status.is_thinking);
               }
               // Update restarting status if present
               if (msg.status?.is_restarting !== undefined) {
@@ -337,7 +291,6 @@ function App() {
             key={i}
             line={line}
             isLastLine={i === lines.length - 1}
-            isThinking={isThinking}
             cursorVisible={cursorVisible}
             prompt={PROMPT}
           />
