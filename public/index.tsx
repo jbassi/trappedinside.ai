@@ -156,27 +156,6 @@ function App() {
     setIsProcessing(false);
   };
 
-  // Clear terminal and reset state when restarting
-  useEffect(() => {
-    restartingRef.current = isRestarting;
-    
-    if (isRestarting) {
-      // Clear all lines and reset to initial state
-      setLines([PROMPT]);
-      // Clear the animation queue
-      queueRef.current = [];
-      // Reset animation states
-      animatingRef.current = false;
-      processingRef.current = false;
-      setIsAnimating(false);
-      setIsProcessing(false);
-      // Clear memory
-      setLastMemory(undefined);
-      // Make cursor visible
-      setCursorVisible(true);
-    }
-  }, [isRestarting]);
-
   // Ensure we always have at least one prompt line
   useEffect(() => {
     if (lines.length === 0) {
@@ -211,12 +190,25 @@ function App() {
               if (msg.memory) {
                 setLastMemory(msg.memory);
               }
-              // Update restarting status if present
+              // Handle restarting status synchronously
               if (msg.status?.is_restarting !== undefined) {
                 setIsRestarting(msg.status.is_restarting);
+                restartingRef.current = msg.status.is_restarting;
+                
+                // Clear terminal and reset state immediately when restarting
+                if (msg.status.is_restarting) {
+                  setLines([PROMPT]);
+                  queueRef.current = [];
+                  animatingRef.current = false;
+                  processingRef.current = false;
+                  setIsAnimating(false);
+                  setIsProcessing(false);
+                  setLastMemory(undefined);
+                  setCursorVisible(true);
+                }
               }
-              // Update prompt if present
-              if (msg.prompt) {
+              // Update prompt if present (check for non-empty string)
+              if (msg.prompt && msg.prompt.trim() !== "") {
                 setLlmPrompt(msg.prompt);
               }
             }
