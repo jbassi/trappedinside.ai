@@ -5,9 +5,10 @@ interface CRTScreenProps {
   textRef: RefObject<HTMLDivElement>;
   memoryBar: React.ReactNode;
   promptDisplay: React.ReactNode;
+  loadingSpinner?: React.ReactNode;
 }
 
-export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay }) => {
+export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay, loadingSpinner }) => {
   return (
     <div className="relative">
       {/* Outer CRT Monitor Bezel */}
@@ -229,6 +230,13 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                   {promptDisplay}
                   {children}
                 </div>
+                
+                {/* Loading spinner overlay - positioned within screen boundaries */}
+                {loadingSpinner && (
+                  <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 100 }}>
+                    {loadingSpinner}
+                  </div>
+                )}
               </div>
             </div>
           </div>

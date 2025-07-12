@@ -5,6 +5,7 @@ import { CRTScreen } from "./CRTScreen";
 import { MemoryBar } from "./MemoryBar";
 import { TerminalLine } from "./TerminalLine";
 import { PromptDisplay } from "./PromptDisplay";
+import { LoadingSpinner } from "./LoadingSpinner";
 import type { Memory } from "./types";
 
 const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
@@ -44,6 +45,7 @@ function App() {
   const [lines, setLines] = useState<string[]>([PROMPT]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
   const [isRestarting, setIsRestarting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [cursorVisible, setCursorVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -52,6 +54,7 @@ function App() {
   const animatingRef = useRef(false);
   const processingRef = useRef(false);
   const restartingRef = useRef(false);
+  const isLoadingRef = useRef(true);
   const cursorIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [terminalWidth, setTerminalWidth] = useState(80);
   const [, forceUpdate] = useState({});
@@ -80,6 +83,11 @@ function App() {
       }
     };
   }, [isAnimating, isProcessing, isRestarting]); // Re-run when animation or restarting state changes
+
+  // Keep loading ref in sync with loading state
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
@@ -169,16 +177,33 @@ function App() {
   useEffect(() => {
     let ws: WebSocket;
     let reconnectTimeout: NodeJS.Timeout;
+    let loadingTimeout: NodeJS.Timeout;
     
     const connect = () => {
       ws = new WebSocket(WS_URL);
       
+      // Set a timeout to hide loading spinner if connection takes too long
+      loadingTimeout = setTimeout(() => {
+        if (isLoadingRef.current) {
+          setIsLoading(false);
+          isLoadingRef.current = false;
+        }
+      }, 10000); // 10 seconds timeout
+      
       ws.onopen = () => {
         console.log("WebSocket connected");
+        // Clear the loading timeout since we connected
+        clearTimeout(loadingTimeout);
       };
       
       ws.onmessage = (event) => {
         try {
+          // Hide loading spinner on first message
+          if (isLoadingRef.current) {
+            setIsLoading(false);
+            isLoadingRef.current = false;
+          }
+          
           const data = JSON.parse(event.data);
           const result = ServerMessageSchema.safeParse(data);
           if (result.success) {
@@ -230,12 +255,18 @@ function App() {
       
       ws.onclose = () => {
         console.log("WebSocket closed, reconnecting...");
+        clearTimeout(loadingTimeout);
         // Automatically reconnect after a short delay
         reconnectTimeout = setTimeout(connect, 100);
       };
       
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
+        clearTimeout(loadingTimeout);
+        if (isLoadingRef.current) {
+          setIsLoading(false);
+          isLoadingRef.current = false;
+        }
         ws.close();
       };
     };
@@ -244,6 +275,7 @@ function App() {
     
     return () => {
       clearTimeout(reconnectTimeout);
+      clearTimeout(loadingTimeout);
       ws?.close();
     };
     // eslint-disable-next-line
@@ -284,22 +316,23 @@ function App() {
   return (
     <div className="fixed inset-0 bg-gray-50 flex flex-col p-4 resize overflow-auto">
       {/* Fixed, resizable, scrollable CRT screen */}
-      <div className="flex-1 min-h-0">
-              <CRTScreen 
-        textRef={textRef}
-        memoryBar={<MemoryBar memory={lastMemory} terminalWidth={terminalWidth} />}
-        promptDisplay={<PromptDisplay prompt={llmPrompt} terminalWidth={terminalWidth} />}
-      >
-        {lines.map((line, i) => (
-          <TerminalLine
-            key={i}
-            line={line}
-            isLastLine={i === lines.length - 1}
-            cursorVisible={cursorVisible}
-            prompt={PROMPT}
-          />
-        ))}
-      </CRTScreen>
+      <div className="flex-1 min-h-0 relative">
+        <CRTScreen 
+          textRef={textRef}
+          memoryBar={!isLoading ? <MemoryBar memory={lastMemory} terminalWidth={terminalWidth} /> : undefined}
+          promptDisplay={!isLoading ? <PromptDisplay prompt={llmPrompt} terminalWidth={terminalWidth} /> : undefined}
+          loadingSpinner={isLoading ? <LoadingSpinner /> : undefined}
+        >
+          {!isLoading && lines.map((line, i) => (
+            <TerminalLine
+              key={i}
+              line={line}
+              isLastLine={i === lines.length - 1}
+              cursorVisible={cursorVisible}
+              prompt={PROMPT}
+            />
+          ))}
+        </CRTScreen>
       </div>
     </div>
   );
