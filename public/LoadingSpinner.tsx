@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { terminalStyles, terminalClasses } from './terminalStyles';
 
 interface LoadingSpinnerProps {
   terminalWidth?: number;
@@ -27,15 +28,12 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
   }, []);
   
   return (
-    <div className="flex flex-col items-center justify-center space-y-4 font-mono">
+    <div className={`flex flex-col items-center justify-center space-y-4 ${terminalClasses.container}`}>
       {/* Terminal-style connecting message with dynamic # borders */}
       <div className="text-center">
         {/* Header line with centered CONNECTING TO RASPBERRY PI */}
         <div className="w-full overflow-hidden whitespace-nowrap mb-2">
-          <span className="text-green-400" style={{ 
-            fontFamily: 'monospace',
-            textShadow: '0 0 5px rgba(0,255,0,0.5)'
-          }}>
+          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
             {(() => {
               const connectingText = " CONNECTING TO RASPBERRY PI ";
               const totalWidth = Math.max(60, terminalWidth);
@@ -50,36 +48,25 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
         
         {/* Content lines with # borders on left and right */}
         <div className="w-full flex items-center mb-2">
-          <span className="text-green-400">#</span>
-          <span className="flex-1 text-green-400 px-2 text-center" style={{ 
-            fontFamily: 'monospace',
-            textShadow: '0 0 5px rgba(0,255,0,0.5)',
-            fontSize: 'inherit'
-          }}>
+          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
+          <span className={`flex-1 px-2 text-center ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
             [{spinnerChars[spinnerFrame]}] LOADING{'.'.repeat(dotsCount)}
           </span>
-          <span className="text-green-400">#</span>
+          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
         </div>
         
         {/* Progress bar line with # borders */}
         <div className="w-full flex items-center mb-2">
-          <span className="text-green-400">#</span>
-          <span className="flex-1 text-green-400 px-2 text-center" style={{ 
-            fontFamily: 'monospace',
-            textShadow: '0 0 5px rgba(0,255,0,0.5)',
-            fontSize: 'inherit'
-          }}>
+          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
+          <span className={`flex-1 px-2 text-center ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
             {'█'.repeat(Math.floor(spinnerFrame * 2) + 1)}{'░'.repeat(7 - Math.floor(spinnerFrame * 2))}
           </span>
-          <span className="text-green-400">#</span>
+          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
         </div>
         
         {/* Bottom border */}
         <div className="w-full overflow-hidden whitespace-nowrap">
-          <span className="text-green-400" style={{ 
-            fontFamily: 'monospace',
-            textShadow: '0 0 5px rgba(0,255,0,0.5)'
-          }}>
+          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
             {"#".repeat(Math.max(60, terminalWidth))}
           </span>
         </div>

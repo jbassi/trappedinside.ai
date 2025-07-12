@@ -1,4 +1,5 @@
 import React from "react";
+import { terminalStyles, terminalClasses } from './terminalStyles';
 
 interface PromptDisplayProps {
   prompt: string;
@@ -42,16 +43,10 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
   const promptLines = wrapText(prompt, maxLineLength);
   
     return (
-    <div className="text-green-400 font-mono text-base mb-4 w-full" style={{ 
-      fontFamily: 'monospace',
-      textShadow: '0 0 5px rgba(0,255,0,0.5)'
-    }}>
+    <div className={`${terminalClasses.baseText} mb-4 w-full`} style={terminalStyles.baseText}>
       {/* Header line with centered P R O M P T */}
       <div className="w-full overflow-hidden whitespace-nowrap">
-        <span className="text-green-400" style={{ 
-          fontFamily: 'monospace',
-          textShadow: '0 0 5px rgba(0,255,0,0.5)'
-        }}>
+        <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
           {(() => {
             const promptText = " P R O M P T ";
             const totalWidth = Math.max(60, terminalWidth);
@@ -67,21 +62,19 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
       {/* Content lines with # borders on left and right only */}
       {promptLines.map((line, index) => (
         <div key={index} className="w-full flex items-center">
-          <span className="text-green-400">#</span>
-          <span className="flex-1 text-green-400 px-2" style={{ 
-            fontFamily: 'monospace',
-            textShadow: '0 0 5px rgba(0,255,0,0.5)',
-            fontSize: 'inherit'
-          }}>
+          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
+          <span className={`flex-1 px-2 ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
             {line}
           </span>
-          <span className="text-green-400">#</span>
+          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
         </div>
       ))}
       
       {/* Bottom border */}
       <div className="w-full overflow-hidden whitespace-nowrap">
-        {"#".repeat(200)}
+        <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
+          {"#".repeat(200)}
+        </span>
       </div>
     </div>
   );

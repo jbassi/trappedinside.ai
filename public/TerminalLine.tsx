@@ -1,4 +1,5 @@
 import React from 'react';
+import { terminalStyles, terminalClasses } from './terminalStyles';
 
 interface TerminalLineProps {
   line: string;
@@ -19,11 +20,13 @@ export const TerminalLine: React.FC<TerminalLineProps> = ({
 
   return (
     <div className="flex items-start min-h-[1.5em]">
-      <span className="text-green-400 select-none">{isPromptLine ? prompt.trim() : ""}</span>
-      <span className="ml-2 whitespace-pre-line text-green-400">
+      <span className={`${terminalClasses.baseText} select-none`} style={terminalStyles.baseText}>
+        {isPromptLine ? prompt.trim() : ""}
+      </span>
+      <span className={`ml-2 whitespace-pre-line ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
         {lineContent}
         {showCursor && (
-          <span className={`text-green-400 ${cursorVisible ? 'opacity-100' : 'opacity-0'}`}>
+          <span className={`${terminalClasses.baseText} ${cursorVisible ? 'opacity-100' : 'opacity-0'}`} style={terminalStyles.baseText}>
             █
           </span>
         )}
