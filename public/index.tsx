@@ -321,7 +321,7 @@ function App() {
           textRef={textRef}
           memoryBar={!isLoading ? <MemoryBar memory={lastMemory} terminalWidth={terminalWidth} /> : undefined}
           promptDisplay={!isLoading ? <PromptDisplay prompt={llmPrompt} terminalWidth={terminalWidth} /> : undefined}
-          loadingSpinner={isLoading ? <LoadingSpinner /> : undefined}
+          loadingSpinner={isLoading ? <LoadingSpinner terminalWidth={terminalWidth} /> : undefined}
         >
           {!isLoading && lines.map((line, i) => (
             <TerminalLine
