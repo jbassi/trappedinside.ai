@@ -2,12 +2,12 @@ import type { CSSProperties } from 'react';
 
 // Shared terminal styles
 export const terminalStyles = {
-  // Base terminal text styling
+  // Base terminal text styling with responsive font size
   baseText: {
     color: '#4ade80', // text-green-400
     fontFamily: 'monospace',
     textShadow: '0 0 5px rgba(0,255,0,0.5)',
-    fontSize: '16px', // Base terminal font size
+    fontSize: 'clamp(14px, 2.5vw, 16px)', // Responsive font size
   } as CSSProperties,
 
   // Terminal text with stronger glow
@@ -15,7 +15,7 @@ export const terminalStyles = {
     color: '#4ade80',
     fontFamily: 'monospace', 
     textShadow: '0 0 8px rgba(0,255,0,0.7)',
-    fontSize: '16px',
+    fontSize: 'clamp(14px, 2.5vw, 16px)',
   } as CSSProperties,
 
   // Small terminal text
@@ -23,7 +23,7 @@ export const terminalStyles = {
     color: '#4ade80',
     fontFamily: 'monospace',
     textShadow: '0 0 5px rgba(0,255,0,0.5)',
-    fontSize: '14px',
+    fontSize: 'clamp(12px, 2vw, 14px)', // Smaller responsive font
   } as CSSProperties,
 
   // Large terminal text
@@ -31,7 +31,7 @@ export const terminalStyles = {
     color: '#4ade80',
     fontFamily: 'monospace',
     textShadow: '0 0 5px rgba(0,255,0,0.5)',
-    fontSize: '18px',
+    fontSize: 'clamp(16px, 3vw, 18px)', // Larger responsive font
   } as CSSProperties,
 };
 

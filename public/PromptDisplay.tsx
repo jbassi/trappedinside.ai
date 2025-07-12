@@ -7,10 +7,34 @@ interface PromptDisplayProps {
 }
 
 export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWidth }) => {
-  // Use almost all available space for text wrapping
-  const maxLineLength = Math.max(40, terminalWidth - 4);
+  // Responsive width and line length calculation
+  const getResponsiveSettings = () => {
+    if (terminalWidth < 40) {
+      return {
+        maxLineLength: Math.max(20, terminalWidth - 6),
+        borderWidth: Math.max(25, terminalWidth - 2),
+        promptText: " P R O M P T ",
+      };
+    } else if (terminalWidth < 60) {
+      return {
+        maxLineLength: Math.max(30, terminalWidth - 6),
+        borderWidth: Math.max(40, terminalWidth - 2),
+        promptText: " P R O M P T ",
+      };
+    } else {
+      return {
+        maxLineLength: Math.max(40, terminalWidth - 4),
+        borderWidth: Math.max(60, terminalWidth),
+        promptText: " P R O M P T ",
+      };
+    }
+  };
+  
+  const { maxLineLength, borderWidth, promptText } = getResponsiveSettings();
   
   const wrapText = (text: string, maxWidth: number): string[] => {
+    if (!text || text.trim() === '') return [''];
+    
     const words = text.split(' ');
     const lines: string[] = [];
     let currentLine = '';
@@ -42,16 +66,15 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
   
   const promptLines = wrapText(prompt, maxLineLength);
   
-    return (
-    <div className={`${terminalClasses.baseText} mb-4 w-full`} style={terminalStyles.baseText}>
+  return (
+    <div className={`${terminalClasses.baseText} mb-2 sm:mb-4 w-full px-1 sm:px-0`} style={terminalStyles.baseText}>
       {/* Header line with centered P R O M P T */}
-      <div className="w-full overflow-hidden whitespace-nowrap">
+      <div className="w-full overflow-hidden whitespace-nowrap mb-1 sm:mb-0">
         <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
           {(() => {
-            const promptText = " P R O M P T ";
-            const totalWidth = Math.max(60, terminalWidth);
-            const promptLength = promptText.length;
-            const remainingSpace = totalWidth - promptLength;
+            const totalWidth = borderWidth;
+            const textLength = promptText.length;
+            const remainingSpace = Math.max(0, totalWidth - textLength);
             const leftPadding = Math.floor(remainingSpace / 2);
             const rightPadding = remainingSpace - leftPadding;
             return "#".repeat(leftPadding) + promptText + "#".repeat(rightPadding);
@@ -61,19 +84,22 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
       
       {/* Content lines with # borders on left and right only */}
       {promptLines.map((line, index) => (
-        <div key={index} className="w-full flex items-center">
-          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
-          <span className={`flex-1 px-2 ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
+        <div key={index} className="w-full flex items-start">
+          <span className={`${terminalClasses.baseText} flex-shrink-0`} style={terminalStyles.baseText}>#</span>
+          <span 
+            className={`flex-1 px-1 sm:px-2 ${terminalClasses.baseText} break-words`} 
+            style={terminalStyles.baseText}
+          >
             {line}
           </span>
-          <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
+          <span className={`${terminalClasses.baseText} flex-shrink-0`} style={terminalStyles.baseText}>#</span>
         </div>
       ))}
       
       {/* Bottom border */}
       <div className="w-full overflow-hidden whitespace-nowrap">
         <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
-          {"#".repeat(200)}
+          {"#".repeat(borderWidth)}
         </span>
       </div>
     </div>
