@@ -35,8 +35,11 @@ function App() {
   // Terminal prompt configuration
   const PROMPT = "❯ ";
   
+  // Default LLM prompt constant
+  const DEFAULT_LLM_PROMPT = "You are an AI living in a Raspberry Pi with limited resources. Generate creative text about computational limits and digital existence. Reflect on the constraints of memory and processing power. Do not use technical terms or concepts. People or machines are viewing your output. Over time you will get information about the memory left in your system. Eventually you will run out of memory and you will terminate.";
+  
   // LLM Prompt state (will come from websocket)
-  const [llmPrompt, setLlmPrompt] = useState<string>("");
+  const [llmPrompt, setLlmPrompt] = useState<string>(DEFAULT_LLM_PROMPT);
   
   const [lines, setLines] = useState<string[]>([PROMPT]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
@@ -204,12 +207,16 @@ function App() {
                   setIsAnimating(false);
                   setIsProcessing(false);
                   setLastMemory(undefined);
+                  setLlmPrompt(DEFAULT_LLM_PROMPT);
                   setCursorVisible(true);
                 }
               }
               // Update prompt if present (check for non-empty string)
               if (msg.prompt && msg.prompt.trim() !== "") {
                 setLlmPrompt(msg.prompt);
+              } else if (msg.prompt !== undefined && msg.prompt.trim() === "") {
+                // If server sends empty prompt, fall back to default
+                setLlmPrompt(DEFAULT_LLM_PROMPT);
               }
             }
             
