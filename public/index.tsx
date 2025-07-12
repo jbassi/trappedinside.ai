@@ -26,6 +26,7 @@ const ServerMessageSchema = z.object({
           is_restarting: z.boolean().optional(),
         })
         .optional(),
+      prompt: z.string().optional(),
     })
   ),
 });
@@ -34,8 +35,8 @@ function App() {
   // Terminal prompt configuration
   const PROMPT = "❯ ";
   
-  // LLM Prompt constant (will later come from websocket)
-  const LLM_PROMPT = "You are an AI living in a Raspberry Pi with limited resources. Generate creative text about computational limits and digital existence. Reflect on the constraints of memory and processing power. Do not use technical terms or concepts. People or machines are viewing your output. Over time you will get information about the memory left in your system. Eventually you will run out of memory and you will terminate.";
+  // LLM Prompt state (will come from websocket)
+  const [llmPrompt, setLlmPrompt] = useState<string>("");
   
   const [lines, setLines] = useState<string[]>([PROMPT]);
   const [lastMemory, setLastMemory] = useState<Memory | undefined>(undefined);
@@ -214,6 +215,10 @@ function App() {
               if (msg.status?.is_restarting !== undefined) {
                 setIsRestarting(msg.status.is_restarting);
               }
+              // Update prompt if present
+              if (msg.prompt) {
+                setLlmPrompt(msg.prompt);
+              }
             }
             
             // Process queue without overlapping
@@ -284,7 +289,7 @@ function App() {
               <CRTScreen 
         textRef={textRef}
         memoryBar={<MemoryBar memory={lastMemory} terminalWidth={terminalWidth} />}
-        promptDisplay={<PromptDisplay prompt={LLM_PROMPT} terminalWidth={terminalWidth} />}
+        promptDisplay={<PromptDisplay prompt={llmPrompt} terminalWidth={terminalWidth} />}
       >
         {lines.map((line, i) => (
           <TerminalLine

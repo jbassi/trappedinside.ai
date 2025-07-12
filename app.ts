@@ -15,6 +15,7 @@ const IncomingMessageSchema = z.object({
   text: z.string(),
   memory: MemorySchema.optional(),
   status: StatusSchema.optional(),
+  prompt: z.string().optional(),
 });
 const AuthMessageSchema = z.object({
   token: z.string(),
@@ -104,13 +105,13 @@ const server = Bun.serve({
       const msgObj = msgResult.data;
       messages.push(msgObj);
       // Only broadcast the new message, not the entire history
-      const broadcast = { messages: [{ text: msgObj.text ?? "", memory: msgObj.memory, status: msgObj.status }] };
+      const broadcast = { messages: [{ text: msgObj.text ?? "", memory: msgObj.memory, status: msgObj.status, prompt: msgObj.prompt }] };
       for (const client of clients) {
         if (client.readyState === 1) {
           client.send(JSON.stringify(broadcast));
         }
       }
-      console.log("Received:", msgObj.text, msgObj.memory ? JSON.stringify(msgObj.memory) : "", msgObj.status ? JSON.stringify(msgObj.status) : "");
+      console.log("Received:", msgObj.text, msgObj.memory ? JSON.stringify(msgObj.memory) : "", msgObj.status ? JSON.stringify(msgObj.status) : "", msgObj.prompt ? `Prompt: ${msgObj.prompt}` : "");
     },
     close(ws: Bun.ServerWebSocket<unknown>) {
       clients.delete(ws);
