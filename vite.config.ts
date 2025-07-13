@@ -7,7 +7,9 @@ export default defineConfig({
   build: {
     outDir: '../dist',
     emptyOutDir: true,
+    copyPublicDir: true,
   },
+  publicDir: '.',
   server: {
     port: 3001,
     proxy: {

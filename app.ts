@@ -48,6 +48,7 @@ const server = Bun.serve({
     // Serve static files from the appropriate directory
     let filePath = `${staticDir}${url.pathname}`;
     if (url.pathname === "/") filePath = `${staticDir}/index.html`;
+
     try {
       const file = Bun.file(filePath);
       if (file.size > 0) {
