@@ -89,6 +89,33 @@ function App() {
     isLoadingRef.current = isLoading;
   }, [isLoading]);
 
+  // Handle tab visibility changes to prevent gibberish when returning to tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Tab became visible - show loading state until we get fresh data
+        console.log('Tab became visible, showing loading state until fresh data arrives');
+        
+        // Show loading spinner
+        setIsLoading(true);
+        isLoadingRef.current = true;
+        
+        // Clear any pending animations and queue
+        queueRef.current = [];
+        animatingRef.current = false;
+        processingRef.current = false;
+        setIsAnimating(false);
+        setIsProcessing(false);
+        
+        // Reset cursor blinking
+        setCursorVisible(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   // Helper to animate in new output, returns a Promise
   const animateOutput = (output: string) => {
     return new Promise<void>((resolve) => {
@@ -97,8 +124,8 @@ function App() {
       setCursorVisible(true); // Keep cursor visible during animation
       let i = 0;
       function step() {
-        // Stop animation immediately if restarting
-        if (restartingRef.current) {
+        // Stop animation immediately if restarting or tab is not visible
+        if (restartingRef.current || document.visibilityState !== 'visible') {
           animatingRef.current = false;
           setIsAnimating(false);
           resolve();
@@ -134,8 +161,8 @@ function App() {
     setCursorVisible(true); // Keep cursor visible during processing
     
     while (queueRef.current.length > 0) {
-      // Stop processing immediately if restarting
-      if (restartingRef.current) {
+      // Stop processing immediately if restarting or tab is not visible
+      if (restartingRef.current || document.visibilityState !== 'visible') {
         processingRef.current = false;
         setIsProcessing(false);
         return;
@@ -146,8 +173,8 @@ function App() {
       
       // If chunk contains newlines, split and animate each part
       for (let part of chunk.split(/(\n)/g)) {
-        // Check for restart before each part
-        if (restartingRef.current) {
+        // Check for restart or tab visibility before each part
+        if (restartingRef.current || document.visibilityState !== 'visible') {
           processingRef.current = false;
           setIsProcessing(false);
           return;
@@ -212,7 +239,10 @@ function App() {
             // Process each message chunk
             for (const msg of messages) {
               if (msg.text) {
-                queueRef.current.push(msg.text);
+                // Only queue text if tab is visible to prevent accumulation
+                if (document.visibilityState === 'visible') {
+                  queueRef.current.push(msg.text);
+                }
               }
               // Update memory if present
               if (msg.memory) {
@@ -245,8 +275,10 @@ function App() {
               }
             }
             
-            // Process queue without overlapping
-            processQueue();
+            // Process queue without overlapping (only if tab is visible)
+            if (document.visibilityState === 'visible') {
+              processQueue();
+            }
           }
         } catch (error) {
           console.error("Error parsing WebSocket message:", error);
