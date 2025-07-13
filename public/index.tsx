@@ -313,12 +313,69 @@ function App() {
     // eslint-disable-next-line
   }, []);
 
-  // Scroll to bottom when new text arrives
+  // Smart scrolling behavior - detect user scroll and delay auto-scroll
+  const [userHasScrolled, setUserHasScrolled] = useState(false);
+  const [autoScrollTimeout, setAutoScrollTimeout] = useState<NodeJS.Timeout | null>(null);
+  const lastScrollTopRef = useRef<number>(0);
+
+  // Detect when user manually scrolls up
   useEffect(() => {
-    if (textRef.current) {
+    const handleScroll = () => {
+      if (textRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = textRef.current;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5; // 5px tolerance
+        
+        // If user scrolled up from the bottom, mark as manually scrolled
+        if (scrollTop < lastScrollTopRef.current && !isAtBottom) {
+          setUserHasScrolled(true);
+          
+          // Clear any existing timeout
+          if (autoScrollTimeout) {
+            clearTimeout(autoScrollTimeout);
+          }
+          
+          // Set a timeout to resume auto-scroll after 5 seconds of inactivity
+          const timeout = setTimeout(() => {
+            setUserHasScrolled(false);
+          }, 5000);
+          setAutoScrollTimeout(timeout);
+        }
+        
+        // If user scrolled back to bottom manually, resume auto-scroll
+        if (isAtBottom && userHasScrolled) {
+          setUserHasScrolled(false);
+          if (autoScrollTimeout) {
+            clearTimeout(autoScrollTimeout);
+            setAutoScrollTimeout(null);
+          }
+        }
+        
+        lastScrollTopRef.current = scrollTop;
+      }
+    };
+
+    const element = textRef.current;
+    if (element) {
+      element.addEventListener('scroll', handleScroll);
+      return () => element.removeEventListener('scroll', handleScroll);
+    }
+  }, [userHasScrolled, autoScrollTimeout]);
+
+  // Scroll to bottom when new text arrives (only if user hasn't manually scrolled up)
+  useEffect(() => {
+    if (textRef.current && !userHasScrolled) {
       textRef.current.scrollTop = textRef.current.scrollHeight;
     }
-  }, [lines]);
+  }, [lines, userHasScrolled]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoScrollTimeout) {
+        clearTimeout(autoScrollTimeout);
+      }
+    };
+  }, [autoScrollTimeout]);
 
   // Calculate terminal width based on container
   useEffect(() => {
