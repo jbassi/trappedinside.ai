@@ -17,25 +17,25 @@ export const MemoryBar: React.FC<MemoryBarProps> = ({ memory, terminalWidth }) =
   const getResponsiveLayout = () => {
     if (terminalWidth < 40) {
       return {
-        barWidth: Math.max(12, terminalWidth - 15), // Leave space for "Memory" and percentage
+        barWidth: Math.max(8, terminalWidth - 18), // Leave space for "Memory" and percentage
         showFullText: false,
         abbreviateLabel: true,
       };
     } else if (terminalWidth < 60) {
       return {
-        barWidth: Math.max(20, terminalWidth - 20), // Leave space for labels
+        barWidth: Math.max(15, terminalWidth - 25), // Leave space for labels
         showFullText: false,
         abbreviateLabel: false,
       };
     } else if (terminalWidth < 80) {
       return {
-        barWidth: Math.max(30, terminalWidth - 25), // Leave space for full text
+        barWidth: Math.max(25, terminalWidth - 30), // Leave space for full text
         showFullText: false,
         abbreviateLabel: false,
       };
     } else {
       return {
-        barWidth: Math.max(40, terminalWidth - 30), // Fill most of the width
+        barWidth: Math.max(35, terminalWidth - 35), // Fill most of the width
         showFullText: true,
         abbreviateLabel: false,
       };
@@ -47,12 +47,13 @@ export const MemoryBar: React.FC<MemoryBarProps> = ({ memory, terminalWidth }) =
   const emptyWidth = barWidth - filledWidth;
   
   const formatMemoryText = () => {
+    const used_gb = (total_mb * percent_used / 100 / 1024);
     if (showFullText) {
-      return `Used ${percent_used.toFixed(1)}% (${(total_mb / 1024).toFixed(1)}G)`;
+      return `Used ${percent_used.toFixed(1)}% (${used_gb.toFixed(1)}GB)`;
     } else if (abbreviateLabel) {
       return `Used ${percent_used.toFixed(0)}%`;
     } else {
-      return `Used ${percent_used.toFixed(0)}% (${(total_mb / 1024).toFixed(1)}G)`;
+      return `Used ${percent_used.toFixed(0)}% (${used_gb.toFixed(1)}GB)`;
     }
   };
 

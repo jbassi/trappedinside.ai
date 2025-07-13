@@ -12,20 +12,20 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
     if (terminalWidth < 40) {
       return {
         maxLineLength: Math.max(20, terminalWidth - 6),
-        borderWidth: Math.max(25, terminalWidth - 2),
-        promptText: " P R O M P T ",
+        borderWidth: Math.max(20, terminalWidth - 2),
+        promptText: " PROMPT ",
       };
     } else if (terminalWidth < 60) {
       return {
         maxLineLength: Math.max(30, terminalWidth - 6),
-        borderWidth: Math.max(40, terminalWidth - 2),
-        promptText: " P R O M P T ",
+        borderWidth: Math.max(35, terminalWidth - 2),
+        promptText: " PROMPT ",
       };
     } else {
       return {
         maxLineLength: Math.max(40, terminalWidth - 4),
-        borderWidth: Math.max(60, terminalWidth),
-        promptText: " P R O M P T ",
+        borderWidth: Math.max(50, terminalWidth),
+        promptText: " PROMPT ",
       };
     }
   };
