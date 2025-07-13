@@ -35,10 +35,10 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
         
         {/* Terminal content positioned using SVG coordinates */}
         <foreignObject
-          x="500"
-          y="202"
-          width="555"
-          height="436"
+          x="492"
+          y="196"
+          width="570"
+          height="446"
           className="overflow-hidden"
         >
           <div
@@ -58,6 +58,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
               radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%)
             `,
             backgroundSize: '100% 4px, 100% 100%',
+            borderRadius: '14px',
             zIndex: 20
           }}
         />
