@@ -4,12 +4,11 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   root: 'public',
+  publicDir: 'images',
   build: {
     outDir: '../dist',
     emptyOutDir: true,
-    copyPublicDir: true,
   },
-  publicDir: '.',
   server: {
     port: 3001,
     proxy: {

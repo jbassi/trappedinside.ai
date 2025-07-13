@@ -25,7 +25,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
       >
         {/* Monitor background */}
         <image
-          href="/images/monitor-background.svg"
+          href="/monitor-background.svg"
           x="0"
           y="0"
           width="1536"
