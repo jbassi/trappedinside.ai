@@ -346,27 +346,22 @@ function App() {
   const percentUsed = lastMemory?.percent_used;
 
   return (
-    <div className="fixed inset-0 bg-gray-50 flex flex-col p-4 resize overflow-auto">
-      {/* Fixed, resizable, scrollable CRT screen */}
-      <div className="flex-1 min-h-0 relative">
-        <CRTScreen 
-          textRef={textRef}
-          memoryBar={!isLoading ? <MemoryBar memory={lastMemory} terminalWidth={terminalWidth} /> : undefined}
-          promptDisplay={!isLoading ? <PromptDisplay prompt={llmPrompt} terminalWidth={terminalWidth} /> : undefined}
-          loadingSpinner={isLoading ? <LoadingSpinner terminalWidth={terminalWidth} /> : undefined}
-        >
-          {!isLoading && lines.map((line, i) => (
-            <TerminalLine
-              key={i}
-              line={line}
-              isLastLine={i === lines.length - 1}
-              cursorVisible={cursorVisible}
-              prompt={PROMPT}
-            />
-          ))}
-        </CRTScreen>
-      </div>
-    </div>
+    <CRTScreen 
+      textRef={textRef}
+      memoryBar={!isLoading ? <MemoryBar memory={lastMemory} terminalWidth={terminalWidth} /> : undefined}
+      promptDisplay={!isLoading ? <PromptDisplay prompt={llmPrompt} terminalWidth={terminalWidth} /> : undefined}
+      loadingSpinner={isLoading ? <LoadingSpinner terminalWidth={terminalWidth} /> : undefined}
+    >
+      {!isLoading && lines.map((line, i) => (
+        <TerminalLine
+          key={i}
+          line={line}
+          isLastLine={i === lines.length - 1}
+          cursorVisible={cursorVisible}
+          prompt={PROMPT}
+        />
+      ))}
+    </CRTScreen>
   );
 }
 
