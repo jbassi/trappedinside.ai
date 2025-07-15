@@ -1,5 +1,33 @@
 import React, { type RefObject, useState, useEffect } from 'react';
 
+// Mobile detection utilities
+const isMobileUserAgent = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const ua = window.navigator.userAgent.toLowerCase();
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
+};
+
+const isMobileScreenSize = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth <= 768;
+};
+
+const hasTouchCapabilities = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || 
+         navigator.maxTouchPoints > 0 ||
+         (navigator as any).msMaxTouchPoints > 0;
+};
+
+const isMobileDevice = (): boolean => {
+  const isMobileUA = isMobileUserAgent();
+  const isSmallScreen = isMobileScreenSize();
+  const hasTouch = hasTouchCapabilities();
+  
+  // Consider it mobile if it matches at least 2 of the 3 criteria
+  return [isMobileUA, isSmallScreen, hasTouch].filter(Boolean).length >= 2;
+};
+
 interface CRTScreenProps {
   children: React.ReactNode;
   textRef: RefObject<HTMLDivElement>;
@@ -9,64 +37,33 @@ interface CRTScreenProps {
 }
 
 export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay, loadingSpinner }) => {
-  // State for responsive terminal dimensions
-  const [terminalDimensions, setTerminalDimensions] = useState({
+  // State for desktop terminal dimensions (only used in SVG approach)
+  const [terminalDimensions] = useState({
     x: 492,
     y: 196,
     width: 570,
     height: 446
   });
 
-  // State to determine if we should use SVG or direct mobile approach
-  const [useSVGApproach, setUseSVGApproach] = useState(true);
+  // Determine if we should use SVG approach
+  const [useSVGApproach, setUseSVGApproach] = useState(!isMobileDevice());
 
-  // Check for mobile portrait orientation
+  // Update SVG approach when screen size changes
   useEffect(() => {
-    const checkOrientation = () => {
-      const isMobile = window.innerWidth <= 768;
-      const isPortrait = window.innerHeight > window.innerWidth;
-      
-      if (isMobile && isPortrait) {
-        // Mobile portrait: use direct approach (no SVG)
-        setUseSVGApproach(false);
-      } else {
-        // Desktop, tablet, or mobile landscape: use SVG approach
-        setUseSVGApproach(true);
-        
-        if (isMobile) {
-          // Mobile landscape: expand terminal area
-          setTerminalDimensions({
-            x: 77,
-            y: 102,
-            width: 1382,
-            height: 819
-          });
-        } else {
-          // Desktop/tablet: use default dimensions
-          setTerminalDimensions({
-            x: 492,
-            y: 196,
-            width: 570,
-            height: 446
-          });
-        }
-      }
+    const checkDevice = () => {
+      setUseSVGApproach(!isMobileDevice());
     };
 
-    // Check on mount
-    checkOrientation();
-    
-    // Check on resize and orientation change
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
+    // Check on mount and when window resizes
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
     
     return () => {
-      window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
+      window.removeEventListener('resize', checkDevice);
     };
   }, []);
 
-  // Mobile portrait direct approach (no SVG)
+  // Mobile direct approach (no SVG)
   if (!useSVGApproach) {
     return (
       <div className="fixed inset-0 overflow-hidden bg-black">
@@ -118,7 +115,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
                 WebkitOverflowScrolling: 'touch',
-                fontSize: '1.25rem',
+                fontSize: 'clamp(1rem, 3vw, 1.5rem)',
                 lineHeight: '1.6'
               }}
             >
@@ -139,7 +136,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
     );
   }
 
-  // SVG approach for desktop, tablet, and mobile landscape
+  // Desktop SVG approach
   return (
     <div className="fixed inset-0 overflow-hidden bg-black">
       <svg
@@ -157,7 +154,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
           height="1024"
           preserveAspectRatio="xMidYMid meet"
         />
-        {/* Responsive Terminal Content Area */}
+        {/* Terminal Content Area */}
         <foreignObject
           x={terminalDimensions.x}
           y={terminalDimensions.y}
@@ -166,25 +163,22 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
           className="overflow-hidden"
         >
           <div
-            className="w-full h-full flex flex-col md:rounded-[14px] rounded-[6px]"
+            className="w-full h-full flex flex-col rounded-[14px]"
             style={{
               background: 'rgba(0, 0, 0, 0.98)',
-              borderRadius: '14px',
               overflow: 'hidden',
-              // Responsive padding for mobile
               padding: '0',
             }}
           >
             {/* CRT Screen Effects Overlay */}
             <div
-              className="absolute inset-0 pointer-events-none md:rounded-[14px] rounded-[6px]"
+              className="absolute inset-0 pointer-events-none rounded-[14px]"
               style={{
                 background: `
                   linear-gradient(transparent 50%, rgba(0,255,0,0.03) 50%),
                   radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%)
                 `,
                 backgroundSize: '100% 4px, 100% 100%',
-                borderRadius: '14px',
                 zIndex: 20
               }}
             />
@@ -202,7 +196,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
             >
               {/* Fixed memory bar at top */}
               <div
-                className="px-2 md:px-4 pt-1.5 md:pt-3 pb-1"
+                className="px-4 pt-3 pb-1"
                 style={{
                   zIndex: 25,
                   flexShrink: 0
@@ -213,7 +207,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
               {/* Scrollable terminal content with prompt display */}
               <div
                 ref={textRef}
-                className="px-0 md:px-4 pb-0 md:pb-3 text-xs md:text-base lg:text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden mobile-portrait:text-2xl"
+                className="px-4 pb-3 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden"
                 style={{
                   fontFamily: 'monospace',
                   textShadow: '0 0 5px rgba(0,255,0,0.5)',
@@ -221,8 +215,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                   scrollbarWidth: 'none',
                   msOverflowStyle: 'none',
                   WebkitOverflowScrolling: 'touch',
-                  // Much larger font size for mobile portrait
-                  fontSize: 'clamp(2rem, 5vw, 2.5rem)'
+                  fontSize: '1.125rem'
                 }}
               >
                 {/* Prompt display that scrolls with content */}
@@ -238,17 +231,6 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
             </div>
           </div>
         </foreignObject>
-        {/* Mobile landscape media query only */}
-        <style>{`
-          @media (max-width: 768px) and (orientation: landscape) {
-            foreignObject {
-              x: 77px !important;
-              y: 102px !important;
-              width: 1382px !important;
-              height: 819px !important;
-            }
-          }
-        `}</style>
       </svg>
     </div>
   );
