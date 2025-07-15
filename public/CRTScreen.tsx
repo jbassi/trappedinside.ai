@@ -98,7 +98,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
           >
             {/* Fixed memory bar at top */}
             <div
-              className="px-4 pt-4 pb-2"
+              className="p-2"
               style={{
                 zIndex: 25,
                 flexShrink: 0
@@ -110,7 +110,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
             {/* Scrollable terminal content with prompt display */}
             <div
               ref={textRef}
-              className="px-4 pb-4 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden"
+              className="p-2 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
               style={{
                 fontFamily: 'monospace',
                 textShadow: '0 0 5px rgba(0,255,0,0.5)',
@@ -118,7 +118,6 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
                 WebkitOverflowScrolling: 'touch',
-                // Large font size for mobile portrait
                 fontSize: '1.25rem',
                 lineHeight: '1.6'
               }}
