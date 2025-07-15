@@ -7,24 +7,37 @@ interface PromptDisplayProps {
 }
 
 export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWidth }) => {
+  // Detect if we're in mobile portrait mode
+  const isMobilePortrait = typeof window !== 'undefined' && 
+    window.innerWidth <= 768 && 
+    window.innerHeight > window.innerWidth;
+
   // Responsive width and line length calculation
   const getResponsiveSettings = () => {
-    if (terminalWidth < 40) {
+    // For mobile portrait, use a wider border to fill the screen better
+    const effectiveTerminalWidth = isMobilePortrait ? 
+      Math.max(terminalWidth, Math.floor(window.innerWidth / 10)) : 
+      terminalWidth;
+    
+    // Use full terminal width for borders to ensure they connect properly
+    const fullBorderWidth = effectiveTerminalWidth;
+    
+    if (effectiveTerminalWidth < 40) {
       return {
-        maxLineLength: Math.max(20, terminalWidth - 6),
-        borderWidth: Math.max(20, terminalWidth - 2),
+        maxLineLength: Math.max(15, effectiveTerminalWidth - 8),
+        borderWidth: fullBorderWidth,
         promptText: " PROMPT ",
       };
-    } else if (terminalWidth < 60) {
+    } else if (effectiveTerminalWidth < 60) {
       return {
-        maxLineLength: Math.max(30, terminalWidth - 6),
-        borderWidth: Math.max(35, terminalWidth - 2),
+        maxLineLength: Math.max(25, effectiveTerminalWidth - 8),
+        borderWidth: fullBorderWidth,
         promptText: " PROMPT ",
       };
     } else {
       return {
-        maxLineLength: Math.max(40, terminalWidth - 4),
-        borderWidth: Math.max(50, terminalWidth),
+        maxLineLength: Math.max(35, effectiveTerminalWidth - 6),
+        borderWidth: fullBorderWidth,
         promptText: " PROMPT ",
       };
     }
@@ -63,22 +76,35 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
     }
     return lines.length > 0 ? lines : [''];
   };
-  
+
   const promptLines = wrapText(prompt, maxLineLength);
   
+  // Calculate proper centering for PROMPT text
+  const createCenteredHeader = () => {
+    const textLength = promptText.length;
+    const totalWidth = borderWidth;
+    
+    // Ensure we have enough space for the text
+    if (totalWidth < textLength) {
+      return promptText.substring(0, totalWidth);
+    }
+    
+    const remainingSpace = totalWidth - textLength;
+    const leftPadding = Math.floor(remainingSpace / 2);
+    const rightPadding = remainingSpace - leftPadding;
+    
+    return "#".repeat(leftPadding) + promptText + "#".repeat(rightPadding);
+  };
+
+  // Calculate the content area width (accounting for left and right # borders)
+  const contentWidth = Math.max(0, borderWidth - 2); // -2 for left and right #
+
   return (
     <div className={`${terminalClasses.baseText} mb-2 sm:mb-4 w-full px-1 sm:px-0`} style={terminalStyles.baseText}>
-      {/* Header line with centered P R O M P T */}
+      {/* Header line with centered PROMPT */}
       <div className="w-full overflow-hidden whitespace-nowrap mb-1 sm:mb-0">
         <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
-          {(() => {
-            const totalWidth = borderWidth;
-            const textLength = promptText.length;
-            const remainingSpace = Math.max(0, totalWidth - textLength);
-            const leftPadding = Math.floor(remainingSpace / 2);
-            const rightPadding = remainingSpace - leftPadding;
-            return "#".repeat(leftPadding) + promptText + "#".repeat(rightPadding);
-          })()}
+          {createCenteredHeader()}
         </span>
       </div>
       
@@ -87,10 +113,15 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
         <div key={index} className="w-full flex items-start">
           <span className={`${terminalClasses.baseText} flex-shrink-0`} style={terminalStyles.baseText}>#</span>
           <span 
-            className={`flex-1 px-1 sm:px-2 ${terminalClasses.baseText} break-words`} 
-            style={terminalStyles.baseText}
+            className={`${terminalClasses.baseText} break-words`} 
+            style={{
+              ...terminalStyles.baseText,
+              width: `${contentWidth}ch`,
+              paddingLeft: '0.25rem',
+              paddingRight: '0.25rem'
+            }}
           >
-            {line}
+            {line || ' '}
           </span>
           <span className={`${terminalClasses.baseText} flex-shrink-0`} style={terminalStyles.baseText}>#</span>
         </div>

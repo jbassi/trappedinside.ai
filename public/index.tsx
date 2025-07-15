@@ -395,10 +395,53 @@ function App() {
       }
     };
 
-    calculateWidth();
-    window.addEventListener('resize', calculateWidth);
-    return () => window.removeEventListener('resize', calculateWidth);
-  }, []);
+    const calculateWidthSafely = () => {
+      // Only calculate if the element is actually rendered and has dimensions
+      if (textRef.current && textRef.current.clientWidth > 0) {
+        calculateWidth();
+      } else {
+        // If not ready, use requestAnimationFrame to wait for next paint
+        requestAnimationFrame(calculateWidthSafely);
+      }
+    };
+
+    // Initial calculation - ensure DOM is ready
+    if (document.readyState === 'complete') {
+      calculateWidthSafely();
+    } else {
+      // Wait for DOM to be fully loaded
+      const onLoad = () => {
+        calculateWidthSafely();
+        window.removeEventListener('load', onLoad);
+      };
+      window.addEventListener('load', onLoad);
+    }
+    
+    // Listen for resize and orientation changes
+    window.addEventListener('resize', calculateWidthSafely);
+    window.addEventListener('orientationchange', calculateWidthSafely);
+    
+    // Use ResizeObserver for when the container itself changes size
+    const observer = new ResizeObserver((entries) => {
+      // Only recalculate if the observed element actually changed size
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          calculateWidth();
+          break;
+        }
+      }
+    });
+    
+    if (textRef.current) {
+      observer.observe(textRef.current);
+    }
+    
+    return () => {
+      window.removeEventListener('resize', calculateWidthSafely);
+      window.removeEventListener('orientationchange', calculateWidthSafely);
+      observer.disconnect();
+    };
+  }, [isLoading]); // Recalculate when loading state changes
 
   const percentUsed = lastMemory?.percent_used;
 

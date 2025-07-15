@@ -19,9 +19,9 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
     
     // Scale down on smaller screens
     if (terminalWidth < 50) {
-      return Math.max(minWidth, terminalWidth - 4);
+      return Math.max(minWidth, terminalWidth - 8); // More padding for mobile
     } else if (terminalWidth < 80) {
-      return Math.max(40, terminalWidth - 8);
+      return Math.max(40, terminalWidth - 10);
     }
     return maxWidth;
   };
@@ -44,7 +44,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
   const responsiveWidth = getResponsiveWidth();
   
   return (
-    <div className={`flex flex-col items-center justify-center space-y-2 sm:space-y-4 ${terminalClasses.container} px-2`}>
+    <div className={`flex flex-col items-center justify-center space-y-2 sm:space-y-4 ${terminalClasses.container} px-4 sm:px-6 md:px-2`}>
       {/* Terminal-style connecting message with dynamic # borders */}
       <div className="text-center w-full max-w-full">
         {/* Header line with centered CONNECTING TO RASPBERRY PI */}

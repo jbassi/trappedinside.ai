@@ -17,19 +17,19 @@ export const MemoryBar: React.FC<MemoryBarProps> = ({ memory, terminalWidth }) =
   const getResponsiveLayout = () => {
     if (terminalWidth < 40) {
       return {
-        barWidth: Math.max(8, terminalWidth - 18), // Leave space for "Memory" and percentage
+        barWidth: Math.max(8, terminalWidth - 20), // More space for labels on mobile
         showFullText: false,
         abbreviateLabel: true,
       };
     } else if (terminalWidth < 60) {
       return {
-        barWidth: Math.max(15, terminalWidth - 25), // Leave space for labels
+        barWidth: Math.max(15, terminalWidth - 28), // Adjust for better spacing
         showFullText: false,
         abbreviateLabel: false,
       };
     } else if (terminalWidth < 80) {
       return {
-        barWidth: Math.max(25, terminalWidth - 30), // Leave space for full text
+        barWidth: Math.max(25, terminalWidth - 32), // Leave more space for text
         showFullText: false,
         abbreviateLabel: false,
       };
@@ -43,17 +43,20 @@ export const MemoryBar: React.FC<MemoryBarProps> = ({ memory, terminalWidth }) =
   };
   
   const { barWidth, showFullText, abbreviateLabel } = getResponsiveLayout();
-  const filledWidth = Math.floor((percent_used / 100) * barWidth);
-  const emptyWidth = barWidth - filledWidth;
+  
+  // Ensure percent_used is within valid range and calculate filled width properly
+  const safePercentUsed = Math.max(0, Math.min(100, percent_used));
+  const filledWidth = Math.max(0, Math.floor((safePercentUsed / 100) * barWidth));
+  const emptyWidth = Math.max(0, barWidth - filledWidth);
   
   const formatMemoryText = () => {
-    const used_gb = (total_mb * percent_used / 100 / 1024);
+    const used_gb = (total_mb * safePercentUsed / 100 / 1024);
     if (showFullText) {
-      return `Used ${percent_used.toFixed(1)}% (${used_gb.toFixed(1)}GB)`;
+      return `Used ${safePercentUsed.toFixed(1)}% (${used_gb.toFixed(1)}GB)`;
     } else if (abbreviateLabel) {
-      return `Used ${percent_used.toFixed(0)}%`;
+      return `Used ${safePercentUsed.toFixed(0)}%`;
     } else {
-      return `Used ${percent_used.toFixed(0)}% (${used_gb.toFixed(1)}GB)`;
+      return `Used ${safePercentUsed.toFixed(0)}% (${used_gb.toFixed(1)}GB)`;
     }
   };
 
