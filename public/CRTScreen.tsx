@@ -1,6 +1,6 @@
 import React, { type RefObject, useState, useEffect } from 'react';
 import { PiAsciiArt } from './PiAsciiArt';
-import { isMobileUserAgent, isMobileScreenSize, hasTouchCapabilities } from './mobileUtils';
+import { isMobileDevice } from './mobileUtils';
 
 interface CRTScreenProps {
   children: React.ReactNode;
@@ -25,12 +25,8 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
   // Check for mobile devices
   useEffect(() => {
     const checkDevice = () => {
-      const isMobileUA = isMobileUserAgent();
-      const isSmallScreen = isMobileScreenSize();
-      const hasTouch = hasTouchCapabilities();
-      
       // Use direct approach for mobile devices
-      if ((isMobileUA && isSmallScreen) || (isSmallScreen && hasTouch)) {
+      if (isMobileDevice()) {
         setUseSVGApproach(false);
       } else {
         // Desktop or tablet: use SVG approach
@@ -99,7 +95,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
             {/* Scrollable terminal content with prompt display */}
             <div
               ref={textRef}
-              className="p-2 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
+              className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
               style={{
                 fontFamily: 'monospace',
                 textShadow: '0 0 5px rgba(0,255,0,0.5)',

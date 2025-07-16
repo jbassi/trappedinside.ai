@@ -66,12 +66,12 @@ export const MemoryBar: React.FC<MemoryBarProps> = ({ memory, terminalWidth }) =
 
   return (
     <div className={`w-full ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-green-500 text-black px-2 py-1">
         <span className="flex-shrink-0">{getLabel()}</span>
-        <span className="flex-1 mx-1 sm:mx-2 text-center overflow-hidden">
-          {'█'.repeat(filledWidth)}{'░'.repeat(emptyWidth)}
+        <span className="flex-1 mx-1 sm:mx-2 text-center overflow-hidden font-mono">
+          {'█'.repeat(filledWidth)}{'▒'.repeat(emptyWidth)}
         </span>
-        <span className="flex-shrink-0 text-right text-xs sm:text-base" style={terminalWidth < 40 ? terminalStyles.smallText : terminalStyles.baseText}>
+        <span className="flex-shrink-0 text-right text-xs sm:text-base">
           {formatMemoryText()}
         </span>
       </div>

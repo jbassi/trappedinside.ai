@@ -19,3 +19,13 @@ export const hasTouchCapabilities = (): boolean => {
          navigator.maxTouchPoints > 0 || 
          (navigator as any).msMaxTouchPoints > 0;
 };
+
+// Combined mobile detection using multiple criteria
+export const isMobileDevice = (): boolean => {
+  const isMobileUA = isMobileUserAgent();
+  const isSmallScreen = isMobileScreenSize();
+  const hasTouch = hasTouchCapabilities();
+  
+  // Consider it mobile if it matches at least 2 of the 3 criteria
+  return [isMobileUA, isSmallScreen, hasTouch].filter(Boolean).length >= 2;
+};
