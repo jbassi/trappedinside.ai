@@ -1,32 +1,6 @@
 import React, { type RefObject, useState, useEffect } from 'react';
-
-// Mobile detection utilities
-const isMobileUserAgent = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  const ua = window.navigator.userAgent.toLowerCase();
-  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
-};
-
-const isMobileScreenSize = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return window.innerWidth <= 768;
-};
-
-const hasTouchCapabilities = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return 'ontouchstart' in window || 
-         navigator.maxTouchPoints > 0 ||
-         (navigator as any).msMaxTouchPoints > 0;
-};
-
-const isMobileDevice = (): boolean => {
-  const isMobileUA = isMobileUserAgent();
-  const isSmallScreen = isMobileScreenSize();
-  const hasTouch = hasTouchCapabilities();
-  
-  // Consider it mobile if it matches at least 2 of the 3 criteria
-  return [isMobileUA, isSmallScreen, hasTouch].filter(Boolean).length >= 2;
-};
+import { PiAsciiArt } from './PiAsciiArt';
+import { isMobileUserAgent, isMobileScreenSize, hasTouchCapabilities } from './mobileUtils';
 
 interface CRTScreenProps {
   children: React.ReactNode;
@@ -37,7 +11,7 @@ interface CRTScreenProps {
 }
 
 export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay, loadingSpinner }) => {
-  // State for desktop terminal dimensions (only used in SVG approach)
+  // State for desktop terminal dimensions
   const [terminalDimensions] = useState({
     x: 492,
     y: 196,
@@ -45,29 +19,47 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
     height: 446
   });
 
-  // Determine if we should use SVG approach
-  const [useSVGApproach, setUseSVGApproach] = useState(!isMobileDevice());
+  // State to determine if we should use SVG or direct mobile approach
+  const [useSVGApproach, setUseSVGApproach] = useState(true);
 
-  // Update SVG approach when screen size changes
+  // Check for mobile devices
   useEffect(() => {
     const checkDevice = () => {
-      setUseSVGApproach(!isMobileDevice());
+      const isMobileUA = isMobileUserAgent();
+      const isSmallScreen = isMobileScreenSize();
+      const hasTouch = hasTouchCapabilities();
+      
+      // Use direct approach for mobile devices
+      if ((isMobileUA && isSmallScreen) || (isSmallScreen && hasTouch)) {
+        setUseSVGApproach(false);
+      } else {
+        // Desktop or tablet: use SVG approach
+        setUseSVGApproach(true);
+      }
     };
 
-    // Check on mount and when window resizes
+    // Check on mount
     checkDevice();
+    
+    // Check on resize and orientation change
     window.addEventListener('resize', checkDevice);
+    window.addEventListener('orientationchange', checkDevice);
     
     return () => {
       window.removeEventListener('resize', checkDevice);
+      window.removeEventListener('orientationchange', checkDevice);
     };
   }, []);
 
   // Mobile direct approach (no SVG)
   if (!useSVGApproach) {
     return (
-      <div className="fixed inset-0 overflow-hidden bg-black">
-        <div className="w-full h-full flex flex-col">
+      <div className="fixed inset-0 flex flex-col bg-black overflow-hidden">
+        {/* Pi ASCII Art Header - only show when not loading */}
+        {!loadingSpinner && <PiAsciiArt />}
+          
+        {/* Terminal Container */}
+        <div className="flex-1 relative flex flex-col min-h-0">
           {/* CRT Screen Effects Overlay */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -80,10 +72,10 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
               zIndex: 20
             }}
           />
-          
+            
           {/* Terminal Content Area */}
           <div
-            className="relative h-full flex flex-col"
+            className="relative flex-1 flex flex-col min-h-0"
             style={{
               background: `
                 radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%),
@@ -95,15 +87,15 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
           >
             {/* Fixed memory bar at top */}
             <div
-              className="p-2"
+              className="sticky top-0 p-2 bg-black/95"
               style={{
                 zIndex: 25,
-                flexShrink: 0
+                backdropFilter: 'blur(2px)'
               }}
             >
               {memoryBar}
             </div>
-            
+              
             {/* Scrollable terminal content with prompt display */}
             <div
               ref={textRef}
@@ -123,7 +115,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
               {promptDisplay}
               {children}
             </div>
-            
+              
             {/* Loading spinner overlay */}
             {loadingSpinner && (
               <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 100 }}>
@@ -136,7 +128,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
     );
   }
 
-  // Desktop SVG approach
+  // SVG approach for desktop, tablet, and mobile landscape
   return (
     <div className="fixed inset-0 overflow-hidden bg-black">
       <svg
@@ -196,10 +188,11 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
             >
               {/* Fixed memory bar at top */}
               <div
-                className="px-4 pt-3 pb-1"
+                className="px-4 pt-3 pb-1 bg-black/95"
                 style={{
                   zIndex: 25,
-                  flexShrink: 0
+                  flexShrink: 0,
+                  backdropFilter: 'blur(2px)'
                 }}
               >
                 {memoryBar}

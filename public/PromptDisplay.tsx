@@ -135,4 +135,4 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
       </div>
     </div>
   );
-}; 
+};
