@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { terminalStyles, terminalClasses } from './terminalStyles';
 import { useTerminalSize } from './TerminalSizeContext';
 
@@ -8,7 +8,41 @@ interface PromptDisplayProps {
 
 export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
   const { terminalWidth } = useTerminalSize();
-  const effectiveWidth = Math.max(terminalWidth, 12); // Minimum width for "## PROMPT ##"
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [actualWidth, setActualWidth] = useState(terminalWidth);
+
+  // Measure the actual rendered width and calculate character count
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Create a test element to measure character width in this exact container
+    const testElement = document.createElement('div');
+    const containerStyles = getComputedStyle(containerRef.current);
+    
+    testElement.style.fontFamily = containerStyles.fontFamily;
+    testElement.style.fontSize = containerStyles.fontSize;
+    testElement.style.fontWeight = containerStyles.fontWeight;
+    testElement.style.letterSpacing = containerStyles.letterSpacing;
+    testElement.style.visibility = 'hidden';
+    testElement.style.position = 'absolute';
+    testElement.style.whiteSpace = 'pre';
+    testElement.style.top = '-9999px';
+    testElement.textContent = '#'.repeat(100);
+    
+    document.body.appendChild(testElement);
+    const testWidth = testElement.offsetWidth;
+    document.body.removeChild(testElement);
+    
+    // Calculate character count based on actual container width
+    const containerWidth = containerRef.current.offsetWidth;
+    const charWidth = testWidth / 100;
+    // Add small buffer to ensure we use every available pixel
+    const calculatedWidth = Math.floor((containerWidth + 1) / charWidth);
+    
+    setActualWidth(Math.max(calculatedWidth, 12));
+  }, [terminalWidth]);
+
+  const effectiveWidth = actualWidth;
   const contentWidth = effectiveWidth - 4; // Account for "# " and " #"
   
   const wrapText = (text: string, maxWidth: number): string[] => {
@@ -84,10 +118,30 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
   lines.push(createFooterLine());
 
   return (
-    <div className={`${terminalClasses.baseText} mb-2 sm:mb-4 w-full`} style={terminalStyles.baseText}>
+    <div 
+      ref={containerRef}
+      className={`${terminalClasses.baseText} mb-2 sm:mb-4`}
+      style={{
+        ...terminalStyles.baseText,
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: '100%',
+        boxSizing: 'border-box'
+      }}
+    >
       {lines.map((line, index) => (
-        <div key={index} className="whitespace-pre font-mono w-full overflow-hidden">
-          {line}
+        <div 
+          key={index} 
+          className="whitespace-pre font-mono"
+          style={{
+            display: 'flex',
+            width: '100%',
+            overflow: 'hidden'
+          }}
+        >
+          <span style={{ width: '100%', textAlign: 'left' }}>
+            {line}
+          </span>
         </div>
       ))}
     </div>
