@@ -100,12 +100,16 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                 fontFamily: 'monospace',
                 textShadow: '0 0 5px rgba(0,255,0,0.5)',
                 zIndex: 20,
-                overflowAnchor: 'none',
+                overflowAnchor: 'auto',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
                 WebkitOverflowScrolling: 'touch',
                 fontSize: 'clamp(1rem, 3vw, 1.5rem)',
-                lineHeight: '1.6'
+                lineHeight: '1.6',
+                scrollBehavior: 'smooth',
+                willChange: 'scroll-position',
+                contain: 'layout style paint',
+                position: 'relative'
               }}
             >
               {/* Prompt display that scrolls with content */}
@@ -205,7 +209,12 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                   scrollbarWidth: 'none',
                   msOverflowStyle: 'none',
                   WebkitOverflowScrolling: 'touch',
-                  fontSize: '1.125rem'
+                  fontSize: '1.125rem',
+                  overflowAnchor: 'auto',
+                  scrollBehavior: 'smooth',
+                  willChange: 'scroll-position',
+                  contain: 'layout style paint',
+                  position: 'relative'
                 }}
               >
                 {/* Prompt display that scrolls with content */}
