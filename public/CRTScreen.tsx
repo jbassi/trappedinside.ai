@@ -95,7 +95,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
             {/* Scrollable terminal content with prompt display */}
             <div
               ref={textRef}
-              className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto scroll-smooth flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
+              className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
               style={{
                 fontFamily: 'monospace',
                 textShadow: '0 0 5px rgba(0,255,0,0.5)',
@@ -106,10 +106,10 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                 WebkitOverflowScrolling: 'touch',
                 fontSize: 'clamp(1rem, 3vw, 1.5rem)',
                 lineHeight: '1.6',
-                scrollBehavior: 'smooth',
                 willChange: 'scroll-position',
                 contain: 'layout style paint',
-                position: 'relative'
+                position: 'relative',
+                scrollBehavior: 'auto', // Explicitly disable smooth scrolling
               }}
             >
               {/* Prompt display that scrolls with content */}
@@ -211,10 +211,10 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                   WebkitOverflowScrolling: 'touch',
                   fontSize: '1.125rem',
                   overflowAnchor: 'auto',
-                  scrollBehavior: 'smooth',
                   willChange: 'scroll-position',
                   contain: 'layout style paint',
-                  position: 'relative'
+                  position: 'relative',
+                  scrollBehavior: 'auto', // Explicitly disable smooth scrolling
                 }}
               >
                 {/* Prompt display that scrolls with content */}

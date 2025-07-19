@@ -144,10 +144,7 @@ function App() {
       // Scroll to bottom after history loads and loading is hidden
       setTimeout(() => {
         if (textRef.current) {
-          textRef.current.scrollTo({
-            top: textRef.current.scrollHeight,
-            behavior: 'smooth'
-          });
+          textRef.current.scrollTop = textRef.current.scrollHeight;
           setIsAtBottom(true);
         }
       }, 50);
@@ -261,16 +258,8 @@ function App() {
             if (textRef.current && !userIsInteractingRef.current && finalInteractionCheck > finalThreshold) {
               // Additional check for touch momentum on mobile devices
               if (!isTouchDeviceRef.current || !touchMomentumActiveRef.current || finalTouchCheck > 1500) {
-                // Use scrollTop for desktop during animation to avoid smooth scroll conflicts
-                if (isTouchDeviceRef.current) {
-                  textRef.current.scrollTo({
-                    top: textRef.current.scrollHeight,
-                    behavior: 'smooth'
-                  });
-                } else {
-                  // Instant scroll for desktop during animation to avoid conflicts
-                  textRef.current.scrollTop = textRef.current.scrollHeight;
-                }
+                // Always use instant scroll for old school terminal feel
+                textRef.current.scrollTop = textRef.current.scrollHeight;
               }
             }
             pendingScrollRef.current = false;
@@ -286,7 +275,7 @@ function App() {
         } else {
           animatingRef.current = false;
           setIsAnimating(false);
-          // Final smooth scroll when animation completes - both platforms can use smooth scroll
+          // Final scroll when animation completes
           const finalCheck = Date.now() - lastUserInteractionRef.current;
           const touchCheck = Date.now() - touchEndTimeRef.current;
           const animationCompleteThreshold = isTouchDeviceRef.current ? 1200 : 800; // Longer desktop delay
@@ -336,17 +325,8 @@ function App() {
         const mobileThreshold = isTouchDeviceRef.current ? 600 : desktopThreshold;
         
         if (textRef.current && !userIsInteractingRef.current && finalCheck > mobileThreshold) {
-          // Different scroll behavior for desktop vs mobile
-          if (isTouchDeviceRef.current || !isAnimating) {
-            // Mobile always uses smooth scroll, desktop uses smooth only when not animating
-            textRef.current.scrollTo({
-              top: textRef.current.scrollHeight,
-              behavior: 'smooth'
-            });
-          } else {
-            // Desktop during animation uses instant scroll to avoid conflicts
-            textRef.current.scrollTop = textRef.current.scrollHeight;
-          }
+          // Always use instant scroll for old school terminal feel
+          textRef.current.scrollTop = textRef.current.scrollHeight;
           setIsAtBottom(true);
         }
         pendingScrollRef.current = false;
@@ -384,7 +364,7 @@ function App() {
         
         if (part === "\n") {
           setLines(prev => [...prev, PROMPT]);
-          // Brief pause after newlines with mobile-aware conditional smooth scroll
+          // Brief pause after newlines with instant scroll
           await new Promise(res => setTimeout(res, 100));
           
           // Desktop-optimized scroll timing - more conservative during processing
@@ -399,14 +379,9 @@ function App() {
                                   timeSinceTouchEnd > 2000;
           
           if (timeSinceInteraction > scrollThreshold && !userIsInteractingRef.current && touchMomentumSafe) {
-            // Use instant scroll for desktop during processing to avoid conflicts
-            if (isTouchDeviceRef.current) {
-              requestScrollToBottom();
-            } else {
-              // Direct scroll for desktop during processing
-              if (textRef.current && isAtBottom) {
-                textRef.current.scrollTop = textRef.current.scrollHeight;
-              }
+            // Always use instant scroll for old school terminal feel
+            if (textRef.current && isAtBottom) {
+              textRef.current.scrollTop = textRef.current.scrollHeight;
             }
           }
         } else if (part.length > 0) {
@@ -725,6 +700,11 @@ function App() {
         // Set a longer timeout to detect when momentum scrolling might be happening
         setTimeout(() => {
           touchMomentumActiveRef.current = false;
+          // After momentum ends, if we're not at bottom and no user interaction,
+          // instantly scroll to bottom
+          if (textRef.current && !userIsInteractingRef.current && isAtBottom) {
+            textRef.current.scrollTop = textRef.current.scrollHeight;
+          }
         }, 3000); // 3 seconds for momentum to settle
       }
       
