@@ -1,5 +1,3 @@
-import { join } from "path";
-import { existsSync, readFileSync } from "fs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 
