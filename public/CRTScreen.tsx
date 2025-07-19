@@ -95,11 +95,12 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
             {/* Scrollable terminal content with prompt display */}
             <div
               ref={textRef}
-              className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
+              className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto scroll-smooth flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
               style={{
                 fontFamily: 'monospace',
                 textShadow: '0 0 5px rgba(0,255,0,0.5)',
                 zIndex: 20,
+                overflowAnchor: 'none',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
                 WebkitOverflowScrolling: 'touch',

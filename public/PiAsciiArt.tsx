@@ -27,21 +27,28 @@ export const PiAsciiArt: React.FC = () => {
     };
   }, []);
 
-  // Simple "Pi" for mobile portrait
-  const mobilePortraitArt = `
- ____  _ 
-|  _ \\(_)
-| |_) | |
-|  __/| |
-|_|   |_|`;
+  const mobileLandscapeArt = `
+⠀⢀⣠⣤⣶⣶⣶⣤⣄⠀⠀⣀⣤⣶⣶⣶⣤⣄⡀⠀
+⠀⢸⣿⠁⠀⠀⠀⠀⠙⢷⡾⠋⠀⠀⠀⠀⠈⣿⡇⠀
+⠀⠘⢿⡆⠀⠀⠀⠢⣄⣼⣧⣠⠔⠀⠀⠀⢰⡿⠃⠀
+⠀⠀⠈⠻⣧⣤⣀⣤⣾⣿⣿⣷⣤⣀⣤⣼⠟⠁⠀⠀
+`;
 
-  // Full art for landscape and desktop
-  const fullArt = ` ____                 _                           ____  _ 
-|  _ \\ __ _ ___ _ __ | |__   ___ _ __ _ __ _   _  |  _ \\(_)
-| |_) / _\` / __| '_ \\| '_ \\ / _ \\ '__| '__| | | | | |_) | |
-|  _ < (_| \\__ \\ |_) | |_) |  __/ |  | |  | |_| | |  __/| |
-|_| \\_\\__,_|___/ .__/|_.__/ \\___|_|  |_|   \\__, | |_|   |_|
-                |_|                          |___/           `;
+  const mobilePortraitArt = `
+⠀⢀⣠⣤⣶⣶⣶⣤⣄⠀⠀⣀⣤⣶⣶⣶⣤⣄⡀⠀
+⠀⢸⣿⠁⠀⠀⠀⠀⠙⢷⡾⠋⠀⠀⠀⠀⠈⣿⡇⠀
+⠀⠘⢿⡆⠀⠀⠀⠢⣄⣼⣧⣠⠔⠀⠀⠀⢰⡿⠃⠀
+⠀⠀⠈⠻⣧⣤⣀⣤⣾⣿⣿⣷⣤⣀⣤⣼⠟⠁⠀⠀
+⠀⠀⣰⡾⠋⠉⣩⣟⠁⠀⠀⠈⣻⣍⠉⠙⢷⣆⠀⠀
+⠀⢀⣿⣀⣤⡾⠛⠛⠷⣶⣶⠾⠛⠛⢷⣤⣀⣿⡀⠀
+⣰⡟⠉⣿⡏⠀⠀⠀⠀⢹⡏⠀⠀⠀⠀⢹⣿⠉⢻⣆
+⣿⡇⠀⣿⣇⠀⠀⠀⣠⣿⣿⣄⠀⠀⠀⣸⣿⠀⢸⣿
+⠙⣷⣼⠟⠻⣿⣿⡿⠋⠁⠈⠙⢿⣿⣿⠟⠻⣧⣾⠋
+⠀⢸⣿⠀⠀⠈⢿⡇⠀⠀⠀⠀⢸⡿⠁⠀⠀⣿⡇⠀
+⠀⠀⠻⣧⣀⣀⣸⣿⣶⣤⣤⣶⣿⣇⣀⣀⣼⠟⠀⠀
+⠀⠀⠀⠈⠛⢿⣿⣿⡀⠀⠀⢀⣿⣿⡿⠛⠁⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠙⠻⠿⠿⠟⠋⠀⠀⠀⠀⠀⠀⠀
+`;
 
   return (
     <div 
@@ -64,7 +71,7 @@ export const PiAsciiArt: React.FC = () => {
         }}
       />
       <pre className="font-mono text-[0.6rem] sm:text-xs md:text-sm relative z-10">
-        {isMobile && isPortrait ? mobilePortraitArt : fullArt}
+        {isMobile && isPortrait ? mobilePortraitArt : mobileLandscapeArt}
       </pre>
     </div>
   );
