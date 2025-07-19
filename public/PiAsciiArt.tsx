@@ -27,7 +27,7 @@ export const PiAsciiArt: React.FC = () => {
     };
   }, []);
 
-  const mobileLandscapeArt = `
+  const collapsedArt = `
 ⠀⢀⣠⣤⣶⣶⣶⣤⣄⠀⠀⣀⣤⣶⣶⣶⣤⣄⡀⠀
 ⠀⢸⣿⠁⠀⠀⠀⠀⠙⢷⡾⠋⠀⠀⠀⠀⠈⣿⡇⠀
 ⠀⠘⢿⡆⠀⠀⠀⠢⣄⣼⣧⣠⠔⠀⠀⠀⢰⡿⠃⠀
@@ -71,7 +71,7 @@ export const PiAsciiArt: React.FC = () => {
         }}
       />
       <pre className="font-mono text-[0.6rem] sm:text-xs md:text-sm relative z-10">
-        {isMobile && isPortrait ? mobilePortraitArt : mobileLandscapeArt}
+        {isMobile && isPortrait ? mobilePortraitArt : collapsedArt}
       </pre>
     </div>
   );
