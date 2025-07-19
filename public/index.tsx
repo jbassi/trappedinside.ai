@@ -382,7 +382,7 @@ function App() {
     <CRTScreen 
       textRef={textRef}
       memoryBar={!isLoading ? <MemoryBar key={widthVersion} memory={lastMemory} terminalWidth={terminalWidth} /> : undefined}
-      promptDisplay={!isLoading ? <PromptDisplay key={widthVersion} prompt={llmPrompt} terminalWidth={terminalWidth} /> : undefined}
+      promptDisplay={!isLoading ? <PromptDisplay key={widthVersion} prompt={llmPrompt} /> : undefined}
       loadingSpinner={isLoading ? <LoadingSpinner key={widthVersion} terminalWidth={terminalWidth} /> : undefined}
     >
       {!isLoading && lines.map((line, i) => (

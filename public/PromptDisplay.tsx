@@ -1,52 +1,67 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { terminalStyles, terminalClasses } from './terminalStyles';
 
 interface PromptDisplayProps {
   prompt: string;
-  terminalWidth: number;
 }
 
-export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWidth }) => {
-  // Detect if we're in mobile portrait mode
-  const isMobilePortrait = typeof window !== 'undefined' && 
-    window.innerWidth <= 768 && 
-    window.innerHeight > window.innerWidth;
+export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dynamicWidth, setDynamicWidth] = useState(50); // Default fallback
 
-  // Responsive width and line length calculation
-  const getResponsiveSettings = () => {
-    // For mobile portrait, use a wider border to fill the screen better
-    const effectiveTerminalWidth = isMobilePortrait ? 
-      Math.max(terminalWidth, Math.floor(window.innerWidth / 10)) : 
-      terminalWidth;
-    
-    // Use full terminal width for borders to ensure they connect properly
-    const fullBorderWidth = effectiveTerminalWidth;
-    
-    if (effectiveTerminalWidth < 40) {
-      return {
-        maxLineLength: Math.max(15, effectiveTerminalWidth - 8),
-        borderWidth: fullBorderWidth,
-        promptText: " PROMPT ",
-      };
-    } else if (effectiveTerminalWidth < 60) {
-      return {
-        maxLineLength: Math.max(25, effectiveTerminalWidth - 8),
-        borderWidth: fullBorderWidth,
-        promptText: " PROMPT ",
-      };
-    } else {
-      return {
-        maxLineLength: Math.max(35, effectiveTerminalWidth - 6),
-        borderWidth: fullBorderWidth,
-        promptText: " PROMPT ",
-      };
+  useEffect(() => {
+    const measureWidth = () => {
+      if (!containerRef.current) return;
+      
+      // Create a test element with a known number of characters
+      const testElement = document.createElement('div');
+      testElement.style.fontFamily = 'monospace';
+      testElement.style.fontSize = getComputedStyle(containerRef.current).fontSize;
+      testElement.style.fontWeight = getComputedStyle(containerRef.current).fontWeight;
+      testElement.style.visibility = 'hidden';
+      testElement.style.position = 'absolute';
+      testElement.style.whiteSpace = 'pre';
+      testElement.style.top = '-9999px';
+      testElement.textContent = '#'.repeat(100); // 100 characters
+      
+      document.body.appendChild(testElement);
+      const testWidth = testElement.offsetWidth;
+      document.body.removeChild(testElement);
+      
+      // Calculate how many characters fit in the container
+      const containerWidth = containerRef.current.offsetWidth;
+      const charWidth = testWidth / 100; // Width per character
+      const availableChars = Math.floor(containerWidth / charWidth);
+      
+      setDynamicWidth(Math.max(availableChars, 20)); // Minimum 20 chars
+    };
+
+    // Initial measurement
+    measureWidth();
+
+    // Listen for resize events
+    const handleResize = () => measureWidth();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    // Use ResizeObserver for container changes
+    const observer = new ResizeObserver(measureWidth);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
     }
-  };
-  
-  const { maxLineLength, borderWidth, promptText } = getResponsiveSettings();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      observer.disconnect();
+    };
+  }, []);
+
+  const effectiveWidth = dynamicWidth;
+  const contentWidth = effectiveWidth - 4; // Account for "# " and " #"
   
   const wrapText = (text: string, maxWidth: number): string[] => {
-    if (!text || text.trim() === '') return [''];
+    if (!text || text.trim() === '' || maxWidth <= 0) return [''];
     
     const words = text.split(' ');
     const lines: string[] = [];
@@ -58,13 +73,13 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
         currentLine = testLine;
       } else {
         if (currentLine) {
-          lines.push(currentLine.trim());
+          lines.push(currentLine);
           currentLine = word;
         } else {
-          // Word is too long, break it gracefully
+          // Word is too long, break it
           if (word.length > maxWidth) {
-            lines.push(word.substring(0, maxWidth - 1) + '-');
-            currentLine = word.substring(maxWidth - 1);
+            lines.push(word.substring(0, maxWidth));
+            currentLine = word.substring(maxWidth);
           } else {
             currentLine = word;
           }
@@ -72,67 +87,66 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt, terminalWi
       }
     }
     if (currentLine) {
-      lines.push(currentLine.trim());
+      lines.push(currentLine);
     }
     return lines.length > 0 ? lines : [''];
   };
 
-  const promptLines = wrapText(prompt, maxLineLength);
-  
-  // Calculate proper centering for PROMPT text
-  const createCenteredHeader = () => {
-    const textLength = promptText.length;
-    const totalWidth = borderWidth;
-    
-    // Ensure we have enough space for the text
-    if (totalWidth < textLength) {
-      return promptText.substring(0, totalWidth);
+  // Create header line with centered PROMPT
+  const createHeaderLine = (): string => {
+    const promptText = " PROMPT ";
+    if (effectiveWidth < promptText.length) {
+      return "#".repeat(effectiveWidth);
     }
     
-    const remainingSpace = totalWidth - textLength;
+    const remainingSpace = effectiveWidth - promptText.length;
     const leftPadding = Math.floor(remainingSpace / 2);
     const rightPadding = remainingSpace - leftPadding;
     
     return "#".repeat(leftPadding) + promptText + "#".repeat(rightPadding);
   };
 
-  // Calculate the content area width (accounting for left and right # borders)
-  const contentWidth = Math.max(0, borderWidth - 2); // -2 for left and right #
+  // Create content lines with borders and proper spacing
+  const createContentLine = (content: string): string => {
+    const paddedContent = content.padEnd(contentWidth, ' ');
+    return "# " + paddedContent + " #";
+  };
+
+  // Create footer line
+  const createFooterLine = (): string => {
+    return "#".repeat(effectiveWidth);
+  };
+
+  // Build all lines
+  const lines: string[] = [];
+  
+  // Header
+  lines.push(createHeaderLine());
+  
+  // Content lines
+  const wrappedText = wrapText(prompt, contentWidth);
+  for (const textLine of wrappedText) {
+    lines.push(createContentLine(textLine));
+  }
+  
+  // Footer
+  lines.push(createFooterLine());
 
   return (
-    <div className={`${terminalClasses.baseText} mb-2 sm:mb-4 w-full px-1 sm:px-0`} style={terminalStyles.baseText}>
-      {/* Header line with centered PROMPT */}
-      <div className="w-full overflow-hidden whitespace-nowrap mb-1 sm:mb-0">
-        <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
-          {createCenteredHeader()}
-        </span>
-      </div>
-      
-      {/* Content lines with # borders on left and right only */}
-      {promptLines.map((line, index) => (
-        <div key={index} className="w-full flex items-start">
-          <span className={`${terminalClasses.baseText} flex-shrink-0`} style={terminalStyles.baseText}>#</span>
-          <span 
-            className={`${terminalClasses.baseText} break-words`} 
-            style={{
-              ...terminalStyles.baseText,
-              width: `${contentWidth}ch`,
-              paddingLeft: '0.25rem',
-              paddingRight: '0.25rem'
-            }}
-          >
-            {line || ' '}
-          </span>
-          <span className={`${terminalClasses.baseText} flex-shrink-0`} style={terminalStyles.baseText}>#</span>
+    <div 
+      ref={containerRef}
+      className={`${terminalClasses.baseText} mb-2 sm:mb-4 w-full`}
+      style={{
+        ...terminalStyles.baseText,
+        width: '100%',
+        boxSizing: 'border-box'
+      }}
+    >
+      {lines.map((line, index) => (
+        <div key={index} className="whitespace-pre font-mono">
+          {line}
         </div>
       ))}
-      
-      {/* Bottom border */}
-      <div className="w-full overflow-hidden whitespace-nowrap">
-        <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
-          {"#".repeat(borderWidth)}
-        </span>
-      </div>
     </div>
   );
 };

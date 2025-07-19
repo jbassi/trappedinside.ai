@@ -4,6 +4,34 @@ export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isL
   const [terminalWidth, setTerminalWidth] = useState(80);
   const [widthVersion, setWidthVersion] = useState(0);
 
+  const measureCharacterWidth = useCallback((): number => {
+    if (!containerRef.current) return 9.6;
+    
+    // Create a temporary element to measure character width using the exact same styles
+    const testElement = document.createElement('span');
+    const containerStyles = getComputedStyle(containerRef.current);
+    
+    // Copy all relevant font styles from the container
+    testElement.style.fontFamily = containerStyles.fontFamily;
+    testElement.style.fontSize = containerStyles.fontSize;
+    testElement.style.fontWeight = containerStyles.fontWeight;
+    testElement.style.letterSpacing = containerStyles.letterSpacing;
+    testElement.style.lineHeight = '1';
+    testElement.style.visibility = 'hidden';
+    testElement.style.position = 'absolute';
+    testElement.style.whiteSpace = 'pre';
+    testElement.style.top = '-9999px';
+    testElement.textContent = '#';
+    
+    // Append to the same container to inherit styles properly
+    containerRef.current.appendChild(testElement);
+    const charWidth = testElement.getBoundingClientRect().width;
+    containerRef.current.removeChild(testElement);
+    
+    console.log('measureCharacterWidth:', charWidth, 'fontSize:', containerStyles.fontSize);
+    return charWidth || 9.6;
+  }, [containerRef]);
+
   const calculateWidth = useCallback(() => {
     if (containerRef.current) {
       const containerWidth = containerRef.current.clientWidth;
@@ -11,7 +39,7 @@ export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isL
       const paddingRight = parseFloat(getComputedStyle(containerRef.current).paddingRight) || 0;
       const availableWidth = containerWidth - paddingLeft - paddingRight;
       
-      const charWidth = 9.6;
+      const charWidth = measureCharacterWidth();
       const estimatedChars = Math.floor(availableWidth / charWidth);
       
       if (estimatedChars !== terminalWidth) {
@@ -19,7 +47,7 @@ export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isL
         setWidthVersion(prev => prev + 1);
       }
     }
-  }, [containerRef, terminalWidth]);
+  }, [containerRef, terminalWidth, measureCharacterWidth]);
 
   const calculateWidthSafely = useCallback(() => {
     if (containerRef.current && containerRef.current.clientWidth > 0) {
