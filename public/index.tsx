@@ -137,6 +137,15 @@ function App() {
           newLines[newLines.length - 1] += char;
           return newLines;
         });
+        
+        // Scroll to bottom during animation if user hasn't manually scrolled up
+        if (!userHasScrolledRef.current && textRef.current) {
+          requestAnimationFrame(() => {
+            if (textRef.current && !userHasScrolledRef.current) {
+              textRef.current.scrollTop = textRef.current.scrollHeight;
+            }
+          });
+        }
         i += 1;
         if (i < output.length) {
           // More human-like typing with variable speed (25-50ms per character)
@@ -315,7 +324,10 @@ function App() {
   // Smart scrolling behavior - detect user scroll and delay auto-scroll
   const [userHasScrolled, setUserHasScrolled] = useState(false);
   const [autoScrollTimeout, setAutoScrollTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [hasNewContentSinceScroll, setHasNewContentSinceScroll] = useState(false);
   const lastScrollTopRef = useRef<number>(0);
+  const lastLinesLengthRef = useRef(lines.length);
+  const userHasScrolledRef = useRef(false);
 
   // Detect when user manually scrolls up
   useEffect(() => {
@@ -327,22 +339,20 @@ function App() {
         // If user scrolled up from the bottom, mark as manually scrolled
         if (scrollTop < lastScrollTopRef.current && !isAtBottom) {
           setUserHasScrolled(true);
+          userHasScrolledRef.current = true;
+          setHasNewContentSinceScroll(false); // Reset new content flag
           
           // Clear any existing timeout
           if (autoScrollTimeout) {
             clearTimeout(autoScrollTimeout);
           }
-          
-          // Set a timeout to resume auto-scroll after 5 seconds of inactivity
-          const timeout = setTimeout(() => {
-            setUserHasScrolled(false);
-          }, 5000);
-          setAutoScrollTimeout(timeout);
         }
         
         // If user scrolled back to bottom manually, resume auto-scroll
         if (isAtBottom && userHasScrolled) {
           setUserHasScrolled(false);
+          userHasScrolledRef.current = false;
+          setHasNewContentSinceScroll(false);
           if (autoScrollTimeout) {
             clearTimeout(autoScrollTimeout);
             setAutoScrollTimeout(null);
@@ -360,10 +370,55 @@ function App() {
     }
   }, [userHasScrolled, autoScrollTimeout]);
 
-  // Scroll to bottom when new text arrives (only if user hasn't manually scrolled up)
+  // Detect new content and manage auto-scroll behavior
   useEffect(() => {
-    if (textRef.current && !userHasScrolled) {
-      textRef.current.scrollTop = textRef.current.scrollHeight;
+    // Check if new content has arrived
+    if (lines.length > lastLinesLengthRef.current) {
+      lastLinesLengthRef.current = lines.length;
+      
+      // If user has scrolled up, mark that new content has arrived and set timeout
+      if (userHasScrolled) {
+        setHasNewContentSinceScroll(true);
+        
+        // Clear any existing timeout and set a new one
+        if (autoScrollTimeout) {
+          clearTimeout(autoScrollTimeout);
+        }
+        
+        // After 2 seconds, resume auto-scroll behavior
+        const timeout = setTimeout(() => {
+          setUserHasScrolled(false);
+          userHasScrolledRef.current = false;
+          setHasNewContentSinceScroll(false);
+          setAutoScrollTimeout(null);
+          
+          // If we're not at bottom when timeout triggers, scroll to bottom
+          if (textRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = textRef.current;
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+            
+            if (!isAtBottom) {
+              requestAnimationFrame(() => {
+                if (textRef.current) {
+                  textRef.current.scrollTop = textRef.current.scrollHeight;
+                }
+              });
+            }
+          }
+        }, 2000);
+        
+        setAutoScrollTimeout(timeout);
+      } else {
+        // User hasn't scrolled up, so scroll immediately after DOM update
+        if (textRef.current) {
+          // Use requestAnimationFrame to ensure DOM is updated before scrolling
+          requestAnimationFrame(() => {
+            if (textRef.current) {
+              textRef.current.scrollTop = textRef.current.scrollHeight;
+            }
+          });
+        }
+      }
     }
   }, [lines, userHasScrolled]);
 
