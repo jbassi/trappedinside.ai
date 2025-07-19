@@ -6,6 +6,7 @@ import { MemoryBar } from "./MemoryBar";
 import { TerminalLine } from "./TerminalLine";
 import { PromptDisplay } from "./PromptDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { useTerminalWidth } from "./useTerminalWidth";
 import type { Memory } from "./types";
 
 const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
@@ -56,8 +57,7 @@ function App() {
   const restartingRef = useRef(false);
   const isLoadingRef = useRef(true);
   const cursorIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [terminalWidth, setTerminalWidth] = useState(80);
-  const [, forceUpdate] = useState({});
+  const { terminalWidth, widthVersion } = useTerminalWidth(textRef, isLoading);
 
   // Cursor blinking effect - controlled by animation state
   useEffect(() => {
@@ -377,80 +377,13 @@ function App() {
     };
   }, [autoScrollTimeout]);
 
-  // Calculate terminal width based on container
-  useEffect(() => {
-    const calculateWidth = () => {
-      if (textRef.current) {
-        const containerWidth = textRef.current.clientWidth;
-        const paddingLeft = parseFloat(getComputedStyle(textRef.current).paddingLeft) || 0;
-        const paddingRight = parseFloat(getComputedStyle(textRef.current).paddingRight) || 0;
-        const availableWidth = containerWidth - paddingLeft - paddingRight;
-        
-        // Use a more conservative character width estimate for monospace
-        const charWidth = 9.6; // More accurate for typical monospace fonts
-        const estimatedChars = Math.floor(availableWidth / charWidth);
-        setTerminalWidth(estimatedChars);
-        // Force re-render of memory bar when width changes
-        forceUpdate({});
-      }
-    };
-
-    const calculateWidthSafely = () => {
-      // Only calculate if the element is actually rendered and has dimensions
-      if (textRef.current && textRef.current.clientWidth > 0) {
-        calculateWidth();
-      } else {
-        // If not ready, use requestAnimationFrame to wait for next paint
-        requestAnimationFrame(calculateWidthSafely);
-      }
-    };
-
-    // Initial calculation - ensure DOM is ready
-    if (document.readyState === 'complete') {
-      calculateWidthSafely();
-    } else {
-      // Wait for DOM to be fully loaded
-      const onLoad = () => {
-        calculateWidthSafely();
-        window.removeEventListener('load', onLoad);
-      };
-      window.addEventListener('load', onLoad);
-    }
-    
-    // Listen for resize and orientation changes
-    window.addEventListener('resize', calculateWidthSafely);
-    window.addEventListener('orientationchange', calculateWidthSafely);
-    
-    // Use ResizeObserver for when the container itself changes size
-    const observer = new ResizeObserver((entries) => {
-      // Only recalculate if the observed element actually changed size
-      for (const entry of entries) {
-        if (entry.contentRect.width > 0) {
-          calculateWidth();
-          break;
-        }
-      }
-    });
-    
-    if (textRef.current) {
-      observer.observe(textRef.current);
-    }
-    
-    return () => {
-      window.removeEventListener('resize', calculateWidthSafely);
-      window.removeEventListener('orientationchange', calculateWidthSafely);
-      observer.disconnect();
-    };
-  }, [isLoading]); // Recalculate when loading state changes
-
-  const percentUsed = lastMemory?.percent_used;
 
   return (
     <CRTScreen 
       textRef={textRef}
-      memoryBar={!isLoading ? <MemoryBar memory={lastMemory} terminalWidth={terminalWidth} /> : undefined}
-      promptDisplay={!isLoading ? <PromptDisplay prompt={llmPrompt} terminalWidth={terminalWidth} /> : undefined}
-      loadingSpinner={isLoading ? <LoadingSpinner terminalWidth={terminalWidth} /> : undefined}
+      memoryBar={!isLoading ? <MemoryBar key={widthVersion} memory={lastMemory} terminalWidth={terminalWidth} /> : undefined}
+      promptDisplay={!isLoading ? <PromptDisplay key={widthVersion} prompt={llmPrompt} terminalWidth={terminalWidth} /> : undefined}
+      loadingSpinner={isLoading ? <LoadingSpinner key={widthVersion} terminalWidth={terminalWidth} /> : undefined}
     >
       {!isLoading && lines.map((line, i) => (
         <TerminalLine
