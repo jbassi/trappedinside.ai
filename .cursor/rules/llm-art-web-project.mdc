@@ -1,0 +1,186 @@
+---
+description: LLM Art Web Project - Real-time WebSocket Terminal Application Rules
+globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx"
+alwaysApply: true
+---
+
+# LLM Art Web Project Rules
+
+This is a real-time WebSocket-based terminal application simulating an AI living in a Raspberry Pi with limited resources.
+
+## Architecture Patterns
+
+### Backend (app.ts)
+- **Always use Bun.serve()** for WebSocket + HTTP server (not Express)
+- **JWT authentication** required only for sending messages, not receiving
+- **Broadcasting pattern**: All connected clients receive streamed messages
+- **Dual serving mode**: `public/` in dev, `dist/` in production
+- **Environment-based configuration** with fallback defaults
+
+### Frontend Structure
+- **Real-time WebSocket client** with auto-reconnection
+- **CRT terminal simulation** with hardware-accelerated effects
+- **Typewriter animation** with variable timing (25-50ms per character)
+- **Smart scroll behavior** with mobile/desktop differentiation
+- **Tab visibility handling** to prevent message accumulation
+
+## Mobile-First Development
+
+### Touch Scroll Optimization
+- **Use `isMobileDevice()` from `mobileUtils.ts`** for device detection
+- **Separate logic** for mobile touch vs desktop mouse/wheel events
+- **Touch momentum detection** with 2-3 second protection windows
+- **Different timing thresholds**: Mobile needs 2x longer delays than desktop
+- **Passive event listeners** for better performance
+
+```tsx
+// Example: Mobile-aware scroll behavior
+const interactionThreshold = isTouchDeviceRef.current ? 1000 : 500;
+const debounceTime = isTouchDeviceRef.current ? 32 : 16;
+```
+
+### Responsive Design Patterns
+- **ASCII art scaling**: Use `transform: scale()` not tiny font sizes
+- **Character width calculations**: Account for container padding + safety buffers
+- **ResizeObserver** for dynamic width changes
+- **Orientation change handling** for mobile devices
+
+```tsx
+// Mobile-specific width calculation
+const paddingBuffer = isMobile ? 16 : 8;
+const availableWidth = Math.max(containerWidth - paddingBuffer, 100);
+```
+
+## Component Patterns
+
+### Terminal Components
+- **TerminalLine**: Individual lines with cursor support and last-line detection
+- **MemoryBar**: Dynamic width based on terminal dimensions, percentage visualization
+- **PromptDisplay**: Centered, bordered ASCII box with responsive width calculation
+- **CRTScreen**: Hardware-accelerated effects with mobile/desktop variants
+
+### State Management
+- **useRef for immediate access**: User interaction tracking, animation state
+- **useState for UI updates**: Loading states, cursor visibility, scroll position
+- **Debounced event handlers**: Different timing for mobile vs desktop
+
+## Performance Optimizations
+
+### Animation Performance
+- **RAF-based scrolling**: Use `requestAnimationFrame` for smooth auto-scroll
+- **Batched updates**: Reduce scroll attempts during active animation (every 5th character on desktop)
+- **Hardware acceleration**: Use CSS transforms, `will-change`, `contain` properties
+- **Different scroll methods**: Instant scroll during animation, smooth when idle
+
+### Event Handling
+- **Passive event listeners** for touch/scroll events
+- **Debounced scroll detection**: 16ms desktop, 32ms mobile
+- **Intersection Observer** for "at bottom" detection
+- **Cleanup patterns**: Always remove event listeners and cancel animations
+
+## WebSocket Protocol
+
+### Message Format
+```typescript
+interface ServerMessage {
+  text: string;
+  memory?: { available_mb: number; percent_used: number; total_mb: number };
+  status?: { is_restarting: boolean };
+  prompt?: string;
+}
+```
+
+### Connection Handling
+- **Auto-reconnection** with 100ms delay
+- **Loading states** during connection establishment
+- **Tab visibility optimization** to prevent data accumulation
+- **Queue processing** with animation-aware timing
+
+## CSS and Styling
+
+### CRT Effects
+- **Hardware-accelerated animations** using CSS transforms
+- **Scanline effects**: Linear gradients with proper performance optimization  
+- **Text shadows and glows**: Subtle green glow effects for terminal aesthetic
+- **Smooth scroll behavior**: CSS `scroll-behavior: smooth` + JS coordination
+
+### Mobile Status Bar
+- **Dark theme integration**: `theme-color="#000000"`
+- **iOS-specific**: `apple-mobile-web-app-status-bar-style="black-translucent"`
+- **Web app capabilities** for home screen installation
+
+## Error Handling and Edge Cases
+
+### Scroll Behavior
+- **Race condition prevention**: Multiple timeout and ref management
+- **Animation conflicts**: Different behavior during active text animation
+- **Touch momentum handling**: Extended protection windows on mobile
+- **Container measurement failures**: Fallback width calculations
+
+### WebSocket Resilience
+- **Connection timeout handling**: 10-second loading timeout
+- **Message parsing**: Zod schema validation with error boundaries
+- **State synchronization**: Immediate restart state handling
+
+## Development Workflow
+
+### Building and Testing
+```bash
+# Development
+bun run dev        # Frontend dev server (port 3001)
+bun run app.ts     # Backend WebSocket server (port 3002)
+
+# Production
+bun run build      # Vite build to dist/
+bun run preview    # Preview production build
+```
+
+### Code Organization
+- **Utility functions**: Centralized in dedicated files (`mobileUtils.ts`, `terminalStyles.ts`)
+- **Component composition**: Single responsibility, clear prop interfaces
+- **Type safety**: Strict TypeScript with Zod for runtime validation
+- **Performance monitoring**: Console logging for development debugging
+
+## Common Patterns to Follow
+
+1. **Always check `isTouchDeviceRef.current`** before applying mobile-specific logic
+2. **Use ResizeObserver + orientation events** for responsive components
+3. **Implement proper cleanup** in useEffect returns (timeouts, listeners, observers)
+4. **Separate desktop and mobile logic** rather than trying to unify
+5. **Use refs for immediate state access** in event handlers and animations
+6. **Prefer CSS transforms over font-size changes** for scaling
+7. **Account for container padding** in character width calculations
+8. **Use passive event listeners** for performance
+9. **Implement debouncing** with device-specific timing
+10. **Test on both mobile and desktop** for scroll behavior
+
+## AI Maintenance and Evolution
+
+### When to Update These Rules
+- **New patterns discovered** during development that improve performance or user experience
+- **Mobile behavior changes** that require updated timing or interaction patterns
+- **Performance optimizations** that should become standard practice
+- **Common bugs or edge cases** that need prevention guidelines
+- **New component patterns** that follow established architecture principles
+- **Updated browser APIs** or React patterns that affect the codebase
+
+### How to Update Rules
+- **Add new sections** for emerging patterns or technologies
+- **Update existing patterns** when better approaches are discovered
+- **Include code examples** for complex patterns or optimizations
+- **Document performance improvements** with specific timing or behavior changes
+- **Add troubleshooting sections** for common development issues
+- **Update mobile-specific guidelines** as new device behaviors are discovered
+
+### Rule Maintenance Guidelines
+- **Keep patterns practical** - focus on what actually improves the codebase
+- **Maintain consistency** - ensure new rules align with existing architecture
+- **Test thoroughly** - validate new patterns on both mobile and desktop
+- **Document reasoning** - explain why patterns are important for this specific project
+- **Update both files** - keep `.cursor/rules/` and `CLAUDE.md` in sync
+- **Version significant changes** - note major architectural shifts or new technologies
+
+7. **Account for container padding** in character width calculations
+8. **Use passive event listeners** for performance
+9. **Implement debouncing** with device-specific timing
+10. **Test on both mobile and desktop** for scroll behavior
