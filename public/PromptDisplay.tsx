@@ -36,8 +36,8 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
     // Calculate character count based on actual container width
     const containerWidth = containerRef.current.offsetWidth;
     const charWidth = testWidth / 100;
-    // Add small buffer to ensure we use every available pixel
-    const calculatedWidth = Math.floor((containerWidth + 1) / charWidth);
+    // Use slightly more conservative calculation to prevent cutoff on mobile
+    const calculatedWidth = Math.floor((containerWidth - 2) / charWidth);
     
     setActualWidth(Math.max(calculatedWidth, 12));
   }, [terminalWidth]);
