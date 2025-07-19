@@ -15,31 +15,90 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create a test element to measure character width in this exact container
-    const testElement = document.createElement('div');
-    const containerStyles = getComputedStyle(containerRef.current);
-    
-    testElement.style.fontFamily = containerStyles.fontFamily;
-    testElement.style.fontSize = containerStyles.fontSize;
-    testElement.style.fontWeight = containerStyles.fontWeight;
-    testElement.style.letterSpacing = containerStyles.letterSpacing;
-    testElement.style.visibility = 'hidden';
-    testElement.style.position = 'absolute';
-    testElement.style.whiteSpace = 'pre';
-    testElement.style.top = '-9999px';
-    testElement.textContent = '#'.repeat(100);
-    
-    document.body.appendChild(testElement);
-    const testWidth = testElement.offsetWidth;
-    document.body.removeChild(testElement);
-    
-    // Calculate character count based on actual container width
-    const containerWidth = containerRef.current.offsetWidth;
-    const charWidth = testWidth / 100;
-    // Use slightly more conservative calculation to prevent cutoff on mobile
-    const calculatedWidth = Math.floor((containerWidth - 2) / charWidth);
-    
-    setActualWidth(Math.max(calculatedWidth, 12));
+    const measureWidth = () => {
+      if (!containerRef.current) return;
+
+      // Create a test element to measure character width in this exact container
+      const testElement = document.createElement('div');
+      const containerStyles = getComputedStyle(containerRef.current);
+      
+      testElement.style.fontFamily = containerStyles.fontFamily;
+      testElement.style.fontSize = containerStyles.fontSize;
+      testElement.style.fontWeight = containerStyles.fontWeight;
+      testElement.style.letterSpacing = containerStyles.letterSpacing;
+      testElement.style.visibility = 'hidden';
+      testElement.style.position = 'absolute';
+      testElement.style.whiteSpace = 'pre';
+      testElement.style.top = '-9999px';
+      testElement.textContent = '#'.repeat(100);
+      
+      document.body.appendChild(testElement);
+      const testWidth = testElement.offsetWidth;
+      document.body.removeChild(testElement);
+      
+      // Calculate character count based on actual container width
+      const containerWidth = containerRef.current.offsetWidth;
+      const charWidth = testWidth / 100;
+      
+      // More conservative padding calculation for mobile
+      // Mobile: px-4 (32px) + scrollbar space + browser margins + safety buffer
+      const isMobile = window.innerWidth <= 768;
+      let paddingBuffer = isMobile ? 16 : 8; // Much less aggressive
+      
+      // Additional mobile-specific adjustments
+      if (isMobile) {
+        // Account for potential viewport scaling issues
+        const viewportScale = window.visualViewport?.scale || 1;
+        if (viewportScale !== 1) {
+          paddingBuffer = Math.ceil(paddingBuffer * viewportScale);
+        }
+        
+        // Add smaller buffer for very small screens
+        if (containerWidth < 350) {
+          paddingBuffer += 4; // Reduced from 8
+        }
+      }
+      
+      // Account for container padding and add safety buffer
+      const availableWidth = Math.max(containerWidth - paddingBuffer, 100); // Ensure minimum
+      const calculatedWidth = Math.floor(availableWidth / charWidth);
+      
+      // Ensure minimum width but be less conservative
+      const minWidth = isMobile ? 15 : 12; // Reduced from 25
+      const maxWidth = Math.floor(containerWidth / (charWidth * 0.9)); // Increased from 0.8 to 0.9
+      
+      const finalWidth = Math.max(Math.min(calculatedWidth, maxWidth), minWidth);
+      setActualWidth(finalWidth);
+    };
+
+    // Initial measurement with delay to ensure layout is complete
+    requestAnimationFrame(() => {
+      setTimeout(measureWidth, 100);
+    });
+
+    // Set up ResizeObserver for dynamic width changes
+    const resizeObserver = new ResizeObserver(() => {
+      // Debounce resize events
+      setTimeout(measureWidth, 50);
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    // Fallback for orientation changes on mobile
+    const handleResize = () => {
+      setTimeout(measureWidth, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, [terminalWidth]);
 
   const effectiveWidth = actualWidth;
@@ -125,25 +184,37 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
         ...terminalStyles.baseText,
         width: '100%',
         maxWidth: '100%',
-        minWidth: '100%',
-        boxSizing: 'border-box'
+        minWidth: 0, // Allow shrinking below content size
+        boxSizing: 'border-box',
+        overflow: 'hidden', // Prevent any overflow
+        wordBreak: 'keep-all', // Keep words intact
+        whiteSpace: 'pre', // Preserve whitespace and prevent wrapping
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center', // Center horizontally
+        justifyContent: 'center' // Center vertically if needed
       }}
     >
-      {lines.map((line, index) => (
-        <div 
-          key={index} 
-          className="whitespace-pre font-mono"
-          style={{
-            display: 'flex',
-            width: '100%',
-            overflow: 'hidden'
-          }}
-        >
-          <span style={{ width: '100%', textAlign: 'left' }}>
+      <div style={{
+        display: 'inline-block',
+        textAlign: 'left' // Keep text left-aligned within the centered block
+      }}>
+        {lines.map((line, index) => (
+          <div 
+            key={index} 
+            className="font-mono"
+            style={{
+              display: 'block',
+              overflow: 'hidden',
+              whiteSpace: 'pre',
+              textOverflow: 'clip', // Clean cut if overflow occurs
+              boxSizing: 'border-box'
+            }}
+          >
             {line}
-          </span>
-        </div>
-      ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
