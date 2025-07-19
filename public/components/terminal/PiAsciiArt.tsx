@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { terminalStyles, terminalClasses } from './terminalStyles';
-import { isMobileDevice } from './mobileUtils';
+import React, { useState, useEffect } from "react";
+import { terminalStyles, terminalClasses } from "../../styles/terminalStyles";
+import { isMobileDevice } from "../../utils/mobileUtils";
 
 export const PiAsciiArt: React.FC = () => {
   const [isPortrait, setIsPortrait] = useState(false);

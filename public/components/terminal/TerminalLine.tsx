@@ -1,5 +1,5 @@
 import React from 'react';
-import { terminalStyles, terminalClasses } from './terminalStyles';
+import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
 
 interface TerminalLineProps {
   line: string;

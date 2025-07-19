@@ -1,7 +1,7 @@
 import React from 'react';
-import { terminalStyles, terminalClasses } from './terminalStyles';
-import { useTerminalSize } from './TerminalSizeContext';
-import type { Memory } from './types';
+import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
+import { useTerminalSize } from '../context/TerminalSizeContext';
+import type { Memory } from '../../types/types';
 
 interface MemoryBarProps {
   memory?: Memory;

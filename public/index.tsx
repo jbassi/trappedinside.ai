@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { z } from "zod";
-import { CRTScreen } from "./CRTScreen";
-import { MemoryBar } from "./MemoryBar";
-import { TerminalLine } from "./TerminalLine";
-import { PromptDisplay } from "./PromptDisplay";
-import { LoadingSpinner } from "./LoadingSpinner";
-import { TerminalSizeProvider } from "./TerminalSizeContext";
-import { isMobileDevice, hasTouchCapabilities } from "./mobileUtils";
-import type { Memory } from "./types";
+import { CRTScreen } from "./components/terminal/CRTScreen";
+import { MemoryBar } from "./components/terminal/MemoryBar";
+import { TerminalLine } from "./components/terminal/TerminalLine";
+import { PromptDisplay } from "./components/terminal/PromptDisplay";
+import { LoadingSpinner } from "./components/terminal/LoadingSpinner";
+import { TerminalSizeProvider } from "./components/context/TerminalSizeContext";
+import { isMobileDevice, hasTouchCapabilities } from "./utils/mobileUtils";
+import type { Memory } from "./types/types";
 
 const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
 

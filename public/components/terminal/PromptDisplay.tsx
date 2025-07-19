@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
-import { terminalStyles, terminalClasses } from './terminalStyles';
-import { useTerminalSize } from './TerminalSizeContext';
+import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
+import { useTerminalSize } from '../context/TerminalSizeContext';
 
 interface PromptDisplayProps {
   prompt: string;

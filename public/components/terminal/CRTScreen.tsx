@@ -1,6 +1,6 @@
 import React, { type RefObject, useState, useEffect } from 'react';
 import { PiAsciiArt } from './PiAsciiArt';
-import { isMobileDevice } from './mobileUtils';
+import { isMobileDevice } from '../../utils/mobileUtils';
 
 interface CRTScreenProps {
   children: React.ReactNode;
