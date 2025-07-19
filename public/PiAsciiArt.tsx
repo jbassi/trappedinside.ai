@@ -52,7 +52,7 @@ export const PiAsciiArt: React.FC = () => {
 
   return (
     <div 
-      className={`${terminalClasses.baseText} w-full flex items-center justify-center mb-2 relative`}
+      className={`${terminalClasses.baseText} w-full flex items-center justify-center mb-1 relative`}
       style={{
         ...terminalStyles.baseText,
         color: '#22c55e' // text-green-500
@@ -70,7 +70,10 @@ export const PiAsciiArt: React.FC = () => {
           zIndex: 20
         }}
       />
-      <pre className="font-mono text-[0.6rem] sm:text-xs md:text-sm relative z-10">
+      <pre className="font-mono text-xs sm:text-sm md:text-base relative z-10" style={{
+        transform: isMobile && isPortrait ? 'scale(0.8)' : 'scale(1)',
+        transformOrigin: 'center center'
+      }}>
         {isMobile && isPortrait ? mobilePortraitArt : collapsedArt}
       </pre>
     </div>
