@@ -138,12 +138,18 @@ function App() {
           return newLines;
         });
         
-        // Scroll to bottom during animation if user hasn't manually scrolled up
-        if (!userHasScrolledRef.current && textRef.current) {
+        // Only scroll during animation if we're actually at the bottom - check in real-time
+        if (textRef.current && (char === ' ' || char === '\n' || i % 20 === 0)) {
           requestAnimationFrame(() => {
-            if (textRef.current && !userHasScrolledRef.current) {
-              const maxScroll = textRef.current.scrollHeight - textRef.current.clientHeight;
-              textRef.current.scrollTop = Math.max(0, maxScroll);
+            if (textRef.current) {
+              // Check if we're at bottom RIGHT NOW (not using stale state)
+              const { scrollTop, scrollHeight, clientHeight } = textRef.current;
+              const currentlyAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+              
+              if (currentlyAtBottom) {
+                const maxScroll = scrollHeight - clientHeight;
+                textRef.current.scrollTop = Math.max(0, maxScroll);
+              }
             }
           });
         }
@@ -322,106 +328,112 @@ function App() {
     // eslint-disable-next-line
   }, []);
 
-  // Smart scrolling behavior - detect user scroll and delay auto-scroll
-  const [userHasScrolled, setUserHasScrolled] = useState(false);
-  const [autoScrollTimeout, setAutoScrollTimeout] = useState<NodeJS.Timeout | null>(null);
-  const lastScrollTopRef = useRef<number>(0);
-  const lastLinesLengthRef = useRef(lines.length);
-  const userHasScrolledRef = useRef(false);
+  // Simplified scroll behavior
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
 
-  // Detect when user manually scrolls up
+  // Simple scroll detection and inactivity timeout
   useEffect(() => {
     const handleScroll = () => {
-      if (textRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = textRef.current;
-        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5; // 5px tolerance
+      if (!textRef.current) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = textRef.current;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 5; // 5px tolerance
+      
+      // Only consider it user scrolling if it's a real user event (not programmatic)
+      const isUserScroll = true; // For now, treat all scrolls as user scrolls
+      
+      
+      setIsAtBottom(atBottom);
+      
+      // Debounce the timeout setting - only set timeout after user stops scrolling
+      if (isUserScroll && !atBottom) {
+        // Clear existing debounce timeout
+        if (debounceTimeoutRef.current) {
+          clearTimeout(debounceTimeoutRef.current);
+        }
         
-        // If user scrolled up from the bottom, mark as manually scrolled
-        if (scrollTop < lastScrollTopRef.current && !isAtBottom) {
-          setUserHasScrolled(true);
-          userHasScrolledRef.current = true;
-          
-          // Clear any existing timeout
-          if (autoScrollTimeout) {
-            clearTimeout(autoScrollTimeout);
+        // Set debounced timeout - only actually set the 2-second timeout after user stops scrolling for 200ms
+        debounceTimeoutRef.current = setTimeout(() => {
+          // Clear any existing inactivity timeout
+          if (inactivityTimeoutRef.current) {
+            clearTimeout(inactivityTimeoutRef.current);
           }
           
-          // Set a 2-second timeout to resume auto-scroll (regardless of new content)
-          const timeout = setTimeout(() => {
-            setUserHasScrolled(false);
-            userHasScrolledRef.current = false;
-            setAutoScrollTimeout(null);
-            
-            // Scroll to bottom if not already at bottom
+          // Set 2-second inactivity timeout
+          inactivityTimeoutRef.current = setTimeout(() => {
             if (textRef.current) {
-              const { scrollTop, scrollHeight, clientHeight } = textRef.current;
-              const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
-              
-              if (!isAtBottom) {
-                requestAnimationFrame(() => {
-                  if (textRef.current) {
-                    const maxScroll = textRef.current.scrollHeight - textRef.current.clientHeight;
-                    textRef.current.scrollTop = Math.max(0, maxScroll);
-                  }
-                });
-              }
+              const maxScroll = textRef.current.scrollHeight - textRef.current.clientHeight;
+              textRef.current.scrollTop = Math.max(0, maxScroll);
             }
           }, 2000);
-          
-          setAutoScrollTimeout(timeout);
-        }
-        
-        // If user scrolled back to bottom manually, resume auto-scroll
-        if (isAtBottom && userHasScrolled) {
-          setUserHasScrolled(false);
-          userHasScrolledRef.current = false;
-          if (autoScrollTimeout) {
-            clearTimeout(autoScrollTimeout);
-            setAutoScrollTimeout(null);
-          }
-        }
-        
-        lastScrollTopRef.current = scrollTop;
+        }, 200); // Wait 200ms after user stops scrolling
+      }
+      
+      // If user scrolled back to bottom manually, clear timeout
+      if (isUserScroll && atBottom && inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+        inactivityTimeoutRef.current = null;
       }
     };
 
     const element = textRef.current;
     if (element) {
       element.addEventListener('scroll', handleScroll);
-      return () => element.removeEventListener('scroll', handleScroll);
-    }
-  }, [userHasScrolled, autoScrollTimeout]);
-
-  // Detect new content and manage auto-scroll behavior
-  useEffect(() => {
-    // Check if new content has arrived
-    if (lines.length > lastLinesLengthRef.current) {
-      lastLinesLengthRef.current = lines.length;
       
-      // If user hasn't scrolled up, scroll immediately after DOM update
-      if (!userHasScrolled) {
+      // Initial check after a delay to set timeout if already not at bottom
+      setTimeout(() => {
         if (textRef.current) {
-          // Use requestAnimationFrame to ensure DOM is updated before scrolling
-          requestAnimationFrame(() => {
-            if (textRef.current) {
-              const maxScroll = textRef.current.scrollHeight - textRef.current.clientHeight;
-              textRef.current.scrollTop = Math.max(0, maxScroll);
-            }
-          });
+          const { scrollTop, scrollHeight, clientHeight } = textRef.current;
+          const atBottom = scrollTop + clientHeight >= scrollHeight - 5;
+          
+          if (!atBottom && !inactivityTimeoutRef.current) {
+            inactivityTimeoutRef.current = setTimeout(() => {
+              if (textRef.current) {
+                const maxScroll = textRef.current.scrollHeight - textRef.current.clientHeight;
+                textRef.current.scrollTop = Math.max(0, maxScroll);
+              }
+            }, 2000);
+          }
         }
-      }
+      }, 100);
+      return () => {
+        element.removeEventListener('scroll', handleScroll);
+        if (inactivityTimeoutRef.current) {
+          clearTimeout(inactivityTimeoutRef.current);
+        }
+        if (debounceTimeoutRef.current) {
+          clearTimeout(debounceTimeoutRef.current);
+        }
+      };
     }
-  }, [lines, userHasScrolled]);
+  }, []);
+
+  // Auto-scroll when new content arrives if at bottom
+  useEffect(() => {
+    if (isAtBottom && textRef.current) {
+      requestAnimationFrame(() => {
+        if (textRef.current) {
+          const maxScroll = textRef.current.scrollHeight - textRef.current.clientHeight;
+          textRef.current.scrollTop = Math.max(0, maxScroll);
+        }
+      });
+    }
+  }, [lines, isAtBottom]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (autoScrollTimeout) {
-        clearTimeout(autoScrollTimeout);
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+      }
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [autoScrollTimeout]);
+  }, []);
 
 
   return (
