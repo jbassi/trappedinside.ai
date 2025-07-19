@@ -19,9 +19,22 @@ const AuthMessageSchema = z.object({
   token: z.string(),
 });
 
-// Store all received JSON messages
-const messages: any[] = [];
+// Enhanced conversation history storage
+interface ConversationMessage {
+  text: string;
+  memory?: { available_mb: number; percent_used: number; total_mb: number };
+  status?: { is_restarting?: boolean };
+  prompt?: string;
+  timestamp: number;
+}
+
+// Store conversation history with timestamp and metadata
+const conversationHistory: ConversationMessage[] = [];
 const clients = new Set<Bun.ServerWebSocket<unknown>>();
+
+// Configuration
+const MAX_HISTORY_MESSAGES = 1000; // Limit history to prevent memory issues
+const HISTORY_CLEANUP_THRESHOLD = 1200; // Clean up when we exceed this
 
 // Load secrets from environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -34,6 +47,36 @@ if (!JWT_SECRET || !ALLOWED_DEVICE_ID) {
 const isProd = process.env.NODE_ENV === "production";
 const staticDir = isProd ? "dist" : "public";
 const port = process.env.PORT ? Number(process.env.PORT) : (isProd ? 3000 : 3002);
+
+// Helper function to manage history size
+const cleanupHistory = () => {
+  if (conversationHistory.length > HISTORY_CLEANUP_THRESHOLD) {
+    // Keep only the most recent MAX_HISTORY_MESSAGES
+    conversationHistory.splice(0, conversationHistory.length - MAX_HISTORY_MESSAGES);
+    console.log(`History cleaned up, now containing ${conversationHistory.length} messages`);
+  }
+};
+
+// Helper function to send conversation history to a client
+const sendHistoryToClient = (ws: Bun.ServerWebSocket<unknown>) => {
+  if (conversationHistory.length > 0) {
+    const historyMessages = conversationHistory.map(msg => ({
+      text: msg.text,
+      memory: msg.memory,
+      status: msg.status,
+      prompt: msg.prompt,
+      timestamp: msg.timestamp,
+    }));
+
+    const historyPayload = {
+      type: 'history',
+      messages: historyMessages
+    };
+
+    ws.send(JSON.stringify(historyPayload));
+    console.log(`Sent ${historyMessages.length} historical messages to new client`);
+  }
+};
 
 const server = Bun.serve({
   port,
@@ -59,8 +102,15 @@ const server = Bun.serve({
     open(ws: Bun.ServerWebSocket<unknown>) {
       (ws as any).isAuthenticated = false;
       clients.add(ws);
-      // Don't send any historical messages to new connections
-      // The message sender creates new connections for each chunk
+      
+      // Send conversation history to new client after a brief delay
+      // This allows the frontend to set up properly before receiving history
+      // and provides a smoother loading experience
+      setTimeout(() => {
+        if (clients.has(ws) && ws.readyState === 1) {
+          sendHistoryToClient(ws);
+        }
+      }, 800); // Increased from 100ms to 800ms for better loading UX
     },
     message(ws: Bun.ServerWebSocket<unknown>, message) {
       let parsed: any;
@@ -102,15 +152,48 @@ const server = Bun.serve({
         return;
       }
       const msgObj = msgResult.data;
-      messages.push(msgObj);
-      // Only broadcast the new message, not the entire history
-      const broadcast = { messages: [{ text: msgObj.text ?? "", memory: msgObj.memory, status: msgObj.status, prompt: msgObj.prompt }] };
+      
+      // Check for restart signal and clear history if needed
+      if (msgObj.status?.is_restarting) {
+        console.log("Restart signal received - clearing conversation history");
+        conversationHistory.length = 0; // Clear the history array
+      }
+      
+      // Create conversation message with timestamp
+      const conversationMessage: ConversationMessage = {
+        text: msgObj.text,
+        memory: msgObj.memory,
+        status: msgObj.status,
+        prompt: msgObj.prompt,
+        timestamp: Date.now(),
+      };
+      
+      // Add to history (unless it's just a restart signal with no content)
+      if (msgObj.text || msgObj.memory || msgObj.prompt) {
+        conversationHistory.push(conversationMessage);
+        cleanupHistory(); // Manage history size
+      }
+      
+      // Broadcast as live message to all clients
+      const liveBroadcast = {
+        type: 'live',
+        messages: [{
+          text: msgObj.text ?? "",
+          memory: msgObj.memory,
+          status: msgObj.status,
+          prompt: msgObj.prompt,
+          timestamp: conversationMessage.timestamp,
+        }]
+      };
+      
       for (const client of clients) {
         if (client.readyState === 1) {
-          client.send(JSON.stringify(broadcast));
+          client.send(JSON.stringify(liveBroadcast));
         }
       }
+      
       console.log("Received:", msgObj.text, msgObj.memory ? JSON.stringify(msgObj.memory) : "", msgObj.status ? JSON.stringify(msgObj.status) : "", msgObj.prompt ? `Prompt: ${msgObj.prompt}` : "");
+      console.log(`Conversation history now contains ${conversationHistory.length} messages`);
     },
     close(ws: Bun.ServerWebSocket<unknown>) {
       clients.delete(ws);
@@ -121,3 +204,4 @@ const server = Bun.serve({
 
 console.log(`Listening on port ${port} (HTTP & WebSocket)...`);
 console.log(`Serving static files from: ${staticDir}/`);
+console.log(`Conversation history management: Max ${MAX_HISTORY_MESSAGES} messages, cleanup at ${HISTORY_CLEANUP_THRESHOLD}`);

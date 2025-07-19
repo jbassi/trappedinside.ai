@@ -12,26 +12,28 @@ import type { Memory } from "./types";
 
 const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
 
-// Zod schema for server messages
-const ServerMessageSchema = z.object({
-  messages: z.array(
-    z.object({
-      text: z.string(),
-      memory: z
-        .object({
-          available_mb: z.number(),
-          percent_used: z.number(),
-          total_mb: z.number(),
-        })
-        .optional(),
-      status: z
-        .object({
-          is_restarting: z.boolean().optional(),
-        })
-        .optional(),
-      prompt: z.string().optional(),
+// Enhanced Zod schema for server messages with history support
+const MessageSchema = z.object({
+  text: z.string(),
+  memory: z
+    .object({
+      available_mb: z.number(),
+      percent_used: z.number(),
+      total_mb: z.number(),
     })
-  ),
+    .optional(),
+  status: z
+    .object({
+      is_restarting: z.boolean().optional(),
+    })
+    .optional(),
+  prompt: z.string().optional(),
+  timestamp: z.number().optional(),
+});
+
+const ServerMessageSchema = z.object({
+  type: z.enum(['history', 'live']).optional(), // Optional for backward compatibility
+  messages: z.array(MessageSchema),
 });
 
 function App() {
@@ -58,6 +60,9 @@ function App() {
   const restartingRef = useRef(false);
   const isLoadingRef = useRef(true);
   const cursorIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const historyLoadedRef = useRef(false);
+  const loadingStartTimeRef = useRef<number>(Date.now());
+  const minLoadingTimeRef = useRef<NodeJS.Timeout | null>(null);
 
   // Enhanced scroll behavior state
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -75,6 +80,79 @@ function App() {
   const isTouchDeviceRef = useRef<boolean>(false);
   const touchMomentumActiveRef = useRef<boolean>(false);
   const touchEndTimeRef = useRef<number>(0);
+
+  // Helper function to hide loading with minimum display time
+  const hideLoadingAfterMinTime = (callback?: () => void) => {
+    const minLoadingTime = 1000; // Show loader for at least 1 second
+    const elapsedTime = Date.now() - loadingStartTimeRef.current;
+    const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+    
+    if (minLoadingTimeRef.current) {
+      clearTimeout(minLoadingTimeRef.current);
+    }
+    
+    minLoadingTimeRef.current = setTimeout(() => {
+      setIsLoading(false);
+      isLoadingRef.current = false;
+      if (callback) callback();
+      minLoadingTimeRef.current = null;
+    }, remainingTime);
+  };
+
+  // Helper function to process history messages (instant display)
+  const processHistoryMessages = (messages: z.infer<typeof MessageSchema>[]) => {
+    console.log(`Processing ${messages.length} history messages`);
+    
+    // Build the complete conversation from history
+    const conversationLines = [PROMPT];
+    let currentLine = PROMPT;
+    
+    for (const msg of messages) {
+      // Update memory if present
+      if (msg.memory) {
+        setLastMemory(msg.memory);
+      }
+      
+      // Update prompt if present
+      if (msg.prompt && msg.prompt.trim() !== "") {
+        setLlmPrompt(msg.prompt);
+      }
+      
+      // Process text content
+      if (msg.text) {
+        for (const char of msg.text) {
+          if (char === '\n') {
+            // Finish current line and start new one
+            conversationLines[conversationLines.length - 1] = currentLine;
+            conversationLines.push(PROMPT);
+            currentLine = PROMPT;
+          } else {
+            currentLine += char;
+          }
+        }
+        // Update the current line
+        conversationLines[conversationLines.length - 1] = currentLine;
+      }
+    }
+    
+    // Set all lines at once for instant display
+    setLines(conversationLines);
+    historyLoadedRef.current = true;
+    
+    // Hide loading spinner with minimum display time
+    hideLoadingAfterMinTime(() => {
+      // Scroll to bottom after history loads and loading is hidden
+      setTimeout(() => {
+        if (textRef.current) {
+          textRef.current.scrollTo({
+            top: textRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+          setIsAtBottom(true);
+        }
+      }, 50);
+    });
+  };
 
   // Cursor blinking effect - controlled by animation state
   useEffect(() => {
@@ -358,12 +436,16 @@ function App() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Tab became visible - show loading state until we get fresh data
-        console.log('Tab became visible, showing loading state until fresh data arrives');
+        // Tab became visible
+        console.log('Tab became visible');
         
-        // Show loading spinner
-        setIsLoading(true);
-        isLoadingRef.current = true;
+        // Only show loading state if no history has been loaded yet
+        if (!historyLoadedRef.current) {
+          console.log('No history loaded yet, showing loading state until fresh data arrives');
+          setIsLoading(true);
+          isLoadingRef.current = true;
+          loadingStartTimeRef.current = Date.now(); // Reset loading start time
+        }
         
         // Clear any pending animations and queue
         queueRef.current = [];
@@ -402,6 +484,9 @@ function App() {
     const connect = () => {
       ws = new WebSocket(WS_URL);
       
+      // Reset loading start time for new connection
+      loadingStartTimeRef.current = Date.now();
+      
       // Set a timeout to hide loading spinner if connection takes too long
       loadingTimeout = setTimeout(() => {
         if (isLoadingRef.current) {
@@ -418,76 +503,85 @@ function App() {
       
       ws.onmessage = (event) => {
         try {
-          // Hide loading spinner on first message
-          if (isLoadingRef.current) {
-            setIsLoading(false);
-            isLoadingRef.current = false;
-          }
-          
           const data = JSON.parse(event.data);
           const result = ServerMessageSchema.safeParse(data);
           if (result.success) {
-            const messages = result.data.messages;
+            const { type = 'live', messages } = result.data;
             
-            // Process each message chunk
-            for (const msg of messages) {
-              if (msg.text) {
-                // Only queue text if tab is visible to prevent accumulation
-                if (document.visibilityState === 'visible') {
-                  queueRef.current.push(msg.text);
-                }
+            // Handle different message types
+            if (type === 'history') {
+              // Process history messages instantly
+              processHistoryMessages(messages);
+            } else if (type === 'live') {
+              // Handle live messages with existing animation logic
+              
+              // Hide loading spinner on first live message (if history wasn't received)
+              if (isLoadingRef.current) {
+                historyLoadedRef.current = true; // Consider history loaded
+                hideLoadingAfterMinTime(); // Use minimum loading time
               }
-              // Update memory if present
-              if (msg.memory) {
-                setLastMemory(msg.memory);
-              }
-              // Handle restarting status synchronously
-              if (msg.status?.is_restarting !== undefined) {
-                setIsRestarting(msg.status.is_restarting);
-                restartingRef.current = msg.status.is_restarting;
-                
-                // Clear terminal and reset state immediately when restarting
-                if (msg.status.is_restarting) {
-                  setLines([PROMPT]);
-                  queueRef.current = [];
-                  animatingRef.current = false;
-                  processingRef.current = false;
-                  setIsAnimating(false);
-                  setIsProcessing(false);
-                  setLastMemory(undefined);
-                  setLlmPrompt(DEFAULT_LLM_PROMPT);
-                  setCursorVisible(true);
-                  
-                  // Reset user interaction state
-                  userIsInteractingRef.current = false;
-                  lastUserInteractionRef.current = 0;
-                  setUserIsScrolling(false);
-                  setIsAtBottom(true);
-                  
-                  // Reset mobile-specific touch state
-                  touchMomentumActiveRef.current = false;
-                  touchEndTimeRef.current = 0;
-                  
-                  // Cancel any pending scroll operations
-                  if (rafScrollRef.current) {
-                    cancelAnimationFrame(rafScrollRef.current);
-                    rafScrollRef.current = null;
+              
+              // Process each live message chunk
+              for (const msg of messages) {
+                if (msg.text) {
+                  // Only queue text if tab is visible to prevent accumulation
+                  if (document.visibilityState === 'visible') {
+                    queueRef.current.push(msg.text);
                   }
-                  pendingScrollRef.current = false;
+                }
+                // Update memory if present
+                if (msg.memory) {
+                  setLastMemory(msg.memory);
+                }
+                // Handle restarting status synchronously
+                if (msg.status?.is_restarting !== undefined) {
+                  setIsRestarting(msg.status.is_restarting);
+                  restartingRef.current = msg.status.is_restarting;
+                  
+                  // Clear terminal and reset state immediately when restarting
+                  if (msg.status.is_restarting) {
+                    setLines([PROMPT]);
+                    queueRef.current = [];
+                    animatingRef.current = false;
+                    processingRef.current = false;
+                    setIsAnimating(false);
+                    setIsProcessing(false);
+                    setLastMemory(undefined);
+                    setLlmPrompt(DEFAULT_LLM_PROMPT);
+                    setCursorVisible(true);
+                    historyLoadedRef.current = false; // Reset history state
+                    
+                    // Reset user interaction state
+                    userIsInteractingRef.current = false;
+                    lastUserInteractionRef.current = 0;
+                    setUserIsScrolling(false);
+                    setIsAtBottom(true);
+                    
+                    // Reset mobile-specific touch state
+                    touchMomentumActiveRef.current = false;
+                    touchEndTimeRef.current = 0;
+                    
+                    // Cancel any pending scroll operations
+                    if (rafScrollRef.current) {
+                      cancelAnimationFrame(rafScrollRef.current);
+                      rafScrollRef.current = null;
+                    }
+                    pendingScrollRef.current = false;
+                  }
+                }
+                // Update prompt if present (check for non-empty string)
+                if (msg.prompt && msg.prompt.trim() !== "") {
+                  setLlmPrompt(msg.prompt);
+                } else if (msg.prompt !== undefined && msg.prompt.trim() === "") {
+                  // If server sends empty prompt, fall back to default
+                  setLlmPrompt(DEFAULT_LLM_PROMPT);
                 }
               }
-              // Update prompt if present (check for non-empty string)
-              if (msg.prompt && msg.prompt.trim() !== "") {
-                setLlmPrompt(msg.prompt);
-              } else if (msg.prompt !== undefined && msg.prompt.trim() === "") {
-                // If server sends empty prompt, fall back to default
-                setLlmPrompt(DEFAULT_LLM_PROMPT);
+              
+              // Process queue without overlapping (only if tab is visible)
+              if (document.visibilityState === 'visible') {
+                processQueue();
               }
-            }
-            
-            // Process queue without overlapping (only if tab is visible)
-            if (document.visibilityState === 'visible') {
-              processQueue();
             }
           }
         } catch (error) {
@@ -755,9 +849,6 @@ function App() {
     };
   }, []); // Remove dependencies to prevent re-creation during user interaction
 
-  // Removed the problematic auto-scroll useEffect that was tied to [lines]
-  // Scroll behavior is now handled within animation functions and user interaction handlers
-
   // Cleanup timeout on unmount with mobile-aware state reset
   useEffect(() => {
     return () => {
@@ -775,6 +866,9 @@ function App() {
       }
       if (rafScrollRef.current) {
         cancelAnimationFrame(rafScrollRef.current);
+      }
+      if (minLoadingTimeRef.current) {
+        clearTimeout(minLoadingTimeRef.current);
       }
     };
   }, []);
