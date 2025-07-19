@@ -1,63 +1,14 @@
-import React, { useRef, useEffect, useState } from "react";
+import React from "react";
 import { terminalStyles, terminalClasses } from './terminalStyles';
+import { useTerminalSize } from './TerminalSizeContext';
 
 interface PromptDisplayProps {
   prompt: string;
 }
 
 export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dynamicWidth, setDynamicWidth] = useState(50); // Default fallback
-
-  useEffect(() => {
-    const measureWidth = () => {
-      if (!containerRef.current) return;
-      
-      // Create a test element with a known number of characters
-      const testElement = document.createElement('div');
-      testElement.style.fontFamily = 'monospace';
-      testElement.style.fontSize = getComputedStyle(containerRef.current).fontSize;
-      testElement.style.fontWeight = getComputedStyle(containerRef.current).fontWeight;
-      testElement.style.visibility = 'hidden';
-      testElement.style.position = 'absolute';
-      testElement.style.whiteSpace = 'pre';
-      testElement.style.top = '-9999px';
-      testElement.textContent = '#'.repeat(100); // 100 characters
-      
-      document.body.appendChild(testElement);
-      const testWidth = testElement.offsetWidth;
-      document.body.removeChild(testElement);
-      
-      // Calculate how many characters fit in the container
-      const containerWidth = containerRef.current.offsetWidth;
-      const charWidth = testWidth / 100; // Width per character
-      const availableChars = Math.floor(containerWidth / charWidth);
-      
-      setDynamicWidth(Math.max(availableChars, 20)); // Minimum 20 chars
-    };
-
-    // Initial measurement
-    measureWidth();
-
-    // Listen for resize events
-    const handleResize = () => measureWidth();
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-
-    // Use ResizeObserver for container changes
-    const observer = new ResizeObserver(measureWidth);
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
-      observer.disconnect();
-    };
-  }, []);
-
-  const effectiveWidth = dynamicWidth;
+  const { terminalWidth } = useTerminalSize();
+  const effectiveWidth = Math.max(terminalWidth, 12); // Minimum width for "## PROMPT ##"
   const contentWidth = effectiveWidth - 4; // Account for "# " and " #"
   
   const wrapText = (text: string, maxWidth: number): string[] => {
@@ -133,17 +84,9 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
   lines.push(createFooterLine());
 
   return (
-    <div 
-      ref={containerRef}
-      className={`${terminalClasses.baseText} mb-2 sm:mb-4 w-full`}
-      style={{
-        ...terminalStyles.baseText,
-        width: '100%',
-        boxSizing: 'border-box'
-      }}
-    >
+    <div className={`${terminalClasses.baseText} mb-2 sm:mb-4 w-full`} style={terminalStyles.baseText}>
       {lines.map((line, index) => (
-        <div key={index} className="whitespace-pre font-mono">
+        <div key={index} className="whitespace-pre font-mono w-full overflow-hidden">
           {line}
         </div>
       ))}

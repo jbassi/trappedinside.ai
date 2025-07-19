@@ -27,8 +27,7 @@ export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isL
     containerRef.current.appendChild(testElement);
     const charWidth = testElement.getBoundingClientRect().width;
     containerRef.current.removeChild(testElement);
-    
-    console.log('measureCharacterWidth:', charWidth, 'fontSize:', containerStyles.fontSize);
+
     return charWidth || 9.6;
   }, [containerRef]);
 

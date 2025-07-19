@@ -1,30 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { terminalStyles, terminalClasses } from './terminalStyles';
+import { useTerminalSize } from './TerminalSizeContext';
 
-interface LoadingSpinnerProps {
-  terminalWidth?: number;
-}
+interface LoadingSpinnerProps {}
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 80 }) => {
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = () => {
+  const { terminalWidth } = useTerminalSize();
   const [spinnerFrame, setSpinnerFrame] = useState(0);
   const [dotsCount, setDotsCount] = useState(0);
   
   // Classic terminal spinner characters
   const spinnerChars = ['|', '/', '-', '\\'];
-  
-  // Responsive width calculation
-  const getResponsiveWidth = () => {
-    const minWidth = 30; // Minimum width for very small screens
-    const maxWidth = Math.max(60, terminalWidth);
-    
-    // Scale down on smaller screens
-    if (terminalWidth < 50) {
-      return Math.max(minWidth, terminalWidth - 8); // More padding for mobile
-    } else if (terminalWidth < 80) {
-      return Math.max(40, terminalWidth - 10);
-    }
-    return maxWidth;
-  };
   
   useEffect(() => {
     const spinnerInterval = setInterval(() => {
@@ -41,7 +27,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
     };
   }, []);
   
-  const responsiveWidth = getResponsiveWidth();
+  const effectiveWidth = Math.max(terminalWidth, 30); // Use full terminal width with minimum
   
   return (
     <div className={`flex flex-col items-center justify-center space-y-2 sm:space-y-4 ${terminalClasses.container} px-4 sm:px-6 md:px-2`}>
@@ -52,7 +38,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
           <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
             {(() => {
               const connectingText = terminalWidth < 50 ? " CONNECTING TO PI " : " CONNECTING TO RASPBERRY PI ";
-              const totalWidth = responsiveWidth;
+              const totalWidth = effectiveWidth;
               const textLength = connectingText.length;
               const remainingSpace = Math.max(0, totalWidth - textLength);
               const leftPadding = Math.floor(remainingSpace / 2);
@@ -76,7 +62,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
           <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
           <span className={`flex-1 px-1 sm:px-2 text-center ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
             {(() => {
-              const barLength = Math.max(4, Math.floor(responsiveWidth / 8));
+              const barLength = Math.max(4, Math.floor(effectiveWidth / 8));
               const filled = Math.floor(spinnerFrame * (barLength / 4)) + 1;
               const empty = barLength - filled;
               return '█'.repeat(filled) + '░'.repeat(empty);
@@ -88,7 +74,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ terminalWidth = 
         {/* Bottom border */}
         <div className="w-full overflow-hidden whitespace-nowrap">
           <span className={terminalClasses.baseText} style={terminalStyles.baseText}>
-            {"#".repeat(responsiveWidth)}
+            {"#".repeat(effectiveWidth)}
           </span>
         </div>
       </div>

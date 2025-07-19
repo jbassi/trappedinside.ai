@@ -6,7 +6,7 @@ import { MemoryBar } from "./MemoryBar";
 import { TerminalLine } from "./TerminalLine";
 import { PromptDisplay } from "./PromptDisplay";
 import { LoadingSpinner } from "./LoadingSpinner";
-import { useTerminalWidth } from "./useTerminalWidth";
+import { TerminalSizeProvider } from "./TerminalSizeContext";
 import type { Memory } from "./types";
 
 const WS_URL = (window.location.protocol === "https:" ? "wss://" : "ws://") + window.location.host + "/ws";
@@ -57,7 +57,6 @@ function App() {
   const restartingRef = useRef(false);
   const isLoadingRef = useRef(true);
   const cursorIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const { terminalWidth, widthVersion } = useTerminalWidth(textRef, isLoading);
 
   // Cursor blinking effect - controlled by animation state
   useEffect(() => {
@@ -379,22 +378,24 @@ function App() {
 
 
   return (
-    <CRTScreen 
-      textRef={textRef}
-      memoryBar={!isLoading ? <MemoryBar key={widthVersion} memory={lastMemory} terminalWidth={terminalWidth} /> : undefined}
-      promptDisplay={!isLoading ? <PromptDisplay key={widthVersion} prompt={llmPrompt} /> : undefined}
-      loadingSpinner={isLoading ? <LoadingSpinner key={widthVersion} terminalWidth={terminalWidth} /> : undefined}
-    >
-      {!isLoading && lines.map((line, i) => (
-        <TerminalLine
-          key={i}
-          line={line}
-          isLastLine={i === lines.length - 1}
-          cursorVisible={cursorVisible}
-          prompt={PROMPT}
-        />
-      ))}
-    </CRTScreen>
+    <TerminalSizeProvider textRef={textRef}>
+      <CRTScreen 
+        textRef={textRef}
+        memoryBar={!isLoading ? <MemoryBar memory={lastMemory} /> : undefined}
+        promptDisplay={!isLoading ? <PromptDisplay prompt={llmPrompt} /> : undefined}
+        loadingSpinner={isLoading ? <LoadingSpinner /> : undefined}
+      >
+        {!isLoading && lines.map((line, i) => (
+          <TerminalLine
+            key={i}
+            line={line}
+            isLastLine={i === lines.length - 1}
+            cursorVisible={cursorVisible}
+            prompt={PROMPT}
+          />
+        ))}
+      </CRTScreen>
+    </TerminalSizeProvider>
   );
 }
 

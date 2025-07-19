@@ -1,13 +1,14 @@
 import React from 'react';
 import { terminalStyles, terminalClasses } from './terminalStyles';
+import { useTerminalSize } from './TerminalSizeContext';
 import type { Memory } from './types';
 
 interface MemoryBarProps {
   memory?: Memory;
-  terminalWidth: number;
 }
 
-export const MemoryBar: React.FC<MemoryBarProps> = ({ memory, terminalWidth }) => {
+export const MemoryBar: React.FC<MemoryBarProps> = ({ memory }) => {
+  const { terminalWidth } = useTerminalSize();
   // Use default values when no memory data is available
   const available_mb = memory?.available_mb ?? 0;
   const total_mb = memory?.total_mb ?? 8192; // Default 8GB
