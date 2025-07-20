@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import { z } from "zod";
 import { CRTScreen } from "./components/terminal/CRTScreen";
@@ -53,7 +53,15 @@ function App() {
   const [cursorVisible, setCursorVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Simplified scroll behavior state
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
+  const prevScrollTopRef = useRef<number>(0);
+  const prevScrollHeightRef = useRef<number>(0);
+  
+  // Animation and loading refs
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
   const processingRef = useRef(false);
@@ -63,17 +71,68 @@ function App() {
   const historyLoadedRef = useRef(false);
   const loadingStartTimeRef = useRef<number>(Date.now());
   const minLoadingTimeRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Simplified scroll behavior state
-  const [isAtBottom, setIsAtBottom] = useState(true);
-  const [userIsScrolling, setUserIsScrolling] = useState(false);
-  const pendingScrollRef = useRef<boolean>(false);
-  const rafScrollRef = useRef<number | null>(null);
-  const hasScrolledUpRef = useRef<boolean>(false); // Track if user has explicitly scrolled up
-  
-  // Simplified interaction tracking
-  const userIsInteractingRef = useRef<boolean>(false);
   const isTouchDeviceRef = useRef<boolean>(false);
+
+  // Helper function to check if at bottom
+  const checkIfAtBottom = useCallback(() => {
+    if (!textRef.current) return true;
+    
+    const { scrollTop, scrollHeight, clientHeight } = textRef.current;
+    return scrollTop + clientHeight >= scrollHeight - 30;
+  }, []);
+
+  // Helper function to scroll to bottom if needed
+  const scrollToBottomIfNeeded = useCallback(() => {
+    if (!textRef.current) return;
+    
+    // Only auto-scroll if user hasn't scrolled up
+    if (!userScrolledUp && checkIfAtBottom()) {
+      textRef.current.scrollTop = textRef.current.scrollHeight + 30;
+    }
+  }, [userScrolledUp, checkIfAtBottom]);
+
+  // Unified scroll handler for both desktop and mobile
+  const handleScroll = useCallback(() => {
+    if (!textRef.current) return;
+    
+    const { scrollTop, scrollHeight } = textRef.current;
+    const wasAtBottom = isAtBottom;
+    const isNowAtBottom = checkIfAtBottom();
+    
+    // Detect scroll direction
+    const scrollingDown = scrollTop > prevScrollTopRef.current;
+    const contentAdded = scrollHeight > prevScrollHeightRef.current;
+    
+    // Update refs for next check
+    prevScrollTopRef.current = scrollTop;
+    prevScrollHeightRef.current = scrollHeight;
+    
+    // Update state based on scroll position
+    setIsAtBottom(isNowAtBottom);
+    
+    // If user was at bottom and scrolled up, mark as scrolled up
+    if (wasAtBottom && !isNowAtBottom && !contentAdded) {
+      setUserScrolledUp(true);
+    }
+    
+    // If user scrolled back to bottom, clear scrolled up state
+    if (!wasAtBottom && isNowAtBottom && scrollingDown) {
+      setUserScrolledUp(false);
+    }
+  }, [isAtBottom, checkIfAtBottom]);
+
+  // Set up scroll event listener
+  useEffect(() => {
+    const element = textRef.current;
+    if (!element) return;
+    
+    // Use passive listeners for better performance
+    element.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      element.removeEventListener('scroll', handleScroll);
+    };
+  }, [handleScroll]);
 
   // Helper function to hide loading with minimum display time
   const hideLoadingAfterMinTime = (callback?: () => void) => {
@@ -183,7 +242,6 @@ function App() {
       const isMobile = isMobileDevice();
       
       // Consider it a touch device if it has touch capability AND is identified as mobile
-      // This provides better accuracy than the previous logic
       isTouchDeviceRef.current = hasTouch && isMobile;
     };
 
@@ -196,67 +254,6 @@ function App() {
       window.removeEventListener('orientationchange', detectTouchDevice);
     };
   }, []);
-
-  // Simplified scroll detection
-  useEffect(() => {
-    let scrollDebounceTimer: NodeJS.Timeout;
-    
-    const handleScroll = () => {
-      if (!textRef.current) return;
-      
-      const { scrollTop, scrollHeight, clientHeight } = textRef.current;
-      // More generous definition of "at bottom" with 30px buffer
-      const atBottom = scrollTop + clientHeight >= scrollHeight - 30;
-      
-      // If user explicitly scrolls up from bottom, mark it
-      if (!atBottom && isAtBottom) {
-        hasScrolledUpRef.current = true;
-        userIsInteractingRef.current = true;
-        setUserIsScrolling(true);
-        
-        // Cancel any pending auto-scroll
-        if (rafScrollRef.current) {
-          cancelAnimationFrame(rafScrollRef.current);
-          rafScrollRef.current = null;
-          pendingScrollRef.current = false;
-        }
-      }
-      
-      // If user scrolls back to bottom, clear the scrolled up state
-      if (atBottom && hasScrolledUpRef.current) {
-        hasScrolledUpRef.current = false;
-        userIsInteractingRef.current = false;
-        setUserIsScrolling(false);
-      }
-      
-      setIsAtBottom(atBottom);
-      
-      // Debounce scroll detection
-      clearTimeout(scrollDebounceTimer);
-      scrollDebounceTimer = setTimeout(() => {
-        // Only clear interaction state if we're at the bottom
-        if (atBottom) {
-          userIsInteractingRef.current = false;
-          setUserIsScrolling(false);
-        }
-      }, 150);
-    };
-
-    const element = textRef.current;
-    if (element) {
-      // Simple scroll event listener
-      element.addEventListener('scroll', handleScroll, { passive: true });
-      
-      return () => {
-        clearTimeout(scrollDebounceTimer);
-        element.removeEventListener('scroll', handleScroll);
-        
-        if (rafScrollRef.current) {
-          cancelAnimationFrame(rafScrollRef.current);
-        }
-      };
-    }
-  }, [isAtBottom]); // Add isAtBottom as dependency since we use it in handleScroll
 
   // Helper to animate in new output - simplified version
   const animateOutput = (output: string) => {
@@ -281,22 +278,8 @@ function App() {
           return newLines;
         });
         
-        // Auto-scroll if at bottom and not explicitly scrolled up
-        if (isAtBottom && !hasScrolledUpRef.current && !pendingScrollRef.current) {
-          pendingScrollRef.current = true;
-          if (rafScrollRef.current) {
-            cancelAnimationFrame(rafScrollRef.current);
-          }
-          rafScrollRef.current = requestAnimationFrame(() => {
-            if (textRef.current) {
-              // Always use instant scroll for old school terminal feel
-              // Add extra padding to ensure text isn't cut off
-              textRef.current.scrollTop = textRef.current.scrollHeight + 30;
-            }
-            pendingScrollRef.current = false;
-            rafScrollRef.current = null;
-          });
-        }
+        // Scroll to bottom if needed (only if user hasn't scrolled up)
+        scrollToBottomIfNeeded();
         
         i += 1;
         if (i < output.length) {
@@ -345,11 +328,8 @@ function App() {
           // Brief pause after newlines with instant scroll
           await new Promise(res => setTimeout(res, 100));
           
-          // Auto-scroll if at bottom and not explicitly scrolled up
-          if (isAtBottom && !hasScrolledUpRef.current && textRef.current) {
-            // Add extra padding to ensure text isn't cut off
-            textRef.current.scrollTop = textRef.current.scrollHeight + 30;
-          }
+          // Scroll to bottom if needed (only if user hasn't scrolled up)
+          scrollToBottomIfNeeded();
         } else if (part.length > 0) {
           await animateOutput(part);
           await new Promise(res => setTimeout(res, 50 + part.length * 5));
@@ -382,9 +362,6 @@ function App() {
         processingRef.current = false;
         setIsAnimating(false);
         setIsProcessing(false);
-        
-        // Reset interaction state
-        userIsInteractingRef.current = false;
         
         // Reset cursor blinking
         setCursorVisible(true);
@@ -477,17 +454,8 @@ function App() {
                     setCursorVisible(true);
                     historyLoadedRef.current = false; // Reset history state
                     
-                    // Reset user interaction state
-                    userIsInteractingRef.current = false;
-                    setUserIsScrolling(false);
+                    setUserScrolledUp(false); // Reset scroll state
                     setIsAtBottom(true);
-                    
-                    // Cancel any pending scroll operations
-                    if (rafScrollRef.current) {
-                      cancelAnimationFrame(rafScrollRef.current);
-                      rafScrollRef.current = null;
-                    }
-                    pendingScrollRef.current = false;
                   }
                 }
                 // Update prompt if present (check for non-empty string)
@@ -543,12 +511,6 @@ function App() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // Reset interaction state
-      userIsInteractingRef.current = false;
-      
-      if (rafScrollRef.current) {
-        cancelAnimationFrame(rafScrollRef.current);
-      }
       if (minLoadingTimeRef.current) {
         clearTimeout(minLoadingTimeRef.current);
       }
