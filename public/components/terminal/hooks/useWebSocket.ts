@@ -126,17 +126,7 @@ export const useWebSocket = () => {
       
       // Process each live message chunk
       for (const msg of messages) {
-        if (msg.text) {
-          // Only queue text if tab is visible to prevent accumulation
-          if (document.visibilityState === 'visible') {
-            queueRef.current.push(msg.text);
-          }
-        }
-        // Update memory if present
-        if (msg.memory) {
-          setLastMemory(msg.memory);
-        }
-        // Handle restarting status synchronously
+        // Handle restarting status first and synchronously
         if (msg.status?.is_restarting !== undefined) {
           setIsRestarting(msg.status.is_restarting);
           restartingRef.current = msg.status.is_restarting;
@@ -150,8 +140,37 @@ export const useWebSocket = () => {
             setLastMemory(undefined);
             setLlmPrompt(DEFAULT_LLM_PROMPT);
             historyLoadedRef.current = false; // Reset history state
+            
+            // Show loading state
+            setIsLoading(true);
+            isLoadingRef.current = true;
+            loadingStartTimeRef.current = Date.now();
+            
+            // Force WebSocket reconnection after a brief delay
+            setTimeout(() => {
+              if (wsServiceRef.current) {
+                wsServiceRef.current.reconnect();
+              }
+            }, 100);
+            
+            // Skip processing any remaining message content
+            return;
           }
         }
+        
+        // Process text content if not restarting
+        if (msg.text) {
+          // Only queue text if tab is visible to prevent accumulation
+          if (document.visibilityState === 'visible') {
+            queueRef.current.push(msg.text);
+          }
+        }
+        
+        // Update memory if present
+        if (msg.memory) {
+          setLastMemory(msg.memory);
+        }
+        
         // Update prompt if present (check for non-empty string)
         if (msg.prompt && msg.prompt.trim() !== "") {
           setLlmPrompt(msg.prompt);
@@ -168,12 +187,15 @@ export const useWebSocket = () => {
     setLastMemory,
     setLlmPrompt,
     setIsRestarting,
+    setIsLoading,
     queueRef,
     animatingRef,
     processingRef,
     restartingRef,
     isLoadingRef,
     historyLoadedRef,
+    loadingStartTimeRef,
+    wsServiceRef,
     DEFAULT_LLM_PROMPT,
     PROMPT
   ]);
