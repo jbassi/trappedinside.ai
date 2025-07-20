@@ -57,6 +57,7 @@ function App() {
   // Simplified scroll behavior state
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
+  const [activelyDragging, setActivelyDragging] = useState(false); // Track active dragging
   const textRef = useRef<HTMLDivElement>(null);
   const prevScrollTopRef = useRef<number>(0);
   const prevScrollHeightRef = useRef<number>(0);
@@ -85,11 +86,11 @@ function App() {
   const scrollToBottomIfNeeded = useCallback(() => {
     if (!textRef.current) return;
     
-    // Only auto-scroll if user hasn't scrolled up
-    if (!userScrolledUp && checkIfAtBottom()) {
+    // Only auto-scroll if user hasn't scrolled up AND isn't actively dragging
+    if (!userScrolledUp && !activelyDragging && checkIfAtBottom()) {
       textRef.current.scrollTop = textRef.current.scrollHeight + 30;
     }
-  }, [userScrolledUp, checkIfAtBottom]);
+  }, [userScrolledUp, activelyDragging, checkIfAtBottom]);
 
   // Unified scroll handler for both desktop and mobile
   const handleScroll = useCallback(() => {
@@ -129,8 +130,37 @@ function App() {
     // Use passive listeners for better performance
     element.addEventListener('scroll', handleScroll, { passive: true });
     
+    // Add touch event listeners to detect active dragging
+    const handleTouchStart = () => {
+      setActivelyDragging(true);
+    };
+    
+    const handleTouchMove = () => {
+      // Ensure we're marked as actively dragging during movement
+      if (!activelyDragging) {
+        setActivelyDragging(true);
+      }
+    };
+    
+    const handleTouchEnd = () => {
+      // Small delay to ensure scroll events are processed
+      setTimeout(() => {
+        setActivelyDragging(false);
+      }, 50);
+    };
+    
+    // Add touch-specific listeners
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
+    element.addEventListener('touchmove', handleTouchMove, { passive: true });
+    element.addEventListener('touchend', handleTouchEnd, { passive: true });
+    element.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+    
     return () => {
       element.removeEventListener('scroll', handleScroll);
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, [handleScroll]);
 
@@ -345,12 +375,8 @@ function App() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Tab became visible
-        console.log('Tab became visible');
-        
         // Only show loading state if no history has been loaded yet
         if (!historyLoadedRef.current) {
-          console.log('No history loaded yet, showing loading state until fresh data arrives');
           setIsLoading(true);
           isLoadingRef.current = true;
           loadingStartTimeRef.current = Date.now(); // Reset loading start time
@@ -505,8 +531,6 @@ function App() {
     };
     // eslint-disable-next-line
   }, []);
-
-
 
   // Cleanup on unmount
   useEffect(() => {
