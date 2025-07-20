@@ -1,8 +1,3 @@
----
-description: LLM Art Web Project - Real-time WebSocket Terminal Application Rules
-globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx"
-alwaysApply: true
----
 
 # LLM Art Web Project Rules
 
@@ -18,65 +13,61 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Environment-based configuration** with fallback defaults
 
 ### Frontend Structure
-- **Real-time WebSocket client** with auto-reconnection
+- **Context-based state management** with TerminalContext provider
+- **Custom hooks architecture** for modular functionality
+- **WebSocket service layer** for connection management
 - **CRT terminal simulation** with hardware-accelerated effects
 - **Typewriter animation** with variable timing (25-50ms per character)
-- **Smart scroll behavior** with mobile/desktop differentiation
+- **Smart scroll behavior** with unified desktop/mobile handling
 - **Tab visibility handling** to prevent message accumulation
 
-## Mobile-First Development
+## Component Architecture
 
-### Touch Scroll Optimization
-- **Use `isMobileDevice()` from `mobileUtils.ts`** for device detection
-- **Separate logic** for mobile touch vs desktop mouse/wheel events
-- **Touch momentum detection** with 2-3 second protection windows
-- **Different timing thresholds**: Mobile needs 2x longer delays than desktop
-- **Passive event listeners** for better performance
+### Core Components
+- **Terminal**: Main component orchestrating all functionality
+- **CRTScreen**: Hardware-accelerated CRT effects
+- **MemoryBar**: Dynamic width-based memory visualization
+- **PromptDisplay**: Centered, bordered ASCII box
+- **TerminalLine**: Individual lines with cursor support
 
-```tsx
-// Example: Mobile-aware scroll behavior
-const interactionThreshold = isTouchDeviceRef.current ? 1000 : 500;
-const debounceTime = isTouchDeviceRef.current ? 32 : 16;
-```
+### Context and Hooks
+- **TerminalContext**: Centralized state and shared functionality
+- **useTerminalScroll**: Unified scroll behavior management
+- **useTerminalAnimation**: Text animation and queue processing
+- **useWebSocket**: WebSocket connection and message handling
 
-### Responsive Design Patterns
-- **ASCII art scaling**: Use `transform: scale()` not tiny font sizes
-- **Character width calculations**: Account for container padding + safety buffers
-- **ResizeObserver** for dynamic width changes
-- **Orientation change handling** for mobile devices
+### Services
+- **WebSocketService**: Connection management and message parsing
+- **Mobile Detection**: Device-aware functionality
+- **Terminal Styling**: Centralized CRT effects
 
-```tsx
-// Mobile-specific width calculation
-const paddingBuffer = isMobile ? 16 : 8;
-const availableWidth = Math.max(containerWidth - paddingBuffer, 100);
-```
+## State Management
 
-## Component Patterns
+### Context Provider
+- **Shared State**: Lines, memory, prompt, loading states
+- **Animation Control**: Cursor blinking, text animation
+- **Scroll Behavior**: Position tracking, auto-scroll
+- **WebSocket State**: Connection status, message queue
 
-### Terminal Components
-- **TerminalLine**: Individual lines with cursor support and last-line detection
-- **MemoryBar**: Dynamic width based on terminal dimensions, percentage visualization
-- **PromptDisplay**: Centered, bordered ASCII box with responsive width calculation
-- **CRTScreen**: Hardware-accelerated effects with mobile/desktop variants
+### Custom Hooks
+- **Scroll Management**: Position tracking and auto-scroll
+- **Animation Control**: Typewriter effect and cursor
+- **WebSocket Handling**: Connection and messages
+- **Queue Processing**: Message animation coordination
 
-### State Management
-- **useRef for immediate access**: User interaction tracking, animation state
-- **useState for UI updates**: Loading states, cursor visibility, scroll position
-- **Debounced event handlers**: Different timing for mobile vs desktop
+## Performance Patterns
 
-## Performance Optimizations
-
-### Animation Performance
-- **RAF-based scrolling**: Use `requestAnimationFrame` for smooth auto-scroll
-- **Batched updates**: Reduce scroll attempts during active animation (every 5th character on desktop)
-- **Hardware acceleration**: Use CSS transforms, `will-change`, `contain` properties
-- **Different scroll methods**: Instant scroll during animation, smooth when idle
+### Animation Optimization
+- **RAF-based scrolling**: Smooth auto-scroll behavior
+- **Hardware acceleration**: CSS transforms and effects
+- **Efficient updates**: State batching and refs
+- **Cleanup patterns**: Proper resource management
 
 ### Event Handling
-- **Passive event listeners** for touch/scroll events
-- **Debounced scroll detection**: 16ms desktop, 32ms mobile
-- **Intersection Observer** for "at bottom" detection
-- **Cleanup patterns**: Always remove event listeners and cancel animations
+- **Passive listeners**: Touch and scroll optimization
+- **Unified scroll handling**: Desktop and mobile
+- **Debounced handlers**: Prevent excessive updates
+- **Proper cleanup**: Remove listeners and timeouts
 
 ## WebSocket Protocol
 
@@ -91,94 +82,80 @@ interface ServerMessage {
 ```
 
 ### Connection Handling
-- **Auto-reconnection** with 100ms delay
-- **Loading states** during connection establishment
-- **Tab visibility optimization** to prevent data accumulation
-- **Queue processing** with animation-aware timing
+- **Auto-reconnection**: 100ms delay between attempts
+- **Loading states**: Connection status tracking
+- **Message validation**: Zod schema parsing
+- **Queue management**: Ordered message processing
 
-## CSS and Styling
+## Development Guidelines
 
-### CRT Effects
-- **Hardware-accelerated animations** using CSS transforms
-- **Scanline effects**: Linear gradients with proper performance optimization  
-- **Text shadows and glows**: Subtle green glow effects for terminal aesthetic
-- **Smooth scroll behavior**: CSS `scroll-behavior: smooth` + JS coordination
+### Component Development
+- **Use context** for shared state access
+- **Implement hooks** for specific functionality
+- **Leverage services** for external concerns
+- **Follow cleanup patterns** in effects
 
-### Mobile Status Bar
-- **Dark theme integration**: `theme-color="#000000"`
-- **iOS-specific**: `apple-mobile-web-app-status-bar-style="black-translucent"`
-- **Web app capabilities** for home screen installation
+### State Management
+- **Context for sharing**: Avoid prop drilling
+- **Refs for performance**: Immediate state access
+- **Hooks for logic**: Reusable functionality
+- **Services for external**: WebSocket, device detection
 
-## Error Handling and Edge Cases
+### Error Handling
+- **WebSocket resilience**: Auto-reconnection
+- **Message validation**: Schema checking
+- **Loading timeouts**: Connection monitoring
+- **State cleanup**: Proper reset handling
 
-### Scroll Behavior
-- **Race condition prevention**: Multiple timeout and ref management
-- **Animation conflicts**: Different behavior during active text animation
-- **Touch momentum handling**: Extended protection windows on mobile
-- **Container measurement failures**: Fallback width calculations
+### Testing Requirements
+- **Scroll behavior**: During animation
+- **WebSocket handling**: Connection states
+- **State management**: Context updates
+- **Hook interaction**: Cleanup verification
+- **Service reliability**: Connection handling
 
-### WebSocket Resilience
-- **Connection timeout handling**: 10-second loading timeout
-- **Message parsing**: Zod schema validation with error boundaries
-- **State synchronization**: Immediate restart state handling
+## Code Organization
 
-## Development Workflow
-
-### Building and Testing
-```bash
-# Development
-bun run dev        # Frontend dev server (port 3001)
-bun run app.ts     # Backend WebSocket server (port 3002)
-
-# Production
-bun run build      # Vite build to dist/
-bun run preview    # Preview production build
+### File Structure
+```
+public/
+  ├── components/
+  │   ├── terminal/
+  │   │   ├── Terminal.tsx
+  │   │   ├── CRTScreen.tsx
+  │   │   ├── TerminalContext.tsx
+  │   │   └── hooks/
+  │   │       ├── useTerminalScroll.ts
+  │   │       ├── useTerminalAnimation.ts
+  │   │       └── useWebSocket.ts
+  ├── services/
+  │   └── websocketService.ts
+  └── utils/
+      └── mobileUtils.ts
 ```
 
-### Code Organization
-- **Utility functions**: Centralized in dedicated files (`mobileUtils.ts`, `terminalStyles.ts`)
-- **Component composition**: Single responsibility, clear prop interfaces
-- **Type safety**: Strict TypeScript with Zod for runtime validation
-- **Performance monitoring**: Console logging for development debugging
+### Best Practices
+- **Context-based state**: Centralized management
+- **Custom hooks**: Reusable logic
+- **Service layer**: External concerns
+- **Clear separation**: Component responsibilities
+- **Type safety**: TypeScript and Zod
 
-## Common Patterns to Follow
+## Maintenance Guidelines
 
-1. **Always check `isTouchDeviceRef.current`** before applying mobile-specific logic
-2. **Use ResizeObserver + orientation events** for responsive components
-3. **Implement proper cleanup** in useEffect returns (timeouts, listeners, observers)
-4. **Separate desktop and mobile logic** rather than trying to unify
-5. **Use refs for immediate state access** in event handlers and animations
-6. **Prefer CSS transforms over font-size changes** for scaling
-7. **Account for container padding** in character width calculations
-8. **Use passive event listeners** for performance
-9. **Implement debouncing** with device-specific timing
-10. **Test on both mobile and desktop** for scroll behavior
+### When to Update
+- **Architecture changes**: Component organization
+- **New patterns**: Hook or context usage
+- **Service updates**: External handling
+- **State management**: Context patterns
+- **Mobile handling**: Interaction patterns
 
-## AI Maintenance and Evolution
-
-### When to Update These Rules
-- **New patterns discovered** during development that improve performance or user experience
-- **Mobile behavior changes** that require updated timing or interaction patterns
-- **Performance optimizations** that should become standard practice
-- **Common bugs or edge cases** that need prevention guidelines
-- **New component patterns** that follow established architecture principles
-- **Updated browser APIs** or React patterns that affect the codebase
-
-### How to Update Rules
-- **Add new sections** for emerging patterns or technologies
-- **Update existing patterns** when better approaches are discovered
-- **Include code examples** for complex patterns or optimizations
-- **Document performance improvements** with specific timing or behavior changes
-- **Add troubleshooting sections** for common development issues
-- **Update mobile-specific guidelines** as new device behaviors are discovered
-
-### Rule Maintenance Guidelines
-- **Keep patterns practical** - focus on what actually improves the codebase
-- **Maintain consistency** - ensure new rules align with existing architecture
-- **Test thoroughly** - validate new patterns on both mobile and desktop
-- **Document reasoning** - explain why patterns are important for this specific project
-- **Update both files** - keep `.cursor/rules/` and `CLAUDE.md` in sync
-- **Version significant changes** - note major architectural shifts or new technologies
+### How to Update
+- **Document patterns**: As they emerge
+- **Update structure**: Keep diagrams current
+- **Add examples**: Show hook usage
+- **Note changes**: Mobile considerations
+- **Keep in sync**: Update both docs
 
 7. **Account for container padding** in character width calculations
 8. **Use passive event listeners** for performance
