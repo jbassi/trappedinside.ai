@@ -64,22 +64,16 @@ function App() {
   const loadingStartTimeRef = useRef<number>(Date.now());
   const minLoadingTimeRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Enhanced scroll behavior state
+  // Simplified scroll behavior state
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [userIsScrolling, setUserIsScrolling] = useState(false);
-  const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const scrollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingScrollRef = useRef<boolean>(false);
   const rafScrollRef = useRef<number | null>(null);
-  const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
-  const scrollSentinelRef = useRef<HTMLDivElement>(null);
+  const hasScrolledUpRef = useRef<boolean>(false); // Track if user has explicitly scrolled up
   
-  // Mobile-aware interaction tracking
+  // Simplified interaction tracking
   const userIsInteractingRef = useRef<boolean>(false);
-  const lastUserInteractionRef = useRef<number>(0);
   const isTouchDeviceRef = useRef<boolean>(false);
-  const touchMomentumActiveRef = useRef<boolean>(false);
-  const touchEndTimeRef = useRef<number>(0);
 
   // Helper function to hide loading with minimum display time
   const hideLoadingAfterMinTime = (callback?: () => void) => {
@@ -203,7 +197,68 @@ function App() {
     };
   }, []);
 
-  // Helper to animate in new output with mobile-aware interaction checks
+  // Simplified scroll detection
+  useEffect(() => {
+    let scrollDebounceTimer: NodeJS.Timeout;
+    
+    const handleScroll = () => {
+      if (!textRef.current) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = textRef.current;
+      // More generous definition of "at bottom" with 30px buffer
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 30;
+      
+      // If user explicitly scrolls up from bottom, mark it
+      if (!atBottom && isAtBottom) {
+        hasScrolledUpRef.current = true;
+        userIsInteractingRef.current = true;
+        setUserIsScrolling(true);
+        
+        // Cancel any pending auto-scroll
+        if (rafScrollRef.current) {
+          cancelAnimationFrame(rafScrollRef.current);
+          rafScrollRef.current = null;
+          pendingScrollRef.current = false;
+        }
+      }
+      
+      // If user scrolls back to bottom, clear the scrolled up state
+      if (atBottom && hasScrolledUpRef.current) {
+        hasScrolledUpRef.current = false;
+        userIsInteractingRef.current = false;
+        setUserIsScrolling(false);
+      }
+      
+      setIsAtBottom(atBottom);
+      
+      // Debounce scroll detection
+      clearTimeout(scrollDebounceTimer);
+      scrollDebounceTimer = setTimeout(() => {
+        // Only clear interaction state if we're at the bottom
+        if (atBottom) {
+          userIsInteractingRef.current = false;
+          setUserIsScrolling(false);
+        }
+      }, 150);
+    };
+
+    const element = textRef.current;
+    if (element) {
+      // Simple scroll event listener
+      element.addEventListener('scroll', handleScroll, { passive: true });
+      
+      return () => {
+        clearTimeout(scrollDebounceTimer);
+        element.removeEventListener('scroll', handleScroll);
+        
+        if (rafScrollRef.current) {
+          cancelAnimationFrame(rafScrollRef.current);
+        }
+      };
+    }
+  }, [isAtBottom]); // Add isAtBottom as dependency since we use it in handleScroll
+
+  // Helper to animate in new output - simplified version
   const animateOutput = (output: string) => {
     return new Promise<void>((resolve) => {
       animatingRef.current = true;
@@ -226,41 +281,17 @@ function App() {
           return newLines;
         });
         
-        // Desktop-optimized auto-scroll during animation - less aggressive
-        const now = Date.now();
-        const timeSinceLastInteraction = now - lastUserInteractionRef.current;
-        const timeSinceTouchEnd = now - touchEndTimeRef.current;
-        
-        // More conservative thresholds for desktop during active animation
-        const interactionThreshold = isTouchDeviceRef.current ? 1000 : 800; // Increased desktop threshold
-        const touchMomentumThreshold = 2000;
-        
-        const userRecentlyInteracted = timeSinceLastInteraction < interactionThreshold;
-        const touchMomentumActive = isTouchDeviceRef.current && 
-                                  touchMomentumActiveRef.current && 
-                                  timeSinceTouchEnd < touchMomentumThreshold;
-        
-        // Only attempt auto-scroll every few characters on desktop to reduce jumpiness
-        const shouldAttemptScroll = isTouchDeviceRef.current || i % 5 === 0; // Every 5th character on desktop
-        
-        if (shouldAttemptScroll && isAtBottom && !userIsInteractingRef.current && !userRecentlyInteracted && !touchMomentumActive && !pendingScrollRef.current) {
+        // Auto-scroll if at bottom and not explicitly scrolled up
+        if (isAtBottom && !hasScrolledUpRef.current && !pendingScrollRef.current) {
           pendingScrollRef.current = true;
           if (rafScrollRef.current) {
             cancelAnimationFrame(rafScrollRef.current);
           }
           rafScrollRef.current = requestAnimationFrame(() => {
-            // Desktop needs stricter checks during animation
-            const currentTime = Date.now();
-            const finalInteractionCheck = currentTime - lastUserInteractionRef.current;
-            const finalTouchCheck = currentTime - touchEndTimeRef.current;
-            const finalThreshold = isTouchDeviceRef.current ? 800 : 600; // Increased desktop threshold
-            
-            if (textRef.current && !userIsInteractingRef.current && finalInteractionCheck > finalThreshold) {
-              // Additional check for touch momentum on mobile devices
-              if (!isTouchDeviceRef.current || !touchMomentumActiveRef.current || finalTouchCheck > 1500) {
-                // Always use instant scroll for old school terminal feel
-                textRef.current.scrollTop = textRef.current.scrollHeight;
-              }
+            if (textRef.current) {
+              // Always use instant scroll for old school terminal feel
+              // Add extra padding to ensure text isn't cut off
+              textRef.current.scrollTop = textRef.current.scrollHeight + 30;
             }
             pendingScrollRef.current = false;
             rafScrollRef.current = null;
@@ -275,17 +306,6 @@ function App() {
         } else {
           animatingRef.current = false;
           setIsAnimating(false);
-          // Final scroll when animation completes
-          const finalCheck = Date.now() - lastUserInteractionRef.current;
-          const touchCheck = Date.now() - touchEndTimeRef.current;
-          const animationCompleteThreshold = isTouchDeviceRef.current ? 1200 : 800; // Longer desktop delay
-          
-          if (finalCheck > animationCompleteThreshold && !userIsInteractingRef.current) {
-            // Extra check for mobile touch momentum
-            if (!isTouchDeviceRef.current || !touchMomentumActiveRef.current || touchCheck > 2000) {
-              requestScrollToBottom();
-            }
-          }
           resolve();
         }
       }
@@ -293,49 +313,7 @@ function App() {
     });
   };
 
-  // Mobile-aware scroll to bottom helper
-  const requestScrollToBottom = () => {
-    const now = Date.now();
-    const timeSinceInteraction = now - lastUserInteractionRef.current;
-    const timeSinceTouchEnd = now - touchEndTimeRef.current;
-    
-    // Desktop needs longer delays during animation to avoid conflicts
-    const baseInteractionDelay = isTouchDeviceRef.current ? 800 : 300;
-    const animationMultiplier = (isAnimating || isProcessing) ? 2.5 : 1; // Much longer during animation
-    const interactionDelay = baseInteractionDelay * animationMultiplier;
-    
-    const touchMomentumDelay = 2000;
-    
-    const safeToScroll = !userIsInteractingRef.current && 
-                        !userIsScrolling && 
-                        timeSinceInteraction > interactionDelay &&
-                        (!isTouchDeviceRef.current || 
-                         !touchMomentumActiveRef.current || 
-                         timeSinceTouchEnd > touchMomentumDelay);
-    
-    if (safeToScroll && textRef.current && !pendingScrollRef.current) {
-      pendingScrollRef.current = true;
-      if (rafScrollRef.current) {
-        cancelAnimationFrame(rafScrollRef.current);
-      }
-      rafScrollRef.current = requestAnimationFrame(() => {
-        // Final mobile-aware check before scrolling
-        const finalCheck = Date.now() - lastUserInteractionRef.current;
-        const desktopThreshold = (isAnimating || isProcessing) ? 800 : 200; // Much higher during animation
-        const mobileThreshold = isTouchDeviceRef.current ? 600 : desktopThreshold;
-        
-        if (textRef.current && !userIsInteractingRef.current && finalCheck > mobileThreshold) {
-          // Always use instant scroll for old school terminal feel
-          textRef.current.scrollTop = textRef.current.scrollHeight;
-          setIsAtBottom(true);
-        }
-        pendingScrollRef.current = false;
-        rafScrollRef.current = null;
-      });
-    }
-  };
-
-  // Animation queue processor with mobile-aware scroll coordination
+  // Animation queue processor - simplified version
   const processQueue = async () => {
     if (processingRef.current) return;
     processingRef.current = true;
@@ -367,22 +345,10 @@ function App() {
           // Brief pause after newlines with instant scroll
           await new Promise(res => setTimeout(res, 100));
           
-          // Desktop-optimized scroll timing - more conservative during processing
-          const timeSinceInteraction = Date.now() - lastUserInteractionRef.current;
-          const timeSinceTouchEnd = Date.now() - touchEndTimeRef.current;
-          const baseScrollThreshold = isTouchDeviceRef.current ? 800 : 300;
-          const processingMultiplier = 2; // 2x longer during processing
-          const scrollThreshold = baseScrollThreshold * processingMultiplier;
-          
-          const touchMomentumSafe = !isTouchDeviceRef.current || 
-                                  !touchMomentumActiveRef.current || 
-                                  timeSinceTouchEnd > 2000;
-          
-          if (timeSinceInteraction > scrollThreshold && !userIsInteractingRef.current && touchMomentumSafe) {
-            // Always use instant scroll for old school terminal feel
-            if (textRef.current && isAtBottom) {
-              textRef.current.scrollTop = textRef.current.scrollHeight;
-            }
+          // Auto-scroll if at bottom and not explicitly scrolled up
+          if (isAtBottom && !hasScrolledUpRef.current && textRef.current) {
+            // Add extra padding to ensure text isn't cut off
+            textRef.current.scrollTop = textRef.current.scrollHeight + 30;
           }
         } else if (part.length > 0) {
           await animateOutput(part);
@@ -393,18 +359,6 @@ function App() {
     
     processingRef.current = false;
     setIsProcessing(false);
-    // Final scroll when all processing complete with desktop-optimized timing
-    const finalCheck = Date.now() - lastUserInteractionRef.current;
-    const touchCheck = Date.now() - touchEndTimeRef.current;
-    const baseFinalThreshold = isTouchDeviceRef.current ? 1000 : 500;
-    const finalThreshold = baseFinalThreshold; // No multiplier needed since processing is done
-    const touchMomentumSettled = !isTouchDeviceRef.current || 
-                                !touchMomentumActiveRef.current || 
-                                touchCheck > 2500;
-    
-    if (finalCheck > finalThreshold && !userIsInteractingRef.current && touchMomentumSettled) {
-      requestScrollToBottom();
-    }
   };
 
   // Handle tab visibility changes to prevent gibberish when returning to tab
@@ -429,11 +383,8 @@ function App() {
         setIsAnimating(false);
         setIsProcessing(false);
         
-        // Reset mobile-specific state
-        touchMomentumActiveRef.current = false;
-        touchEndTimeRef.current = 0;
+        // Reset interaction state
         userIsInteractingRef.current = false;
-        lastUserInteractionRef.current = 0;
         
         // Reset cursor blinking
         setCursorVisible(true);
@@ -528,13 +479,8 @@ function App() {
                     
                     // Reset user interaction state
                     userIsInteractingRef.current = false;
-                    lastUserInteractionRef.current = 0;
                     setUserIsScrolling(false);
                     setIsAtBottom(true);
-                    
-                    // Reset mobile-specific touch state
-                    touchMomentumActiveRef.current = false;
-                    touchEndTimeRef.current = 0;
                     
                     // Cancel any pending scroll operations
                     if (rafScrollRef.current) {
@@ -592,258 +538,14 @@ function App() {
     // eslint-disable-next-line
   }, []);
 
-  // Priority-based scroll detection with mobile touch support
-  useEffect(() => {
-    // Mobile-aware debounced scroll handler
-    let scrollDebounceTimer: NodeJS.Timeout;
-    
-    // Immediate user interaction marker with mobile awareness
-    const markUserInteraction = () => {
-      userIsInteractingRef.current = true;
-      lastUserInteractionRef.current = Date.now();
-      setUserIsScrolling(true);
-      
-      // Cancel any pending auto-scroll immediately
-      if (rafScrollRef.current) {
-        cancelAnimationFrame(rafScrollRef.current);
-        rafScrollRef.current = null;
-        pendingScrollRef.current = false;
-      }
-    };
-    
-    const handleUserInteraction = () => {
-      if (!textRef.current) return;
-      
-      // Mark interaction immediately
-      markUserInteraction();
-      
-      // Cancel any pending debounced calls
-      clearTimeout(scrollDebounceTimer);
-      
-      // Desktop-optimized debounce timing - slower during animation
-      const baseDebounceTime = isTouchDeviceRef.current ? 32 : 16;
-      const animationMultiplier = (isAnimating || isProcessing) ? 2 : 1; // Slower during animation
-      const debounceTime = baseDebounceTime * animationMultiplier;
-      
-      scrollDebounceTimer = setTimeout(() => {
-        if (!textRef.current) return;
-        
-        const { scrollTop, scrollHeight, clientHeight } = textRef.current;
-        const atBottom = scrollTop + clientHeight >= scrollHeight - 10;
-        
-        setIsAtBottom(atBottom);
-        
-        // Clear existing timeouts
-        if (scrollingTimeoutRef.current) {
-          clearTimeout(scrollingTimeoutRef.current);
-        }
-        if (inactivityTimeoutRef.current) {
-          clearTimeout(inactivityTimeoutRef.current);
-          inactivityTimeoutRef.current = null;
-        }
-        
-        // Desktop needs longer delays during active animation
-        const baseInteractionEndDelay = isTouchDeviceRef.current ? 600 : 300;
-        const animationDelay = (isAnimating || isProcessing) ? 2 : 1; // 2x longer during animation
-        const interactionEndDelay = baseInteractionEndDelay * animationDelay;
-        
-        // Set timeout to detect when user stops interacting
-        scrollingTimeoutRef.current = setTimeout(() => {
-          userIsInteractingRef.current = false;
-          setUserIsScrolling(false);
-          
-          // If not at bottom after user stops interacting, set return timeout
-          if (!atBottom) {
-            // Longer delay during animation to avoid conflicts
-            const returnDelay = (isAnimating || isProcessing) ? 3000 : 2000;
-            inactivityTimeoutRef.current = setTimeout(() => {
-              requestScrollToBottom();
-            }, returnDelay);
-          }
-        }, interactionEndDelay);
-      }, debounceTime);
-    };
 
-    // Enhanced touch event handlers for mobile with momentum detection
-    const handleTouchStart = () => {
-      // Immediate interaction marking - critical for preventing jumps
-      markUserInteraction();
-      
-      // Reset touch momentum tracking
-      touchMomentumActiveRef.current = false;
-      touchEndTimeRef.current = 0;
-      
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-        inactivityTimeoutRef.current = null;
-      }
-    };
 
-    const handleTouchMove = () => {
-      // Mark interaction on move as well
-      markUserInteraction();
-      
-      // Reset momentum state during active touch
-      touchMomentumActiveRef.current = false;
-      
-      handleUserInteraction();
-    };
-
-    const handleTouchEnd = () => {
-      // Mark the end of direct touch interaction
-      touchEndTimeRef.current = Date.now();
-      
-      // On mobile devices, momentum scrolling may continue after touchend
-      if (isTouchDeviceRef.current) {
-        touchMomentumActiveRef.current = true;
-        
-        // Set a longer timeout to detect when momentum scrolling might be happening
-        setTimeout(() => {
-          touchMomentumActiveRef.current = false;
-          // After momentum ends, if we're not at bottom and no user interaction,
-          // instantly scroll to bottom
-          if (textRef.current && !userIsInteractingRef.current && isAtBottom) {
-            textRef.current.scrollTop = textRef.current.scrollHeight;
-          }
-        }, 3000); // 3 seconds for momentum to settle
-      }
-      
-      // Use RAF for better timing coordination with scroll events
-      requestAnimationFrame(() => {
-        handleUserInteraction();
-      });
-    };
-
-    // Wheel event handler for better desktop experience
-    const handleWheel = (e: WheelEvent) => {
-      // Immediate response to wheel events - critical for preventing jumps
-      markUserInteraction();
-      handleUserInteraction();
-    };
-
-    // Enhanced scroll event with mobile momentum awareness
-    const handleScroll = () => {
-      // Always mark interaction for scroll events
-      markUserInteraction();
-      
-      // For mobile devices, extend momentum tracking when we see scroll events
-      if (isTouchDeviceRef.current && touchMomentumActiveRef.current) {
-        const timeSinceTouchEnd = Date.now() - touchEndTimeRef.current;
-        
-        // If we're getting scroll events within 3 seconds of touch end, 
-        // it's likely momentum scrolling - extend the protection window
-        if (timeSinceTouchEnd < 3000) {
-          touchEndTimeRef.current = Date.now() - 1000; // Reset to 1s ago to extend momentum window
-        }
-      }
-      
-      handleUserInteraction();
-    };
-
-    const element = textRef.current;
-    if (element) {
-      // Mouse/trackpad scroll events with passive listeners
-      element.addEventListener('scroll', handleScroll, { passive: true });
-      element.addEventListener('wheel', handleWheel, { passive: true });
-      
-      // Touch events for mobile with passive listeners
-      element.addEventListener('touchstart', handleTouchStart, { passive: true });
-      element.addEventListener('touchend', handleTouchEnd, { passive: true });
-      element.addEventListener('touchmove', handleTouchMove, { passive: true });
-      
-      // Additional mobile-specific event listeners
-      if (isTouchDeviceRef.current) {
-        // Listen for touchcancel which can happen on mobile
-        element.addEventListener('touchcancel', handleTouchEnd, { passive: true });
-      }
-      
-      return () => {
-        clearTimeout(scrollDebounceTimer);
-        element.removeEventListener('scroll', handleScroll);
-        element.removeEventListener('wheel', handleWheel);
-        element.removeEventListener('touchstart', handleTouchStart);
-        element.removeEventListener('touchend', handleTouchEnd);
-        element.removeEventListener('touchmove', handleTouchMove);
-        
-        if (isTouchDeviceRef.current) {
-          element.removeEventListener('touchcancel', handleTouchEnd);
-        }
-        
-        if (inactivityTimeoutRef.current) {
-          clearTimeout(inactivityTimeoutRef.current);
-        }
-        if (scrollingTimeoutRef.current) {
-          clearTimeout(scrollingTimeoutRef.current);
-        }
-        if (rafScrollRef.current) {
-          cancelAnimationFrame(rafScrollRef.current);
-        }
-      };
-    }
-  }, []); // Dependencies removed to avoid recreation during interaction
-
-  // Intersection Observer for more reliable "at bottom" detection with mobile awareness
-  useEffect(() => {
-    if (!textRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry) {
-          const wasAtBottom = isAtBottom;
-          const nowAtBottom = entry.isIntersecting;
-          
-          // Only update isAtBottom state if user is not actively interacting
-          // Mobile devices need longer delays due to touch momentum
-          const timeSinceInteraction = Date.now() - lastUserInteractionRef.current;
-          const timeSinceTouchEnd = Date.now() - touchEndTimeRef.current;
-          const interactionDelay = isTouchDeviceRef.current ? 500 : 200;
-          const touchMomentumDelay = 1000;
-          
-          const userNotInteracting = !userIsInteractingRef.current && 
-                                   timeSinceInteraction > interactionDelay &&
-                                   (!isTouchDeviceRef.current || 
-                                    !touchMomentumActiveRef.current || 
-                                    timeSinceTouchEnd > touchMomentumDelay);
-          
-          if (nowAtBottom !== wasAtBottom && userNotInteracting) {
-            setIsAtBottom(nowAtBottom);
-          }
-        }
-      },
-      {
-        root: textRef.current,
-        rootMargin: '0px 0px -10px 0px', // 10px margin from bottom
-        threshold: [0, 1],
-      }
-    );
-
-    if (scrollSentinelRef.current) {
-      observer.observe(scrollSentinelRef.current);
-    }
-
-    intersectionObserverRef.current = observer;
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []); // Remove dependencies to prevent re-creation during user interaction
-
-  // Cleanup timeout on unmount with mobile-aware state reset
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // Reset all interaction state including mobile-specific refs
+      // Reset interaction state
       userIsInteractingRef.current = false;
-      lastUserInteractionRef.current = 0;
-      touchMomentumActiveRef.current = false;
-      touchEndTimeRef.current = 0;
       
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-      }
-      if (scrollingTimeoutRef.current) {
-        clearTimeout(scrollingTimeoutRef.current);
-      }
       if (rafScrollRef.current) {
         cancelAnimationFrame(rafScrollRef.current);
       }
@@ -871,20 +573,7 @@ function App() {
             prompt={PROMPT}
           />
         ))}
-        {/* Scroll sentinel for Intersection Observer */}
-        {!isLoading && (
-          <div
-            ref={scrollSentinelRef}
-            style={{
-              height: '1px',
-              width: '100%',
-              position: 'absolute',
-              bottom: '0',
-              pointerEvents: 'none',
-            }}
-            aria-hidden="true"
-          />
-        )}
+
       </CRTScreen>
     </TerminalSizeProvider>
   );
