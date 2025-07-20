@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useTerminal } from '../TerminalContext';
 import { WebSocketService } from '../../../services/websocketService';
 import type { ServerMessage, Message } from '../../../services/websocketService';
@@ -28,6 +28,10 @@ export const useWebSocket = () => {
     setIsProcessing
   } = useTerminal();
 
+  // Keep WebSocket service reference
+  const wsServiceRef = useRef<WebSocketService | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Helper function to hide loading with minimum display time
   const hideLoadingAfterMinTime = useCallback((callback?: () => void) => {
     const minLoadingTime = 1000; // Show loader for at least 1 second
@@ -48,7 +52,6 @@ export const useWebSocket = () => {
 
   // Helper function to process history messages (instant display)
   const processHistoryMessages = useCallback((messages: Message[]) => {
-    
     // Build the complete conversation from history
     const conversationLines = [PROMPT];
     let currentLine = PROMPT;
@@ -104,19 +107,6 @@ export const useWebSocket = () => {
     PROMPT
   ]);
 
-  // Simple internal queue processor for WebSocket messages
-  const processQueueInternal = useCallback(async () => {
-    if (processingRef.current) return;
-    processingRef.current = true;
-    setIsProcessing(true);
-    
-    // Signal that processing has started
-    
-    // Mark as no longer processing
-    processingRef.current = false;
-    setIsProcessing(false);
-  }, [processingRef, setIsProcessing]);
-
   // Handle WebSocket messages
   const handleMessage = useCallback((data: ServerMessage) => {
     const { type = 'live', messages } = data;
@@ -170,8 +160,6 @@ export const useWebSocket = () => {
           setLlmPrompt(DEFAULT_LLM_PROMPT);
         }
       }
-      
-      // Don't try to process queue here - Terminal component will handle it
     }
   }, [
     processHistoryMessages,
@@ -190,15 +178,51 @@ export const useWebSocket = () => {
     PROMPT
   ]);
 
+  // Helper to reset all state
+  const resetState = useCallback(() => {
+    // Reset state
+    setLines([PROMPT]);
+    setLastMemory(undefined);
+    setLlmPrompt(DEFAULT_LLM_PROMPT);
+    setIsLoading(true);
+    setIsRestarting(false);
+    setIsAnimating(false);
+    setIsProcessing(false);
+    
+    // Reset refs
+    queueRef.current = [];
+    animatingRef.current = false;
+    processingRef.current = false;
+    restartingRef.current = false;
+    isLoadingRef.current = true;
+    historyLoadedRef.current = false;
+    loadingStartTimeRef.current = Date.now();
+  }, [
+    setLines,
+    setLastMemory,
+    setLlmPrompt,
+    setIsLoading,
+    setIsRestarting,
+    setIsAnimating,
+    setIsProcessing,
+    PROMPT,
+    DEFAULT_LLM_PROMPT
+  ]);
+
   // Initialize WebSocket connection
   useEffect(() => {
-    
     // Create WebSocket service
     const wsService = new WebSocketService(WS_URL, {
       onOpen: () => {
+        // Clear any pending reconnect timeout
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
       },
       onMessage: handleMessage,
       onClose: () => {
+        // No need to handle close - service will auto-reconnect
       },
       onError: () => {
         if (isLoadingRef.current) {
@@ -208,44 +232,46 @@ export const useWebSocket = () => {
       }
     });
     
+    // Store service reference
+    wsServiceRef.current = wsService;
+    
     // Connect to WebSocket server
     wsService.connect();
     
-    // Cleanup on unmount
-    return () => {
-      wsService.disconnect();
-    };
-  }, [handleMessage, setIsLoading, isLoadingRef]);
-
-  // Handle tab visibility changes
-  useEffect(() => {
+    // Handle tab visibility changes
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // Only show loading state if no history has been loaded yet
-        if (!historyLoadedRef.current) {
-          setIsLoading(true);
-          isLoadingRef.current = true;
-          loadingStartTimeRef.current = Date.now(); // Reset loading start time
+        // Clear any existing reconnect timeout
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
         }
         
-        // Clear any pending animations and queue
-        queueRef.current = [];
-        animatingRef.current = false;
-        processingRef.current = false;
+        // Reset state after a brief delay to ensure clean slate
+        reconnectTimeoutRef.current = setTimeout(() => {
+          resetState();
+          
+          // Force WebSocket reconnection to get fresh history
+          if (wsServiceRef.current) {
+            wsServiceRef.current.reconnect();
+          }
+          
+          reconnectTimeoutRef.current = null;
+        }, 100);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [
-    setIsLoading, 
-    isLoadingRef, 
-    historyLoadedRef, 
-    loadingStartTimeRef, 
-    queueRef, 
-    animatingRef, 
-    processingRef
-  ]);
+    
+    // Cleanup on unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      wsService.disconnect();
+    };
+  }, [handleMessage, resetState]);
 
   return {
     processHistoryMessages,

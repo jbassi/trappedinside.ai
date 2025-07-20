@@ -44,6 +44,8 @@ export class WebSocketService {
   private options: WebSocketOptions;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private loadingTimeout: NodeJS.Timeout | null = null;
+  private isReconnecting: boolean = false;
+  private isDisconnecting: boolean = false;
 
   constructor(url: string, options: WebSocketOptions) {
     this.url = url;
@@ -53,10 +55,26 @@ export class WebSocketService {
     };
   }
 
+  // Force a reconnection to get fresh history
+  reconnect(): void {
+    // Only reconnect if not already in progress
+    if (!this.isReconnecting) {
+      this.isReconnecting = true;
+      this.disconnect();
+      this.connect();
+    }
+  }
+
   // Connect to WebSocket server
   connect(): void {
+    // Don't connect if intentionally disconnecting
+    if (this.isDisconnecting) {
+      return;
+    }
+
     if (this.ws) {
       this.ws.close();
+      this.ws = null;
     }
 
     this.ws = new WebSocket(this.url);
@@ -76,6 +94,7 @@ export class WebSocketService {
         clearTimeout(this.loadingTimeout);
         this.loadingTimeout = null;
       }
+      this.isReconnecting = false;
       this.options.onOpen?.();
     };
 
@@ -98,15 +117,23 @@ export class WebSocketService {
         clearTimeout(this.loadingTimeout);
         this.loadingTimeout = null;
       }
-      this.options.onClose?.();
       
-      // Automatically reconnect
-      if (this.reconnectTimeout) {
-        clearTimeout(this.reconnectTimeout);
+      // Only call onClose if not intentionally disconnecting
+      if (!this.isDisconnecting) {
+        this.options.onClose?.();
       }
-      this.reconnectTimeout = setTimeout(() => {
-        this.connect();
-      }, this.options.reconnectDelay);
+      
+      // Only auto-reconnect if not manually disconnecting
+      if (!this.isDisconnecting && !this.isReconnecting) {
+        if (this.reconnectTimeout) {
+          clearTimeout(this.reconnectTimeout);
+        }
+        this.reconnectTimeout = setTimeout(() => {
+          this.connect();
+        }, this.options.reconnectDelay);
+      }
+      
+      this.ws = null;
     };
 
     this.ws.onerror = (error) => {
@@ -115,12 +142,18 @@ export class WebSocketService {
         this.loadingTimeout = null;
       }
       this.options.onError?.(error);
-      this.ws?.close();
+      
+      // Close connection on error to trigger reconnect
+      if (this.ws) {
+        this.ws.close();
+      }
     };
   }
 
   // Disconnect from WebSocket server
   disconnect(): void {
+    this.isDisconnecting = true;
+
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -135,6 +168,10 @@ export class WebSocketService {
       this.ws.close();
       this.ws = null;
     }
+
+    // Reset flags after cleanup
+    this.isDisconnecting = false;
+    this.isReconnecting = false;
   }
 
   // Send message to WebSocket server
