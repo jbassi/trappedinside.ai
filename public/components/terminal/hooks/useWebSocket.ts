@@ -162,7 +162,11 @@ export const useWebSocket = () => {
         if (msg.text) {
           // Only queue text if tab is visible to prevent accumulation
           if (document.visibilityState === 'visible') {
-            queueRef.current.push(msg.text);
+            // Check if this message is a duplicate of the last queued message
+            const lastQueuedMsg = queueRef.current[queueRef.current.length - 1];
+            if (!lastQueuedMsg || lastQueuedMsg.trim() !== msg.text.trim()) {
+              queueRef.current.push(msg.text);
+            }
           }
         }
         

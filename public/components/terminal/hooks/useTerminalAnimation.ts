@@ -107,8 +107,13 @@ export const useTerminalAnimation = () => {
       const chunk = queueRef.current.shift();
       if (!chunk) continue;
       
-      // If chunk contains newlines, split and animate each part
-      for (let part of chunk.split(/(\n)/g)) {
+      // Split chunk into parts, filtering out empty strings but preserving whitespace
+      const parts = chunk.split(/(\n)/g).filter(part => part.length > 0);
+      
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (!part) continue;
+        
         // Check for restart or tab visibility before each part
         if (restartingRef.current || document.visibilityState !== 'visible') {
           processingRef.current = false;
@@ -117,15 +122,20 @@ export const useTerminalAnimation = () => {
         }
         
         if (part === "\n") {
-          setLines(prev => [...prev, PROMPT]);
-          // Brief pause after newlines with instant scroll
-          await new Promise(res => setTimeout(res, 100));
-          
-          // Scroll to bottom if needed (only if user hasn't scrolled up)
-          scrollToBottomIfNeeded();
-        } else if (part.length > 0) {
-          await animateOutput(part);
-          await new Promise(res => setTimeout(res, 50 + part.length * 5));
+          // Only add a new line with PROMPT if there's more content coming
+          if (i < parts.length - 1 || queueRef.current.length > 0) {
+            setLines(prev => [...prev, PROMPT]);
+            // Brief pause after newlines with instant scroll
+            await new Promise(res => setTimeout(res, 100));
+            // Scroll to bottom if needed (only if user hasn't scrolled up)
+            scrollToBottomIfNeeded();
+          }
+        } else {
+          // Don't trim the part to preserve leading/trailing spaces
+          if (part.length > 0) {
+            await animateOutput(part);
+            await new Promise(res => setTimeout(res, 50 + part.length * 5));
+          }
         }
       }
     }
