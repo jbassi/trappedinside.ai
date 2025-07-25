@@ -63,7 +63,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = () => {
           <span className={`flex-1 px-1 sm:px-2 text-center ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
             {(() => {
               const barLength = Math.max(4, Math.floor(effectiveWidth / 8));
-              const filled = Math.floor(spinnerFrame * (barLength / 4)) + 1;
+              const filled = Math.round(spinnerFrame * (barLength / 4)) + 1;
               const empty = barLength - filled;
               return '█'.repeat(filled) + '░'.repeat(empty);
             })()}

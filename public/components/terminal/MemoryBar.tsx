@@ -47,7 +47,7 @@ export const MemoryBar: React.FC<MemoryBarProps> = ({ memory }) => {
   
   // Ensure percent_used is within valid range and calculate filled width properly
   const safePercentUsed = Math.max(0, Math.min(100, percent_used));
-  const filledWidth = Math.max(0, Math.floor((safePercentUsed / 100) * barWidth));
+  const filledWidth = Math.max(0, Math.round((safePercentUsed / 100) * barWidth));
   const emptyWidth = Math.max(0, barWidth - filledWidth);
   
   const formatMemoryText = () => {
