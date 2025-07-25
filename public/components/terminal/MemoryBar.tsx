@@ -9,9 +9,9 @@ interface MemoryBarProps {
 
 export const MemoryBar: React.FC<MemoryBarProps> = ({ memory }) => {
   const { terminalWidth } = useTerminalSize();
-  // Use default values when no memory data is available
+
   const available_mb = memory?.available_mb ?? 0;
-  const total_mb = memory?.total_mb ?? 8192; // Default 8GB
+  const total_mb = memory?.total_mb ?? 0;
   const percent_used = memory?.percent_used ?? 0;
   
   // Responsive layout calculation - always try to keep on one line
