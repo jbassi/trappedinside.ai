@@ -1,3 +1,170 @@
+---
+alwaysApply: true
+---
+
+
+# LLM Art Web Project Rules
+
+This is a real-time WebSocket-based terminal application simulating an AI living in a Raspberry Pi with limited resources.
+
+## Architecture Patterns
+
+### Backend (app.ts)
+- **Always use Bun.serve()** for WebSocket + HTTP server (not Express)
+- **JWT authentication** required only for sending messages, not receiving
+- **Broadcasting pattern**: All connected clients receive streamed messages
+- **Dual serving mode**: `public/` in dev, `dist/` in production
+- **Environment-based configuration** with fallback defaults
+
+### Frontend Structure
+- **Context-based state management** with TerminalContext provider
+- **Custom hooks architecture** for modular functionality
+- **WebSocket service layer** for connection management
+- **CRT terminal simulation** with hardware-accelerated effects
+- **Typewriter animation** with variable timing (25-50ms per character)
+- **Smart scroll behavior** with unified desktop/mobile handling
+- **Tab visibility handling** to prevent message accumulation
+
+## Component Architecture
+
+### Core Components
+- **Terminal**: Main component orchestrating all functionality
+- **CRTScreen**: Hardware-accelerated CRT effects
+- **MemoryBar**: Dynamic width-based memory visualization
+- **PromptDisplay**: Centered, bordered ASCII box
+- **TerminalLine**: Individual lines with cursor support
+
+### Context and Hooks
+- **TerminalContext**: Centralized state and shared functionality
+- **useTerminalScroll**: Unified scroll behavior management
+- **useTerminalAnimation**: Text animation and queue processing
+- **useWebSocket**: WebSocket connection and message handling
+
+### Services
+- **WebSocketService**: Connection management and message parsing
+- **Mobile Detection**: Device-aware functionality
+- **Terminal Styling**: Centralized CRT effects
+
+## State Management
+
+### Context Provider
+- **Shared State**: Lines, memory, prompt, loading states
+- **Animation Control**: Cursor blinking, text animation
+- **Scroll Behavior**: Position tracking, auto-scroll
+- **WebSocket State**: Connection status, message queue
+
+### Custom Hooks
+- **Scroll Management**: Position tracking and auto-scroll
+- **Animation Control**: Typewriter effect and cursor
+- **WebSocket Handling**: Connection and messages
+- **Queue Processing**: Message animation coordination
+
+## Performance Patterns
+
+### Animation Optimization
+- **RAF-based scrolling**: Smooth auto-scroll behavior
+- **Hardware acceleration**: CSS transforms and effects
+- **Efficient updates**: State batching and refs
+- **Cleanup patterns**: Proper resource management
+
+### Event Handling
+- **Passive listeners**: Touch and scroll optimization
+- **Unified scroll handling**: Desktop and mobile
+- **Debounced handlers**: Prevent excessive updates
+- **Proper cleanup**: Remove listeners and timeouts
+
+## WebSocket Protocol
+
+### Message Format
+```typescript
+interface ServerMessage {
+  text: string;
+  memory?: { available_mb: number; percent_used: number; total_mb: number };
+  status?: { is_restarting: boolean };
+  prompt?: string;
+}
+```
+
+### Connection Handling
+- **Auto-reconnection**: 100ms delay between attempts
+- **Loading states**: Connection status tracking
+- **Message validation**: Zod schema parsing
+- **Queue management**: Ordered message processing
+
+## Development Guidelines
+
+### Component Development
+- **Use context** for shared state access
+- **Implement hooks** for specific functionality
+- **Leverage services** for external concerns
+- **Follow cleanup patterns** in effects
+
+### State Management
+- **Context for sharing**: Avoid prop drilling
+- **Refs for performance**: Immediate state access
+- **Hooks for logic**: Reusable functionality
+- **Services for external**: WebSocket, device detection
+
+### Error Handling
+- **WebSocket resilience**: Auto-reconnection
+- **Message validation**: Schema checking
+- **Loading timeouts**: Connection monitoring
+- **State cleanup**: Proper reset handling
+
+### Testing Requirements
+- **Scroll behavior**: During animation
+- **WebSocket handling**: Connection states
+- **State management**: Context updates
+- **Hook interaction**: Cleanup verification
+- **Service reliability**: Connection handling
+
+## Code Organization
+
+### File Structure
+```
+public/
+  ├── components/
+  │   ├── terminal/
+  │   │   ├── Terminal.tsx
+  │   │   ├── CRTScreen.tsx
+  │   │   ├── TerminalContext.tsx
+  │   │   └── hooks/
+  │   │       ├── useTerminalScroll.ts
+  │   │       ├── useTerminalAnimation.ts
+  │   │       └── useWebSocket.ts
+  ├── services/
+  │   └── websocketService.ts
+  └── utils/
+      └── mobileUtils.ts
+```
+
+### Best Practices
+- **Context-based state**: Centralized management
+- **Custom hooks**: Reusable logic
+- **Service layer**: External concerns
+- **Clear separation**: Component responsibilities
+- **Type safety**: TypeScript and Zod
+
+## Maintenance Guidelines
+
+### When to Update
+- **Architecture changes**: Component organization
+- **New patterns**: Hook or context usage
+- **Service updates**: External handling
+- **State management**: Context patterns
+- **Mobile handling**: Interaction patterns
+
+### How to Update
+- **Document patterns**: As they emerge
+- **Update structure**: Keep diagrams current
+- **Add examples**: Show hook usage
+- **Note changes**: Mobile considerations
+- **Keep in sync**: Update both docs
+
+7. **Account for container padding** in character width calculations
+8. **Use passive event listeners** for performance
+9. **Implement debouncing** with device-specific timing
+10. **Test on both mobile and desktop** for scroll behavior
 
 # LLM Art Web Project Rules
 
