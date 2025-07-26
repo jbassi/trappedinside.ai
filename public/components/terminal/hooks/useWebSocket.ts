@@ -31,6 +31,11 @@ export const useWebSocket = () => {
   // Keep WebSocket service reference
   const wsServiceRef = useRef<WebSocketService | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Track last received message to prevent duplicates
+  const lastMessageRef = useRef<string>("");
+  const messageHashesRef = useRef<Set<string>>(new Set());
+  const fullTextBufferRef = useRef<string>("");
 
   // Helper function to hide loading with minimum display time
   const hideLoadingAfterMinTime = useCallback((callback?: () => void) => {
@@ -50,8 +55,66 @@ export const useWebSocket = () => {
     }, remainingTime);
   }, [setIsLoading, isLoadingRef, loadingStartTimeRef, minLoadingTimeRef]);
 
+  // Helper function to check for duplicate or overlapping messages
+  const checkAndProcessMessage = useCallback((text: string): string | null => {
+    if (!text || text.length === 0) return null;
+    
+    // Add to full text buffer for overlap detection
+    const fullText = fullTextBufferRef.current + text;
+    
+    // Check for exact duplicates
+    const messageHash = text.trim().substring(0, 50);
+    if (messageHashesRef.current.has(messageHash)) {
+      console.log("Skipping exact duplicate:", text.substring(0, 30) + "...");
+      return null;
+    }
+    
+    // Check for overlapping content (text that's already in our buffer)
+    let newContent = text;
+    
+    // If we have previous content, check for overlaps
+    if (fullTextBufferRef.current.length > 0) {
+      // Look for overlapping segments (at least 10 chars to avoid false positives)
+      for (let overlapSize = Math.min(text.length, fullTextBufferRef.current.length); overlapSize >= 10; overlapSize--) {
+        const endOfBuffer = fullTextBufferRef.current.substring(fullTextBufferRef.current.length - overlapSize);
+        const startOfNewText = text.substring(0, overlapSize);
+        
+        // If we found an overlap
+        if (endOfBuffer === startOfNewText) {
+          // Only keep the part after the overlap
+          newContent = text.substring(overlapSize);
+          console.log(`Found overlap of ${overlapSize} chars, keeping only: "${newContent}"`);
+          break;
+        }
+      }
+    }
+    
+    // Update our tracking
+    fullTextBufferRef.current = fullText;
+    messageHashesRef.current.add(messageHash);
+    
+    // Limit set size to prevent memory growth
+    if (messageHashesRef.current.size > 30) {
+      const messagesArray = Array.from(messageHashesRef.current);
+      messageHashesRef.current = new Set(messagesArray.slice(-15));
+    }
+    
+    // Limit buffer size to prevent memory growth
+    if (fullTextBufferRef.current.length > 5000) {
+      fullTextBufferRef.current = fullTextBufferRef.current.substring(fullTextBufferRef.current.length - 2000);
+    }
+    
+    // Return the non-duplicate content (or null if everything was a duplicate)
+    return newContent.length > 0 ? newContent : null;
+  }, []);
+
   // Helper function to process history messages (instant display)
   const processHistoryMessages = useCallback((messages: Message[]) => {
+    // Reset message tracking on history load
+    lastMessageRef.current = "";
+    messageHashesRef.current.clear();
+    fullTextBufferRef.current = "";
+    
     // Build the complete conversation from history
     const conversationLines = [PROMPT];
     let currentLine = PROMPT;
@@ -116,8 +179,6 @@ export const useWebSocket = () => {
       // Process history messages instantly
       processHistoryMessages(messages);
     } else if (type === 'live') {
-      // Handle live messages with existing animation logic
-      
       // Hide loading spinner on first live message (if history wasn't received)
       if (isLoadingRef.current) {
         historyLoadedRef.current = true; // Consider history loaded
@@ -141,10 +202,14 @@ export const useWebSocket = () => {
             setLlmPrompt(DEFAULT_LLM_PROMPT);
             historyLoadedRef.current = false; // Reset history state
             
-            // Show loading state
-            setIsLoading(true);
-            isLoadingRef.current = true;
-            loadingStartTimeRef.current = Date.now();
+            // Reset message tracking
+            lastMessageRef.current = "";
+            messageHashesRef.current.clear();
+            fullTextBufferRef.current = "";
+            
+            // Don't show loading spinner during restart
+            setIsLoading(false);
+            isLoadingRef.current = false;
             
             // Force WebSocket reconnection after a brief delay
             setTimeout(() => {
@@ -158,29 +223,29 @@ export const useWebSocket = () => {
           }
         }
         
-        // Process text content if not restarting
-        if (msg.text) {
-          // Only queue text if tab is visible to prevent accumulation
-          if (document.visibilityState === 'visible') {
-            // Check if this message is a duplicate of the last queued message
-            const lastQueuedMsg = queueRef.current[queueRef.current.length - 1];
-            if (!lastQueuedMsg || lastQueuedMsg !== msg.text) {
-              queueRef.current.push(msg.text);
-            }
-          }
-        }
-        
         // Update memory if present
         if (msg.memory) {
           setLastMemory(msg.memory);
         }
         
         // Update prompt if present (check for non-empty string)
-        if (msg.prompt && msg.prompt.trim() !== "") {
-          setLlmPrompt(msg.prompt);
-        } else if (msg.prompt !== undefined && msg.prompt.trim() === "") {
-          // If server sends empty prompt, fall back to default
-          setLlmPrompt(DEFAULT_LLM_PROMPT);
+        if (msg.prompt !== undefined) {
+          if (msg.prompt.trim() !== "") {
+            setLlmPrompt(msg.prompt);
+          } else {
+            setLlmPrompt(DEFAULT_LLM_PROMPT);
+          }
+        }
+        
+        // Process text content if not restarting and text exists
+        if (msg.text !== undefined && !restartingRef.current) {
+          // Check for duplicates and get only new content
+          const newContent = checkAndProcessMessage(msg.text);
+          
+          // Only queue non-duplicate content
+          if (newContent) {
+            queueRef.current.push(newContent);
+          }
         }
       }
     }
@@ -201,7 +266,8 @@ export const useWebSocket = () => {
     loadingStartTimeRef,
     wsServiceRef,
     DEFAULT_LLM_PROMPT,
-    PROMPT
+    PROMPT,
+    checkAndProcessMessage
   ]);
 
   // Helper to reset all state
@@ -223,6 +289,11 @@ export const useWebSocket = () => {
     isLoadingRef.current = true;
     historyLoadedRef.current = false;
     loadingStartTimeRef.current = Date.now();
+    
+    // Reset message tracking
+    lastMessageRef.current = "";
+    messageHashesRef.current.clear();
+    fullTextBufferRef.current = "";
   }, [
     setLines,
     setLastMemory,

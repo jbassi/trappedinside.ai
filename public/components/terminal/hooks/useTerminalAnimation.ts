@@ -51,9 +51,15 @@ export const useTerminalAnimation = () => {
   // Helper to animate in new output - simplified version
   const animateOutput = useCallback((output: string) => {
     return new Promise<void>((resolve) => {
+      if (output.length === 0) {
+        resolve();
+        return;
+      }
+      
       animatingRef.current = true;
       setIsAnimating(true);
       setCursorVisible(true); // Keep cursor visible during animation
+      
       let i = 0;
       function step() {
         // Stop animation immediately if restarting or tab is not visible
@@ -89,70 +95,81 @@ export const useTerminalAnimation = () => {
     });
   }, [setIsAnimating, setCursorVisible, setLines, animatingRef, restartingRef, scrollToBottomIfNeeded]);
 
-  // Animation queue processor - simplified version
-  const processQueue = useCallback(async () => {
-    if (processingRef.current) return;
-    processingRef.current = true;
-    setIsProcessing(true);
-    setCursorVisible(true); // Keep cursor visible during processing
+  // Process a single text chunk with newlines
+  const processTextChunk = useCallback(async (text: string) => {
+    if (!text) return;
     
-    while (queueRef.current.length > 0) {
-      // Stop processing immediately if restarting or tab is not visible
-      if (restartingRef.current || document.visibilityState !== 'visible') {
-        processingRef.current = false;
-        setIsProcessing(false);
-        return;
+    // Handle text by processing line by line, preserving all newlines
+    // This ensures proper handling of all content including empty lines and special formatting
+    
+    // First, normalize line endings and split into lines
+    const normalizedText = text.replace(/\r\n/g, '\n');
+    const hasLeadingNewline = normalizedText.startsWith('\n');
+    const hasTrailingNewline = normalizedText.endsWith('\n');
+    
+    // Split by newlines, preserving empty lines
+    const textLines = normalizedText.split('\n');
+    
+    // Process each line
+    for (let i = 0; i < textLines.length; i++) {
+      // Check if we're restarting
+      if (restartingRef.current) break;
+      
+      // For lines after the first one, or if there's a leading newline,
+      // add a new prompt line before processing the content
+      if (i > 0 || (i === 0 && hasLeadingNewline)) {
+        setLines(prev => [...prev, PROMPT]);
+        await new Promise(r => setTimeout(r, 50)); // Small delay for newline
+        scrollToBottomIfNeeded();
       }
       
-      const chunk = queueRef.current.shift();
-      if (!chunk) continue;
+      // Get the current line (safely)
+      const currentLine = textLines[i] || "";
       
-      // Split chunk into parts, preserving all newlines
-      const parts = chunk.split(/(\n)/g);
-      
-      for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        if (part === undefined) continue;
-        
-        // Check for restart or tab visibility before each part
-        if (restartingRef.current || document.visibilityState !== 'visible') {
-          processingRef.current = false;
-          setIsProcessing(false);
-          return;
-        }
-        
-        if (part === "\n") {
-          // Add a new line with PROMPT
-          setLines(prev => [...prev, PROMPT]);
-          // Brief pause after newlines with instant scroll
-          await new Promise(res => setTimeout(res, 100));
-          // Scroll to bottom if needed (only if user hasn't scrolled up)
-          scrollToBottomIfNeeded();
-        } else {
-          // Skip empty strings that are between two newlines (they're handled by the newlines themselves)
-          if (i > 0 && parts[i-1] === "\n" && i < parts.length - 1 && parts[i+1] === "\n") {
-            continue;
-          }
-          // Process the part even if it's empty to preserve spacing in other cases
-          await animateOutput(part);
-          await new Promise(res => setTimeout(res, 50 + part.length * 5));
-        }
+      // Animate the line content (even if empty, to preserve spacing)
+      if (currentLine.length > 0) {
+        await animateOutput(currentLine);
+        await new Promise(r => setTimeout(r, 50)); // Small delay after content
       }
     }
     
-    processingRef.current = false;
-    setIsProcessing(false);
-  }, [
-    setIsProcessing, 
-    setCursorVisible, 
-    setLines, 
-    animateOutput, 
-    processingRef, 
-    queueRef, 
-    restartingRef, 
-    scrollToBottomIfNeeded, 
-    PROMPT
-  ]);
+    // Add a final newline if the text ended with one
+    if (hasTrailingNewline && textLines.length > 0) {
+      setLines(prev => [...prev, PROMPT]);
+      await new Promise(r => setTimeout(r, 50));
+      scrollToBottomIfNeeded();
+    }
+  }, [animateOutput, setLines, scrollToBottomIfNeeded, restartingRef, PROMPT]);
+
+  // Animation queue processor
+  const processQueue = useCallback(async () => {
+    if (processingRef.current || restartingRef.current) return;
+    
+    processingRef.current = true;
+    setIsProcessing(true);
+    
+    try {
+      while (queueRef.current.length > 0 && !restartingRef.current) {
+        const chunk = queueRef.current.shift();
+        if (chunk === undefined) continue;
+        
+        await processTextChunk(chunk);
+      }
+    } finally {
+      processingRef.current = false;
+      setIsProcessing(false);
+    }
+  }, [queueRef, processingRef, restartingRef, setIsProcessing, processTextChunk]);
+
+  // Monitor the queue and process when items are added
+  useEffect(() => {
+    if (queueRef.current.length > 0 && !processingRef.current && !restartingRef.current) {
+      // Use setTimeout to avoid potential state update issues
+      setTimeout(() => {
+        processQueue();
+      }, 0);
+    }
+  }, [queueRef.current.length, processQueue, processingRef, restartingRef]);
 
   return {
     animateOutput,
