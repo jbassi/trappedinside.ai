@@ -164,7 +164,7 @@ export const useWebSocket = () => {
           if (document.visibilityState === 'visible') {
             // Check if this message is a duplicate of the last queued message
             const lastQueuedMsg = queueRef.current[queueRef.current.length - 1];
-            if (!lastQueuedMsg || lastQueuedMsg.trim() !== msg.text.trim()) {
+            if (!lastQueuedMsg || lastQueuedMsg !== msg.text) {
               queueRef.current.push(msg.text);
             }
           }
