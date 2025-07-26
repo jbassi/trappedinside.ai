@@ -13,10 +13,11 @@ interface CRTScreenProps {
 export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay, loadingSpinner }) => {
   // State for desktop terminal dimensions
   const [terminalDimensions] = useState({
-    x: 492,
-    y: 196,
-    width: 570,
-    height: 446
+    x: 655,
+    y: 155,
+    width: 640,
+    height: 500,
+    borderRadius: 62
   });
 
   // State to determine if we should use SVG or direct mobile approach
@@ -130,12 +131,12 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
     );
   }
 
-  // SVG approach for desktop, tablet, and mobile landscape
+  // SVG approach for desktop and tablet
   return (
     <div className="fixed inset-0 overflow-hidden bg-black">
       <svg
         className="w-full h-full min-w-screen min-h-screen"
-        viewBox="0 0 1536 1024"
+        viewBox="0 0 1927 1080"
         preserveAspectRatio="xMidYMid meet"
         style={{ width: '100vw', height: '100vh', display: 'block' }}
       >
@@ -144,8 +145,8 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
           href="/monitor-background.svg"
           x="0"
           y="0"
-          width="1536"
-          height="1024"
+          width="1927"
+          height="1080"
           preserveAspectRatio="xMidYMid meet"
         />
         {/* Terminal Content Area */}
@@ -157,23 +158,25 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
           className="overflow-hidden"
         >
           <div
-            className="w-full h-full flex flex-col rounded-[14px]"
+            className="w-full h-full flex flex-col"
             style={{
               background: 'rgba(0, 0, 0, 0.98)',
               overflow: 'hidden',
               padding: '0',
+              borderRadius: `${terminalDimensions.borderRadius}px`,
             }}
           >
             {/* CRT Screen Effects Overlay */}
             <div
-              className="absolute inset-0 pointer-events-none rounded-[14px]"
+              className="absolute inset-0 pointer-events-none"
               style={{
                 background: `
                   linear-gradient(transparent 50%, rgba(0,255,0,0.03) 50%),
                   radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%)
                 `,
                 backgroundSize: '100% 4px, 100% 100%',
-                zIndex: 20
+                zIndex: 20,
+                borderRadius: `${terminalDimensions.borderRadius}px`,
               }}
             />
             {/* Terminal Content Area */}
@@ -185,7 +188,8 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                   linear-gradient(45deg, rgba(0,255,0,0.02) 0%, transparent 50%, rgba(0,255,0,0.02) 100%)
                 `,
                 boxShadow: 'inset 0 0 50px rgba(0,255,0,0.1)',
-                zIndex: 15
+                zIndex: 15,
+                borderRadius: `${terminalDimensions.borderRadius}px`,
               }}
             >
               {/* Fixed memory bar at top */}
@@ -194,7 +198,9 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                 style={{
                   zIndex: 25,
                   flexShrink: 0,
-                  backdropFilter: 'blur(2px)'
+                  backdropFilter: 'blur(2px)',
+                  borderTopLeftRadius: `${terminalDimensions.borderRadius}px`,
+                  borderTopRightRadius: `${terminalDimensions.borderRadius}px`,
                 }}
               >
                 {memoryBar}
