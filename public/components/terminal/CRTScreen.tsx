@@ -17,7 +17,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
     y: 155,
     width: 640,
     height: 500,
-    borderRadius: 62
+    borderRadius: 54
   });
 
   // State to determine if we should use SVG or direct mobile approach
