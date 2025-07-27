@@ -34,6 +34,19 @@ export const TaskBar: React.FC<TaskBarProps> = ({
   
   const { compact } = getResponsiveLayout();
   
+  // Handle scroll button clicks
+  const handleScrollToTop = () => {
+    if (onScrollToTop) {
+      onScrollToTop();
+    }
+  };
+  
+  const handleScrollToBottom = () => {
+    if (onScrollToBottom) {
+      onScrollToBottom();
+    }
+  };
+  
   return (
     <BarBase>
       {/* Left side - Tab buttons */}
@@ -57,14 +70,16 @@ export const TaskBar: React.FC<TaskBarProps> = ({
       {/* Right side - Navigation buttons */}
       <div className="flex items-center gap-1">
         <BarButton 
-          onClick={onScrollToTop}
+          onClick={handleScrollToTop}
           className={compact ? "px-1 py-0.5" : ""}
+          aria-label="Scroll to top"
         >
           {compact ? "↑" : "To top"}
         </BarButton>
         <BarButton 
-          onClick={onScrollToBottom}
+          onClick={handleScrollToBottom}
           className={compact ? "px-1 py-0.5" : ""}
+          aria-label="Scroll to bottom"
         >
           {compact ? "↓" : "To bottom"}
         </BarButton>
