@@ -36,9 +36,17 @@ export const useWebSocket = () => {
   const lastMessageRef = useRef<string>("");
   const messageHashesRef = useRef<Set<string>>(new Set());
   const fullTextBufferRef = useRef<string>("");
+  
+  // Track if we're waiting for a message after restart
+  const waitingForFirstMessageAfterRestartRef = useRef<boolean>(false);
 
   // Helper function to hide loading with minimum display time
   const hideLoadingAfterMinTime = useCallback((callback?: () => void) => {
+    // If we're waiting for first message after restart, don't hide loading yet
+    if (waitingForFirstMessageAfterRestartRef.current) {
+      return;
+    }
+    
     const minLoadingTime = 1000; // Show loader for at least 1 second
     const elapsedTime = Date.now() - loadingStartTimeRef.current;
     const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
@@ -54,6 +62,13 @@ export const useWebSocket = () => {
       minLoadingTimeRef.current = null;
     }, remainingTime);
   }, [setIsLoading, isLoadingRef, loadingStartTimeRef, minLoadingTimeRef]);
+
+  // Helper function to show loading spinner
+  const showLoading = useCallback(() => {
+    setIsLoading(true);
+    isLoadingRef.current = true;
+    loadingStartTimeRef.current = Date.now();
+  }, [setIsLoading, isLoadingRef, loadingStartTimeRef]);
 
   // Helper function to check for duplicate or overlapping messages
   const checkAndProcessMessage = useCallback((text: string): string | null => {
@@ -180,7 +195,7 @@ export const useWebSocket = () => {
       processHistoryMessages(messages);
     } else if (type === 'live') {
       // Hide loading spinner on first live message (if history wasn't received)
-      if (isLoadingRef.current) {
+      if (isLoadingRef.current && !restartingRef.current && !waitingForFirstMessageAfterRestartRef.current) {
         historyLoadedRef.current = true; // Consider history loaded
         hideLoadingAfterMinTime(); // Use minimum loading time
       }
@@ -189,27 +204,36 @@ export const useWebSocket = () => {
       for (const msg of messages) {
         // Handle restarting status first and synchronously
         if (msg.status?.is_restarting !== undefined) {
-          setIsRestarting(msg.status.is_restarting);
-          restartingRef.current = msg.status.is_restarting;
+          const isRestarting = msg.status.is_restarting;
+          setIsRestarting(isRestarting);
+          restartingRef.current = isRestarting;
           
-          // Clear terminal and reset state immediately when restarting
-          if (msg.status.is_restarting) {
+          // Handle restart state change
+          if (isRestarting) {
+            // Check if this is a silent restart (no message content)
+            const isSilentRestart = !msg.text || msg.text.trim() === "";
+            
+            // Always clear the terminal for restarts
             setLines([PROMPT]);
             queueRef.current = [];
             animatingRef.current = false;
             processingRef.current = false;
+            
+            // Reset state
             setLastMemory(undefined);
             setLlmPrompt(DEFAULT_LLM_PROMPT);
-            historyLoadedRef.current = false; // Reset history state
+            historyLoadedRef.current = false;
             
             // Reset message tracking
             lastMessageRef.current = "";
             messageHashesRef.current.clear();
             fullTextBufferRef.current = "";
             
-            // Don't show loading spinner during restart
-            setIsLoading(false);
-            isLoadingRef.current = false;
+            // Show loading spinner for all restarts
+            showLoading();
+            
+            // Set flag to wait for first message after restart
+            waitingForFirstMessageAfterRestartRef.current = true;
             
             // Force WebSocket reconnection after a brief delay
             setTimeout(() => {
@@ -218,8 +242,17 @@ export const useWebSocket = () => {
               }
             }, 100);
             
-            // Skip processing any remaining message content
-            return;
+            // Skip processing for silent restarts
+            if (isSilentRestart) {
+              return; // Skip processing any remaining message content
+            }
+            // For non-silent restarts, continue to process the message content
+          } else if (!isRestarting && waitingForFirstMessageAfterRestartRef.current) {
+            // We received a message with is_restarting = false after a restart
+            waitingForFirstMessageAfterRestartRef.current = false;
+            
+            // Now we can hide the loading spinner (with minimum display time)
+            hideLoadingAfterMinTime();
           }
         }
         
@@ -237,14 +270,21 @@ export const useWebSocket = () => {
           }
         }
         
-        // Process text content if not restarting and text exists
-        if (msg.text !== undefined && !restartingRef.current) {
+        // Process text content if text exists
+        if (msg.text !== undefined) {
           // Check for duplicates and get only new content
           const newContent = checkAndProcessMessage(msg.text);
           
           // Only queue non-duplicate content
           if (newContent) {
             queueRef.current.push(newContent);
+            
+            // If we're waiting for first message after restart and received text,
+            // we can now hide the loading spinner
+            if (waitingForFirstMessageAfterRestartRef.current) {
+              waitingForFirstMessageAfterRestartRef.current = false;
+              hideLoadingAfterMinTime();
+            }
           }
         }
       }
@@ -252,18 +292,17 @@ export const useWebSocket = () => {
   }, [
     processHistoryMessages,
     hideLoadingAfterMinTime,
+    showLoading,
     setLines,
     setLastMemory,
     setLlmPrompt,
     setIsRestarting,
-    setIsLoading,
     queueRef,
     animatingRef,
     processingRef,
     restartingRef,
     isLoadingRef,
     historyLoadedRef,
-    loadingStartTimeRef,
     wsServiceRef,
     DEFAULT_LLM_PROMPT,
     PROMPT,
@@ -289,6 +328,7 @@ export const useWebSocket = () => {
     isLoadingRef.current = true;
     historyLoadedRef.current = false;
     loadingStartTimeRef.current = Date.now();
+    waitingForFirstMessageAfterRestartRef.current = false;
     
     // Reset message tracking
     lastMessageRef.current = "";
@@ -322,7 +362,7 @@ export const useWebSocket = () => {
         // No need to handle close - service will auto-reconnect
       },
       onError: () => {
-        if (isLoadingRef.current) {
+        if (isLoadingRef.current && !waitingForFirstMessageAfterRestartRef.current) {
           setIsLoading(false);
           isLoadingRef.current = false;
         }

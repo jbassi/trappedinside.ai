@@ -99,16 +99,19 @@ export const useTerminalAnimation = () => {
   const processTextChunk = useCallback(async (text: string) => {
     if (!text) return;
     
-    // Handle text by processing line by line, preserving all newlines
-    // This ensures proper handling of all content including empty lines and special formatting
-    
-    // First, normalize line endings and split into lines
+    // Normalize line endings
     const normalizedText = text.replace(/\r\n/g, '\n');
-    const hasLeadingNewline = normalizedText.startsWith('\n');
-    const hasTrailingNewline = normalizedText.endsWith('\n');
+    
+    // Normalize consecutive newlines to prevent excessive empty lines
+    // Replace sequences of more than 2 newlines with exactly 2
+    const cleanedText = normalizedText.replace(/\n{3,}/g, '\n\n');
+    
+    // Check for leading/trailing newlines
+    const hasLeadingNewline = cleanedText.startsWith('\n');
+    const hasTrailingNewline = cleanedText.endsWith('\n');
     
     // Split by newlines, preserving empty lines
-    const textLines = normalizedText.split('\n');
+    const textLines = cleanedText.split('\n');
     
     // Process each line
     for (let i = 0; i < textLines.length; i++) {
@@ -134,7 +137,8 @@ export const useTerminalAnimation = () => {
     }
     
     // Add a final newline if the text ended with one
-    if (hasTrailingNewline && textLines.length > 0) {
+    // But only if we haven't already added a newline for an empty last line
+    if (hasTrailingNewline && !(textLines.length > 0 && textLines[textLines.length - 1] === "")) {
       setLines(prev => [...prev, PROMPT]);
       await new Promise(r => setTimeout(r, 50));
       scrollToBottomIfNeeded();
