@@ -7,10 +7,11 @@ interface CRTScreenProps {
   textRef: RefObject<HTMLDivElement>;
   memoryBar: React.ReactNode;
   promptDisplay: React.ReactNode;
+  taskBar: React.ReactNode;
   loadingSpinner?: React.ReactNode;
 }
 
-export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay, loadingSpinner }) => {
+export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay, taskBar, loadingSpinner }) => {
   // State for desktop terminal dimensions
   const [terminalDimensions] = useState({
     x: 655,
@@ -111,12 +112,23 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                 contain: 'layout style paint',
                 position: 'relative',
                 scrollBehavior: 'auto', // Explicitly disable smooth scrolling
-                paddingBottom: '40px', // Extra padding at the bottom to prevent cut-off
+                paddingBottom: '60px', // Extra padding for TaskBar at bottom
               }}
             >
               {/* Prompt display that scrolls with content */}
               {promptDisplay}
               {children}
+            </div>
+              
+            {/* Fixed task bar at bottom */}
+            <div
+              className="sticky bottom-0 p-2 bg-black/95"
+              style={{
+                zIndex: 25,
+                backdropFilter: 'blur(2px)'
+              }}
+            >
+              {taskBar}
             </div>
               
             {/* Loading spinner overlay */}
@@ -222,12 +234,25 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                   contain: 'layout style paint',
                   position: 'relative',
                   scrollBehavior: 'auto', // Explicitly disable smooth scrolling
-                  paddingBottom: '40px', // Extra padding at the bottom to prevent cut-off
+                  paddingBottom: '20px', // Extra padding for TaskBar at bottom
                 }}
               >
                 {/* Prompt display that scrolls with content */}
                 {promptDisplay}
                 {children}
+              </div>
+              {/* Fixed task bar at bottom */}
+              <div
+                className="px-4 pt-1 pb-3 bg-black/95"
+                style={{
+                  zIndex: 25,
+                  flexShrink: 0,
+                  backdropFilter: 'blur(2px)',
+                  borderBottomLeftRadius: `${terminalDimensions.borderRadius}px`,
+                  borderBottomRightRadius: `${terminalDimensions.borderRadius}px`,
+                }}
+              >
+                {taskBar}
               </div>
               {/* Loading spinner overlay */}
               {loadingSpinner && (

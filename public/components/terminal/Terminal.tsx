@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CRTScreen } from './CRTScreen';
 import { MemoryBar } from './MemoryBar';
+import { TaskBar } from './TaskBar';
 import { TerminalLine } from './TerminalLine';
 import { PromptDisplay } from './PromptDisplay';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -89,6 +90,7 @@ export const Terminal: React.FC = () => {
         textRef={textRef}
         memoryBar={!isLoading ? <MemoryBar memory={lastMemory} /> : undefined}
         promptDisplay={!isLoading ? <PromptDisplay prompt={llmPrompt} /> : undefined}
+        taskBar={!isLoading ? <TaskBar selectedTab="terminal" /> : undefined}
         loadingSpinner={isLoading ? <LoadingSpinner /> : undefined}
       >
         {!isLoading && lines.map((line, i) => (
