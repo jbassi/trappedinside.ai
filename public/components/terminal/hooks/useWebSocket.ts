@@ -80,7 +80,6 @@ export const useWebSocket = () => {
     // Check for exact duplicates
     const messageHash = text.trim().substring(0, 50);
     if (messageHashesRef.current.has(messageHash)) {
-      console.log("Skipping exact duplicate:", text.substring(0, 30) + "...");
       return null;
     }
     

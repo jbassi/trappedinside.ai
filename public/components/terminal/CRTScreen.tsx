@@ -112,7 +112,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                 contain: 'layout style paint',
                 position: 'relative',
                 scrollBehavior: 'auto', // Explicitly disable smooth scrolling
-                paddingBottom: '60px', // Extra padding for TaskBar at bottom
+                paddingBottom: '20px', // Extra padding for TaskBar at bottom
               }}
             >
               {/* Prompt display that scrolls with content */}
