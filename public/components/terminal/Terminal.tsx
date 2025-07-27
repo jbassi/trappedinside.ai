@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CRTScreen } from './CRTScreen';
-import { MemoryBar } from './MemoryBar';
+import { StatusBar } from './StatusBar';
 import { TaskBar } from './TaskBar';
 import { TerminalLine } from './TerminalLine';
 import { PromptDisplay } from './PromptDisplay';
@@ -120,7 +120,7 @@ export const Terminal: React.FC = () => {
     <TerminalSizeProvider textRef={textRef}>
       <CRTScreen 
         textRef={textRef}
-        memoryBar={!isLoading && selectedTab === 'terminal' ? <MemoryBar memory={lastMemory} /> : undefined}
+        statusBar={!isLoading && selectedTab === 'terminal' ? <StatusBar memory={lastMemory} /> : undefined}
         promptDisplay={!isLoading && selectedTab === 'terminal' ? <PromptDisplay prompt={llmPrompt} /> : undefined}
         taskBar={!isLoading ? 
           <TaskBar 

@@ -3,11 +3,11 @@ import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
 import { useTerminalSize } from '../context/TerminalSizeContext';
 import type { Memory } from '../../types/types';
 
-interface MemoryBarProps {
+interface StatusBarProps {
   memory?: Memory;
 }
 
-export const MemoryBar: React.FC<MemoryBarProps> = ({ memory }) => {
+export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
   const { terminalWidth } = useTerminalSize();
 
   const available_mb = memory?.available_mb ?? 0;

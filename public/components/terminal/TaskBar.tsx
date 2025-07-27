@@ -19,7 +19,7 @@ export const TaskBar: React.FC<TaskBarProps> = ({
 }) => {
   const { terminalWidth } = useTerminalSize();
   
-  // Match the MemoryBar's responsive sizing
+  // Match the StatusBar's responsive sizing
   const getResponsiveLayout = () => {
     if (terminalWidth < 40) {
       return {

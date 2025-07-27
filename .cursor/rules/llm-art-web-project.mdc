@@ -30,7 +30,7 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 ### Core Components
 - **Terminal**: Main component orchestrating all functionality
 - **CRTScreen**: Hardware-accelerated CRT effects
-- **MemoryBar**: Dynamic width-based memory visualization
+- **StatusBar**: Dynamic width-based memory visualization
 - **PromptDisplay**: Centered, bordered ASCII box
 - **TerminalLine**: Individual lines with cursor support
 
@@ -193,7 +193,7 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 ### Core Components
 - **Terminal**: Main component orchestrating all functionality
 - **CRTScreen**: Hardware-accelerated CRT effects
-- **MemoryBar**: Dynamic width-based memory visualization
+- **StatusBar**: Dynamic width-based memory visualization
 - **PromptDisplay**: Centered, bordered ASCII box
 - **TerminalLine**: Individual lines with cursor support
 

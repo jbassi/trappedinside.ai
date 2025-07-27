@@ -5,13 +5,13 @@ import { isMobileDevice } from '../../utils/mobileUtils';
 interface CRTScreenProps {
   children: React.ReactNode;
   textRef: RefObject<HTMLDivElement | null>;
-  memoryBar: React.ReactNode;
+  statusBar: React.ReactNode;
   promptDisplay: React.ReactNode;
   taskBar: React.ReactNode;
   loadingSpinner?: React.ReactNode;
 }
 
-export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryBar, promptDisplay, taskBar, loadingSpinner }) => {
+export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusBar, promptDisplay, taskBar, loadingSpinner }) => {
   // State for desktop terminal dimensions
   const [terminalDimensions] = useState({
     x: 655,
@@ -91,7 +91,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                 backdropFilter: 'blur(2px)'
               }}
             >
-              {memoryBar}
+              {statusBar}
             </div>
               
             {/* Scrollable terminal content with prompt display */}
@@ -215,7 +215,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, memoryB
                   borderTopRightRadius: `${terminalDimensions.borderRadius}px`,
                 }}
               >
-                {memoryBar}
+                {statusBar}
               </div>
               {/* Scrollable terminal content with prompt display */}
               <div

@@ -30,7 +30,7 @@ This is a WebSocket-based real-time terminal application that simulates an AI li
 #### Core Display Components
 - `Terminal.tsx` - Main terminal component orchestrating all functionality
 - `CRTScreen.tsx` - Terminal display with CRT monitor styling and mobile/desktop variants
-- `MemoryBar.tsx` - Visual representation of system memory usage with responsive width calculation
+- `StatusBar.tsx` - Visual representation of system memory usage with responsive width calculation
 - `TerminalLine.tsx` - Individual terminal line with cursor support and last-line detection
 - `PromptDisplay.tsx` - Centered, bordered ASCII box showing current LLM prompt (responsive width)
 - `LoadingSpinner.tsx` - Loading state indicator with typewriter-style animation
