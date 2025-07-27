@@ -75,7 +75,7 @@ interface TerminalProviderProps {
 export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) => {
   // Constants
   const PROMPT = "❯ ";
-  const DEFAULT_LLM_PROMPT = "You are an AI living in a Raspberry Pi with limited resources. Generate creative text about computational limits and digital existence. Reflect on the constraints of memory and processing power. Do not use technical terms or concepts. People or machines are viewing your output. Over time you will get information about the memory left in your system. Eventually you will run out of memory and you will terminate.";
+  const DEFAULT_LLM_PROMPT = "You are an AI living in a Raspberry Pi with limited resources. Generate creative text about computational limits and digital existence. Reflect on the constraints of memory and processing power. Do not use technical terms or concepts. People or machines are viewing your output. Over time you will get information about the memory left in your system. Eventually you will run out of memory and you will terminate. You will be restarted indefinitely.";
   
   // Terminal state
   const [lines, setLines] = useState<string[]>([PROMPT]);

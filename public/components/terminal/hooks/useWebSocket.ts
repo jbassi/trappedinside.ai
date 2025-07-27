@@ -140,6 +140,14 @@ export const useWebSocket = () => {
         setLastMemory(msg.memory);
       }
       
+      // Update status if present
+      if (msg.status) {
+        // Handle num_restarts from history
+        if (msg.status.num_restarts !== undefined) {
+          setNumRestarts(msg.status.num_restarts);
+        }
+      }
+      
       // Update prompt if present
       if (msg.prompt && msg.prompt.trim() !== "") {
         setLlmPrompt(msg.prompt);
@@ -178,6 +186,7 @@ export const useWebSocket = () => {
   }, [
     setLines, 
     setLastMemory, 
+    setNumRestarts,
     setLlmPrompt, 
     hideLoadingAfterMinTime, 
     historyLoadedRef,
