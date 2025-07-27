@@ -63,7 +63,10 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = () => {
           <span className={`flex-1 px-1 sm:px-2 text-center ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
             {(() => {
               const barLength = Math.max(4, Math.floor(effectiveWidth / 8));
-              const filled = Math.round(spinnerFrame * (barLength / 4)) + 1;
+              // Adjust calculation to ensure we can reach 100% fill
+              // Map spinnerFrame (0-3) to fill percentages: 0.25, 0.5, 0.75, 1.0
+              const fillPercentage = (spinnerFrame + 1) / spinnerChars.length;
+              const filled = Math.round(barLength * fillPercentage);
               const empty = barLength - filled;
               return '█'.repeat(filled) + '░'.repeat(empty);
             })()}
