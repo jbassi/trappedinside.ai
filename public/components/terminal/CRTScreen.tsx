@@ -4,7 +4,7 @@ import { isMobileDevice } from '../../utils/mobileUtils';
 
 interface CRTScreenProps {
   children: React.ReactNode;
-  textRef: RefObject<HTMLDivElement>;
+  textRef: RefObject<HTMLDivElement | null>;
   memoryBar: React.ReactNode;
   promptDisplay: React.ReactNode;
   taskBar: React.ReactNode;

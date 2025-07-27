@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Memory } from '../../types/types';
+import type { TaskBarTab } from './TaskBar';
 
 // Define the context type
 interface TerminalContextType {
@@ -36,8 +37,12 @@ interface TerminalContextType {
   activelyDragging: boolean;
   setActivelyDragging: React.Dispatch<React.SetStateAction<boolean>>;
   
+  // Tab state
+  selectedTab: TaskBarTab;
+  setSelectedTab: React.Dispatch<React.SetStateAction<TaskBarTab>>;
+  
   // Refs
-  textRef: React.RefObject<HTMLDivElement>;
+  textRef: React.RefObject<HTMLDivElement | null>;
   queueRef: React.MutableRefObject<string[]>;
   animatingRef: React.MutableRefObject<boolean>;
   processingRef: React.MutableRefObject<boolean>;
@@ -91,6 +96,9 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
   const [userScrolledUp, setUserScrolledUp] = useState(false);
   const [activelyDragging, setActivelyDragging] = useState(false);
   
+  // Tab state
+  const [selectedTab, setSelectedTab] = useState<TaskBarTab>('terminal');
+  
   // Refs
   const textRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<string[]>([]);
@@ -107,7 +115,7 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
   const isTouchDeviceRef = useRef<boolean>(false);
   
   // Context value
-  const value = {
+  const contextValue: TerminalContextType = {
     // Terminal state
     lines,
     setLines,
@@ -140,6 +148,10 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
     activelyDragging,
     setActivelyDragging,
     
+    // Tab state
+    selectedTab,
+    setSelectedTab,
+    
     // Refs
     textRef,
     queueRef,
@@ -161,7 +173,7 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
   };
   
   return (
-    <TerminalContext.Provider value={value}>
+    <TerminalContext.Provider value={contextValue}>
       {children}
     </TerminalContext.Provider>
   );

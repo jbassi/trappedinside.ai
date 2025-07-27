@@ -5,6 +5,7 @@ import { TaskBar } from './TaskBar';
 import { TerminalLine } from './TerminalLine';
 import { PromptDisplay } from './PromptDisplay';
 import { LoadingSpinner } from './LoadingSpinner';
+import { InfoScreen } from './InfoScreen';
 import { TerminalSizeProvider } from '../context/TerminalSizeContext';
 import { useTerminal } from './TerminalContext';
 import { useTerminalAnimation } from './hooks/useTerminalAnimation';
@@ -21,7 +22,9 @@ export const Terminal: React.FC = () => {
     textRef,
     isTouchDeviceRef,
     queueRef,
-    PROMPT
+    PROMPT,
+    selectedTab,
+    setSelectedTab
   } = useTerminal();
 
   const { processQueue } = useTerminalAnimation();
@@ -83,17 +86,53 @@ export const Terminal: React.FC = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [processQueue, queueRef]);
+  
+  // Handle scroll to top/bottom
+  const handleScrollToTop = () => {
+    if (textRef.current) {
+      textRef.current.scrollTop = 0;
+    }
+  };
+  
+  const handleScrollToBottom = () => {
+    if (textRef.current) {
+      textRef.current.scrollTop = textRef.current.scrollHeight;
+    }
+  };
+  
+  // Handle tab change
+  const handleTabChange = (tab: typeof selectedTab) => {
+    setSelectedTab(tab);
+    
+    // Use setTimeout to ensure the DOM has updated before scrolling
+    setTimeout(() => {
+      if (tab === 'terminal') {
+        // If switching to terminal tab, scroll to bottom
+        handleScrollToBottom();
+      } else if (tab === 'info') {
+        // If switching to info tab, scroll to top
+        handleScrollToTop();
+      }
+    }, 0);
+  };
 
   return (
     <TerminalSizeProvider textRef={textRef}>
       <CRTScreen 
         textRef={textRef}
-        memoryBar={!isLoading ? <MemoryBar memory={lastMemory} /> : undefined}
-        promptDisplay={!isLoading ? <PromptDisplay prompt={llmPrompt} /> : undefined}
-        taskBar={!isLoading ? <TaskBar selectedTab="terminal" /> : undefined}
+        memoryBar={!isLoading && selectedTab === 'terminal' ? <MemoryBar memory={lastMemory} /> : undefined}
+        promptDisplay={!isLoading && selectedTab === 'terminal' ? <PromptDisplay prompt={llmPrompt} /> : undefined}
+        taskBar={!isLoading ? 
+          <TaskBar 
+            selectedTab={selectedTab} 
+            onTabChange={handleTabChange}
+            onScrollToTop={handleScrollToTop}
+            onScrollToBottom={handleScrollToBottom}
+          /> : undefined
+        }
         loadingSpinner={isLoading ? <LoadingSpinner /> : undefined}
       >
-        {!isLoading && lines.map((line, i) => (
+        {!isLoading && selectedTab === 'terminal' && lines.map((line, i) => (
           <TerminalLine
             key={i}
             line={line}
@@ -102,6 +141,7 @@ export const Terminal: React.FC = () => {
             prompt={PROMPT}
           />
         ))}
+        {!isLoading && selectedTab === 'info' && <InfoScreen />}
       </CRTScreen>
     </TerminalSizeProvider>
   );

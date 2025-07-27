@@ -9,7 +9,7 @@ const TerminalSizeContext = createContext<TerminalSizeContextType | undefined>(u
 
 interface TerminalSizeProviderProps {
   children: ReactNode;
-  textRef: React.RefObject<HTMLDivElement>; // Use the existing textRef from parent
+  textRef: React.RefObject<HTMLDivElement | null>; // Allow null in the ref type
 }
 
 export const TerminalSizeProvider: React.FC<TerminalSizeProviderProps> = ({ children, textRef }) => {

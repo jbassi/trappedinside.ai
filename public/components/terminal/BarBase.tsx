@@ -29,7 +29,7 @@ export const BarButton: React.FC<BarButtonProps> = ({
   selected = false, 
   className = "" 
 }) => {
-  const baseClasses = "px-2 py-0.5 text-xs sm:text-sm font-mono transition-colors duration-150";
+  const baseClasses = "px-2 py-0.5 text-xs sm:text-base font-mono transition-colors duration-150";
   const selectedClasses = selected 
     ? "bg-black text-green-500 font-bold" 
     : "hover:bg-green-600 cursor-pointer";
