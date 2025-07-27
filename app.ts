@@ -8,6 +8,7 @@ const MemorySchema = z.object({
 });
 const StatusSchema = z.object({
   is_restarting: z.boolean().optional(),
+  num_restarts: z.number().optional(),
 });
 const IncomingMessageSchema = z.object({
   text: z.string(),
@@ -23,7 +24,7 @@ const AuthMessageSchema = z.object({
 interface ConversationMessage {
   text: string;
   memory?: { available_mb: number; percent_used: number; total_mb: number };
-  status?: { is_restarting?: boolean };
+  status?: { is_restarting?: boolean; num_restarts?: number };
   prompt?: string;
   timestamp: number;
 }

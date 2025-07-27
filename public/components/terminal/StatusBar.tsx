@@ -1,6 +1,7 @@
 import React from 'react';
 import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
 import { useTerminalSize } from '../context/TerminalSizeContext';
+import { useTerminal } from './TerminalContext';
 import type { Memory } from '../../types/types';
 
 interface StatusBarProps {
@@ -9,6 +10,7 @@ interface StatusBarProps {
 
 export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
   const { terminalWidth } = useTerminalSize();
+  const { numRestarts } = useTerminal();
 
   const available_mb = memory?.available_mb ?? 0;
   const total_mb = memory?.total_mb ?? 0;
@@ -18,25 +20,25 @@ export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
   const getResponsiveLayout = () => {
     if (terminalWidth < 40) {
       return {
-        barWidth: Math.max(8, terminalWidth - 20), // More space for labels on mobile
+        barWidth: Math.max(8, terminalWidth - 28), // More space for labels and restart counter on mobile
         showFullText: false,
         abbreviateLabel: true,
       };
     } else if (terminalWidth < 60) {
       return {
-        barWidth: Math.max(15, terminalWidth - 28), // Adjust for better spacing
+        barWidth: Math.max(15, terminalWidth - 36), // Adjust for better spacing
         showFullText: false,
         abbreviateLabel: false,
       };
     } else if (terminalWidth < 80) {
       return {
-        barWidth: Math.max(25, terminalWidth - 32), // Leave more space for text
+        barWidth: Math.max(25, terminalWidth - 40), // Leave more space for text
         showFullText: false,
         abbreviateLabel: false,
       };
     } else {
       return {
-        barWidth: Math.max(35, terminalWidth - 35), // Fill most of the width
+        barWidth: Math.max(35, terminalWidth - 43), // Fill most of the width
         showFullText: true,
         abbreviateLabel: false,
       };
@@ -74,6 +76,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
         </span>
         <span className="flex-shrink-0 text-right text-xs sm:text-base">
           {formatMemoryText()}
+        </span>
+        <span className="flex-shrink-0 border-l border-black ml-2 pl-2 text-xs sm:text-base">
+          Restarts: {numRestarts ?? 0}
         </span>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Memory } from '../../types/types';
+import type { Memory, Status } from '../../types/types';
 import type { TaskBarTab } from './TaskBar';
 
 // Define the context type
@@ -28,6 +28,8 @@ interface TerminalContextType {
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   isRestarting: boolean;
   setIsRestarting: React.Dispatch<React.SetStateAction<boolean>>;
+  numRestarts: number;
+  setNumRestarts: React.Dispatch<React.SetStateAction<number>>;
   
   // Scroll behavior state
   isAtBottom: boolean;
@@ -90,6 +92,7 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
   // Loading and restart state
   const [isLoading, setIsLoading] = useState(true);
   const [isRestarting, setIsRestarting] = useState(false);
+  const [numRestarts, setNumRestarts] = useState(0);
   
   // Scroll behavior state
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -139,6 +142,8 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
     setIsLoading,
     isRestarting,
     setIsRestarting,
+    numRestarts,
+    setNumRestarts,
     
     // Scroll behavior state
     isAtBottom,

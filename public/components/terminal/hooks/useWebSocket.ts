@@ -13,6 +13,7 @@ export const useWebSocket = () => {
     setLlmPrompt,
     setIsLoading,
     setIsRestarting,
+    setNumRestarts,
     queueRef,
     animatingRef,
     processingRef,
@@ -201,14 +202,22 @@ export const useWebSocket = () => {
       
       // Process each live message chunk
       for (const msg of messages) {
-        // Handle restarting status first and synchronously
-        if (msg.status?.is_restarting !== undefined) {
-          const isRestarting = msg.status.is_restarting;
-          setIsRestarting(isRestarting);
-          restartingRef.current = isRestarting;
+        // Handle status updates first and synchronously
+        if (msg.status) {
+          // Handle restarting status
+          if (msg.status.is_restarting !== undefined) {
+            const isRestarting = msg.status.is_restarting;
+            setIsRestarting(isRestarting);
+            restartingRef.current = isRestarting;
+          }
+          
+          // Handle num_restarts
+          if (msg.status.num_restarts !== undefined) {
+            setNumRestarts(msg.status.num_restarts);
+          }
           
           // Handle restart state change
-          if (isRestarting) {
+          if (restartingRef.current) {
             // Check if this is a silent restart (no message content)
             const isSilentRestart = !msg.text || msg.text.trim() === "";
             
@@ -246,7 +255,7 @@ export const useWebSocket = () => {
               return; // Skip processing any remaining message content
             }
             // For non-silent restarts, continue to process the message content
-          } else if (!isRestarting && waitingForFirstMessageAfterRestartRef.current) {
+          } else if (!restartingRef.current && waitingForFirstMessageAfterRestartRef.current) {
             // We received a message with is_restarting = false after a restart
             waitingForFirstMessageAfterRestartRef.current = false;
             
@@ -316,6 +325,7 @@ export const useWebSocket = () => {
     setLlmPrompt(DEFAULT_LLM_PROMPT);
     setIsLoading(true);
     setIsRestarting(false);
+    setNumRestarts(0);
     setIsAnimating(false);
     setIsProcessing(false);
     

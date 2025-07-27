@@ -13,6 +13,7 @@ export const MessageSchema = z.object({
   status: z
     .object({
       is_restarting: z.boolean().optional(),
+      num_restarts: z.number().optional(),
     })
     .optional(),
   prompt: z.string().optional(),
