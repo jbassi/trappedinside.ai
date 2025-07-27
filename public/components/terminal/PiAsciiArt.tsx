@@ -71,7 +71,7 @@ export const PiAsciiArt: React.FC = () => {
         }}
       />
       <pre className="font-mono text-xs sm:text-sm md:text-base relative z-10" style={{
-        transform: 'scale(0.8)',
+        transform: 'scale(0.7)',
         transformOrigin: 'center center'
       }}>
         {isMobile && isPortrait ? mobilePortraitArt : collapsedArt}
