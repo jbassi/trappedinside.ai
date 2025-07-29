@@ -14,11 +14,11 @@ interface CRTScreenProps {
 export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusBar, promptDisplay, taskBar, loadingSpinner }) => {
   // State for desktop terminal dimensions
   const [terminalDimensions] = useState({
-    x: 655,
-    y: 155,
-    width: 640,
-    height: 500,
-    borderRadius: 54
+    x: 625,
+    y: 125,
+    width: 696,
+    height: 550,
+    borderRadius: 24
   });
 
   // State to determine if we should use SVG or direct mobile approach
