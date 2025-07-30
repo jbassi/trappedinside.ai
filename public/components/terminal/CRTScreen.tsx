@@ -13,25 +13,110 @@ interface CRTScreenProps {
 
 export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusBar, promptDisplay, taskBar, loadingSpinner }) => {
   // State for desktop terminal dimensions
-  const [terminalDimensions] = useState({
+  const [terminalDimensions, setTerminalDimensions] = useState({
     x: 625,
     y: 125,
     width: 696,
     height: 550,
     borderRadius: 24
   });
+  
+  // Update terminal dimensions based on viewport size
+  useEffect(() => {
+    const updateDimensions = () => {
+      // Get viewport dimensions
+      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+      
+      // Original SVG dimensions
+      const svgWidth = 1927;
+      const svgHeight = 1080;
+      
+      // Calculate the scaling factor based on how the SVG is being displayed
+      // When using preserveAspectRatio="xMidYMid slice", the SVG scales to cover the viewport
+      const svgAspectRatio = svgWidth / svgHeight;
+      const viewportAspectRatio = vw / vh;
+      
+      let scaleFactor;
+      
+      if (viewportAspectRatio > svgAspectRatio) {
+        // Viewport is wider than SVG - width is the constraint
+        scaleFactor = vw / svgWidth;
+      } else {
+        // Viewport is taller than SVG - height is the constraint
+        scaleFactor = vh / svgHeight;
+      }
+      
+      // Base position in the original SVG coordinates
+      const baseX = 625;
+      const baseY = 125;
+      const baseWidth = 696;
+      const baseHeight = 550;
+      
+      // Calculate the center point of the terminal in the original SVG
+      const centerX = baseX + baseWidth / 2;
+      const centerY = baseY + baseHeight / 2;
+      
+      // Calculate the visible portion of the SVG
+      const visibleSvgWidth = vw / scaleFactor;
+      const visibleSvgHeight = vh / scaleFactor;
+      
+      // Calculate the visible SVG's top-left corner
+      const visibleSvgX = (svgWidth - visibleSvgWidth) / 2;
+      const visibleSvgY = (svgHeight - visibleSvgHeight) / 2;
+      
+      // Ensure terminal is always visible by keeping it within the visible SVG area
+      // with some padding to avoid edges
+      const padding = 50;
+      const minX = visibleSvgX + padding;
+      const maxX = visibleSvgX + visibleSvgWidth - baseWidth - padding;
+      const minY = visibleSvgY + padding;
+      const maxY = visibleSvgY + visibleSvgHeight - baseHeight - padding;
+      
+      // Adjust terminal position to stay in view
+      let adjustedX = Math.max(minX, Math.min(maxX, baseX));
+      let adjustedY = Math.max(minY, Math.min(maxY, baseY));
+      
+      // Set the terminal dimensions
+      setTerminalDimensions({
+        x: adjustedX,
+        y: adjustedY,
+        width: baseWidth,
+        height: baseHeight,
+        borderRadius: 24
+      });
+    };
+    
+    // Initial update
+    updateDimensions();
+    
+    // Update on resize
+    window.addEventListener('resize', updateDimensions);
+    
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, []);
 
+  // Define breakpoint for mobile view
+  const MOBILE_BREAKPOINT = 768; // pixels
+  
   // State to determine if we should use SVG or direct mobile approach
-  const [useSVGApproach, setUseSVGApproach] = useState(true);
+  const [useSVGApproach, setUseSVGApproach] = useState(
+    window.innerWidth >= MOBILE_BREAKPOINT && !isMobileDevice()
+  );
 
-  // Check for mobile devices
+  // Check for mobile devices or small viewport
   useEffect(() => {
     const checkDevice = () => {
-      // Use direct approach for mobile devices
-      if (isMobileDevice()) {
+      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+      
+      // Use direct approach for mobile devices or small viewport
+      if (isMobileDevice() || vw < MOBILE_BREAKPOINT) {
         setUseSVGApproach(false);
       } else {
-        // Desktop or tablet: use SVG approach
+        // Desktop or tablet with sufficient width: use SVG approach
         setUseSVGApproach(true);
       }
     };
@@ -49,12 +134,12 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
     };
   }, []);
 
-  // Mobile direct approach (no SVG)
+  // Mobile direct approach (no SVG) - used for actual mobile devices and small viewports
   if (!useSVGApproach) {
     return (
-      <div className="fixed inset-0 flex flex-col bg-black overflow-hidden">
-        {/* Pi ASCII Art Header - only show when not loading */}
-        {!loadingSpinner && <PiAsciiArt />}
+      <div className="fixed inset-0 flex flex-col bg-black overflow-hidden transition-all duration-300">
+        {/* Pi ASCII Art Header - only show when not loading and screen is large enough */}
+        {!loadingSpinner && window.innerHeight > 500 && <PiAsciiArt />}
           
         {/* Terminal Container */}
         <div className="flex-1 relative flex flex-col min-h-0">
@@ -97,7 +182,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
             {/* Scrollable terminal content with prompt display */}
             <div
               ref={textRef}
-              className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
+              className="p-2 sm:p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
               style={{
                 fontFamily: 'monospace',
                 textShadow: '0 0 5px rgba(0,255,0,0.5)',
@@ -106,8 +191,8 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
                 WebkitOverflowScrolling: 'touch',
-                fontSize: 'clamp(1rem, 3vw, 1.5rem)',
-                lineHeight: '1.6',
+                fontSize: 'clamp(0.875rem, 2.5vw, 1.5rem)',
+                lineHeight: '1.5',
                 willChange: 'scroll-position',
                 contain: 'layout style paint',
                 position: 'relative',
@@ -145,11 +230,11 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
 
   // SVG approach for desktop and tablet
   return (
-    <div className="fixed inset-0 overflow-hidden bg-black">
+    <div className="fixed inset-0 overflow-hidden bg-black transition-all duration-300" style={{ minHeight: '100vh', minWidth: '100vw' }}>
       <svg
         className="w-full h-full min-w-screen min-h-screen"
         viewBox="0 0 1927 1080"
-        preserveAspectRatio="xMidYMid meet"
+        preserveAspectRatio="xMidYMid slice"
         style={{ width: '100vw', height: '100vh', display: 'block' }}
       >
         {/* Monitor background */}
@@ -159,7 +244,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
           y="0"
           width="1927"
           height="1080"
-          preserveAspectRatio="xMidYMid meet"
+          preserveAspectRatio="xMidYMid slice"
         />
         {/* Terminal Content Area */}
         <foreignObject
