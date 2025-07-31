@@ -24,6 +24,8 @@ This is a WebSocket-based real-time terminal application that simulates an AI li
 - **Advanced scroll behavior** with unified desktop/mobile handling
 - **Tab visibility handling** to prevent message accumulation when inactive
 - **Mobile-first responsive design** with orientation change support
+- **Tailwind CSS** for utility-first styling and responsive layouts
+- **Vite development server** with WebSocket proxy support
 
 ### Key Components
 
@@ -81,8 +83,11 @@ Each hook is responsible for a specific aspect of functionality:
 ### WebSocket Service
 - **Connection management** with auto-reconnection
 - **Message validation** using Zod schemas
-- **Error handling** and timeout management
+- **Error handling** with 10-second loading timeout
 - **Clean disconnection** handling
+- **History loading optimization** with 800ms delay
+- **Smart tab visibility handling** with state reset and reconnection
+- **Conversation history management** with automatic cleanup
 
 ## Development Commands
 
@@ -93,7 +98,7 @@ bun install
 
 Development mode (starts both frontend dev server and backend):
 ```bash
-# Frontend dev server (port 3001 with proxy to backend)
+# Frontend dev server (port 3001 with WebSocket proxy to backend)
 bun run dev
 
 # Backend server (port 3002 in dev, 3000 in prod)
@@ -105,6 +110,18 @@ Production build:
 bun run build
 bun run preview
 ```
+
+### Development Environment
+- **Vite** for fast HMR and development experience
+  - WebSocket proxy configuration for backend communication
+  - Public directory structure with `public/` in dev
+  - Production builds to `dist/` directory
+- **Tailwind CSS** for styling
+  - Configured for all TypeScript/JavaScript files
+  - Scans both public/ and src/ directories
+  - Supports dynamic class generation
+- **TypeScript** configuration with React 19 support
+- **Bun** for package management and running scripts
 
 ## Environment Configuration
 
@@ -131,6 +148,17 @@ Message format for sending data:
 }
 ```
 
+### Connection Behavior
+- Initial connection includes 800ms delay before history load for smooth UX
+- 10-second timeout for initial connection attempts
+- Auto-reconnection with 100ms delay between attempts
+- Smart tab visibility handling:
+  - State reset on tab becoming visible
+  - Forced reconnection to refresh history
+  - 100ms delay before reconnection to ensure clean state
+- Conversation history management with automatic cleanup
+- Separate message types for history and live updates
+
 ## Development Notes & Patterns
 
 ### Component Architecture
@@ -139,11 +167,34 @@ Message format for sending data:
 - **Service layer** for external communication
 - **Unified scroll behavior** across devices
 
+### Animation Optimization
+- **RAF-based scrolling**: Smooth auto-scroll behavior
+- **Hardware acceleration**: CSS transforms and effects
+- **Efficient updates**: State batching and refs
+- **Cleanup patterns**: Proper resource management
+- **Variable typing speed**: 25-50ms per character for natural feel
+- **Smart newline handling**: Normalized consecutive newlines
+- **Cursor management**: Visible during animation, blinking when idle
+- **Queue-based processing**: Ordered text chunk animation
+
+### Event Handling
+- **Passive listeners**: Touch and scroll optimization
+- **Unified scroll handling**: Desktop and mobile
+- **Debounced handlers**: Prevent excessive updates
+- **Proper cleanup**: Remove listeners and timeouts
+- **Scroll threshold**: 30px margin for "at bottom" detection
+- **Drag detection**: Prevents auto-scroll during active dragging
+- **Visibility-aware**: Stops animation when tab inactive
+
 ### Performance Best Practices
 - **RAF-based animations** for smooth performance
 - **Proper cleanup** in useEffect hooks
 - **Passive event listeners** for touch/scroll
 - **Debounced handlers** for scroll events
+- **Optimized history loading** with delayed send
+- **Smart reconnection** on tab visibility changes
+- **Efficient text chunking** with normalized line endings
+- **Controlled animation timing** for consistent performance
 
 ### Mobile-First Considerations
 - **Unified scroll handling** for touch and mouse
@@ -157,13 +208,40 @@ Message format for sending data:
 - **Loading timeouts** for connection issues
 - **Tab visibility** handling
 
-## Code Organization Philosophy
+## Code Organization
 
-- **Context-based state management** for cleaner component interaction
-- **Custom hooks** for reusable logic
-- **Service layer** for external concerns
-- **Clear separation** of responsibilities
-- **Type safety** with TypeScript and Zod
+### File Structure
+```
+public/
+  ├── components/
+  │   ├── terminal/
+  │   │   ├── Terminal.tsx
+  │   │   ├── CRTScreen.tsx
+  │   │   ├── TerminalContext.tsx
+  │   │   └── hooks/
+  │   │       ├── useTerminalScroll.ts
+  │   │       ├── useTerminalAnimation.ts
+  │   │       └── useWebSocket.ts
+  ├── services/
+  │   └── websocketService.ts
+  └── utils/
+      └── mobileUtils.ts
+
+Build Configuration:
+  ├── vite.config.ts      # Vite configuration with WebSocket proxy
+  ├── tailwind.config.cjs # Tailwind CSS configuration
+  ├── tsconfig.json       # TypeScript configuration
+  └── package.json        # Dependencies and scripts
+```
+
+### Best Practices
+- **Context-based state**: Centralized management
+- **Custom hooks**: Reusable logic
+- **Service layer**: External concerns
+- **Clear separation**: Component responsibilities
+- **Type safety**: TypeScript and Zod
+- **Utility-first CSS**: Tailwind classes for styling
+- **Build optimization**: Vite for development and production
 
 ## Testing & Debugging
 

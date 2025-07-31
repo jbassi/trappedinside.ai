@@ -3,6 +3,7 @@ alwaysApply: true
 ---
 
 
+
 # LLM Art Web Project Rules
 
 This is a real-time WebSocket-based terminal application simulating an AI living in a Raspberry Pi with limited resources.
@@ -24,6 +25,32 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Typewriter animation** with variable timing (25-50ms per character)
 - **Smart scroll behavior** with unified desktop/mobile handling
 - **Tab visibility handling** to prevent message accumulation
+- **Utility-first styling** with Tailwind CSS
+- **Fast development** with Vite HMR and WebSocket proxy
+
+### Development Guidelines
+
+#### Build Tools
+- **Use Vite** for development and production builds
+  - Development server on port 3001
+  - WebSocket proxy to backend on port 3002
+  - Production builds to dist/ directory
+- **Use Tailwind CSS** for styling
+  - Utility-first approach
+  - Responsive design patterns
+  - Component-specific styles
+- **TypeScript** for type safety
+  - React 19 type definitions
+  - Strict mode enabled
+  - Path aliases configured
+
+#### Component Development
+- **Use context** for shared state access
+- **Implement hooks** for specific functionality
+- **Leverage services** for external concerns
+- **Follow cleanup patterns** in effects
+- **Use Tailwind classes** for styling
+- **Leverage Vite features** for development
 
 ## Component Architecture
 
@@ -166,6 +193,10 @@ public/
 9. **Implement debouncing** with device-specific timing
 10. **Test on both mobile and desktop** for scroll behavior
 
+9. **Implement debouncing** with device-specific timing
+10. **Test on both mobile and desktop** for scroll behavior
+
+
 # LLM Art Web Project Rules
 
 This is a real-time WebSocket-based terminal application simulating an AI living in a Raspberry Pi with limited resources.
@@ -187,6 +218,32 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Typewriter animation** with variable timing (25-50ms per character)
 - **Smart scroll behavior** with unified desktop/mobile handling
 - **Tab visibility handling** to prevent message accumulation
+- **Utility-first styling** with Tailwind CSS
+- **Fast development** with Vite HMR and WebSocket proxy
+
+### Development Guidelines
+
+#### Build Tools
+- **Use Vite** for development and production builds
+  - Development server on port 3001
+  - WebSocket proxy to backend on port 3002
+  - Production builds to dist/ directory
+- **Use Tailwind CSS** for styling
+  - Utility-first approach
+  - Responsive design patterns
+  - Component-specific styles
+- **TypeScript** for type safety
+  - React 19 type definitions
+  - Strict mode enabled
+  - Path aliases configured
+
+#### Component Development
+- **Use context** for shared state access
+- **Implement hooks** for specific functionality
+- **Leverage services** for external concerns
+- **Follow cleanup patterns** in effects
+- **Use Tailwind classes** for styling
+- **Leverage Vite features** for development
 
 ## Component Architecture
 
@@ -326,5 +383,8 @@ public/
 
 7. **Account for container padding** in character width calculations
 8. **Use passive event listeners** for performance
+9. **Implement debouncing** with device-specific timing
+10. **Test on both mobile and desktop** for scroll behavior
+
 9. **Implement debouncing** with device-specific timing
 10. **Test on both mobile and desktop** for scroll behavior
