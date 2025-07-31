@@ -71,7 +71,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
     <div className={`w-full ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
       <div className="flex items-center justify-between bg-green-500 text-black px-2 py-1">
         <span className="flex-shrink-0">{getLabel()}</span>
-        <span className="flex-1 mx-1 sm:mx-2 text-center overflow-hidden font-mono">
+        <span className="flex-1 mx-0.5 text-center overflow-hidden font-mono whitespace-nowrap">
           {'█'.repeat(filledWidth)}{'▒'.repeat(emptyWidth)}
         </span>
         <span className="flex-shrink-0 text-right text-xs sm:text-base">
