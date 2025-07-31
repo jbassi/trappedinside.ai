@@ -138,8 +138,8 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
   if (!useSVGApproach) {
     return (
       <div className="fixed inset-0 flex flex-col bg-black overflow-hidden transition-all duration-300">
-        {/* Pi ASCII Art Header - only show when not loading and screen is large enough */}
-        {!loadingSpinner && window.innerHeight > 500 && <PiAsciiArt />}
+        {/* Pi ASCII Art Header - only show when not loading */}
+        {!loadingSpinner && <PiAsciiArt />}
           
         {/* Terminal Container */}
         <div className="flex-1 relative flex flex-col min-h-0">
@@ -182,7 +182,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
             {/* Scrollable terminal content with prompt display */}
             <div
               ref={textRef}
-              className="p-2 sm:p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
+              className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
               style={{
                 fontFamily: 'monospace',
                 textShadow: '0 0 5px rgba(0,255,0,0.5)',
@@ -191,8 +191,8 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
                 WebkitOverflowScrolling: 'touch',
-                fontSize: 'clamp(0.875rem, 2.5vw, 1.5rem)',
-                lineHeight: '1.5',
+                fontSize: 'clamp(1rem, 3vw, 1.5rem)',
+                lineHeight: '1.6',
                 willChange: 'scroll-position',
                 contain: 'layout style paint',
                 position: 'relative',
