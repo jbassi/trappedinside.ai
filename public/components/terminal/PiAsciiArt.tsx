@@ -51,13 +51,20 @@ export const PiAsciiArt: React.FC = () => {
 `;
 
   return (
-    <div 
-      className={`${terminalClasses.baseText} w-full flex items-center justify-center mb-1 relative`}
-      style={{
-        ...terminalStyles.baseText,
-        color: '#22c55e' // text-green-500
-      }}
-    >
+    <div className="w-full relative bg-black/95">
+      {/* Main background with CRT effects */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: `
+            radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%),
+            linear-gradient(45deg, rgba(0,255,0,0.02) 0%, transparent 50%, rgba(0,255,0,0.02) 100%)
+          `,
+          boxShadow: 'inset 0 0 50px rgba(0,255,0,0.1)',
+          zIndex: 15
+        }}
+      />
+      
       {/* CRT Screen Effects Overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -70,12 +77,20 @@ export const PiAsciiArt: React.FC = () => {
           zIndex: 20
         }}
       />
-      <pre className="font-mono text-xs sm:text-sm md:text-base relative z-10" style={{
-        transform: 'scale(0.7)',
-        transformOrigin: 'center center'
-      }}>
-        {isMobile && isPortrait ? mobilePortraitArt : collapsedArt}
-      </pre>
+
+      {/* ASCII Art Container */}
+      <div className={`${terminalClasses.baseText} w-full flex items-center justify-center mb-1 relative z-30`}>
+        <pre 
+          className="font-mono text-xs sm:text-sm md:text-base text-green-500"
+          style={{
+            transform: 'scale(0.7)',
+            transformOrigin: 'center center',
+            textShadow: '0 0 5px rgba(0,255,0,0.5)'
+          }}
+        >
+          {isMobile && isPortrait ? mobilePortraitArt : collapsedArt}
+        </pre>
+      </div>
     </div>
   );
 };
