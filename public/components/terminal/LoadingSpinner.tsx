@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
 import { useTerminalSize } from '../context/TerminalSizeContext';
+import { useTerminal } from './TerminalContext';
 
 interface LoadingSpinnerProps {}
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = () => {
   const { terminalWidth } = useTerminalSize();
+  const { isRestarting } = useTerminal();
   const [spinnerFrame, setSpinnerFrame] = useState(0);
   const [dotsCount, setDotsCount] = useState(0);
   
@@ -52,7 +54,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = () => {
         <div className="w-full flex items-center mb-1 sm:mb-2">
           <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
           <span className={`flex-1 px-1 sm:px-2 text-center ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
-            {`[${spinnerChars[spinnerFrame]}] LOADING${'.'.repeat(dotsCount)}`}
+            {`[${spinnerChars[spinnerFrame]}]${isRestarting ? " RESTARTING" : " LOADING"}${'.'.repeat(dotsCount)}`}
           </span>
           <span className={terminalClasses.baseText} style={terminalStyles.baseText}>#</span>
         </div>
