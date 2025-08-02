@@ -98,7 +98,7 @@ export const useWebSocket = () => {
         if (endOfBuffer === startOfNewText) {
           // Only keep the part after the overlap
           newContent = text.substring(overlapSize);
-          console.log(`Found overlap of ${overlapSize} chars, keeping only: "${newContent}"`);
+          console.log(`Found overlap of ${overlapSize} chars in message processing`);
           break;
         }
       }

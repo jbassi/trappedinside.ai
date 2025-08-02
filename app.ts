@@ -37,11 +37,52 @@ const clients = new Set<Bun.ServerWebSocket<unknown>>();
 const MAX_HISTORY_MESSAGES = 1000; // Limit history to prevent memory issues
 const HISTORY_CLEANUP_THRESHOLD = 1200; // Clean up when we exceed this
 
-// Load secrets from environment variables
+// Rate limiting configuration
+const connectionCounts = new Map<string, { count: number; lastReset: number }>();
+const MAX_CONNECTIONS_PER_IP = 10;
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+
+// Helper function to check rate limits
+const checkRateLimit = (clientIP: string): boolean => {
+  const now = Date.now();
+  const clientData = connectionCounts.get(clientIP);
+  
+  if (!clientData) {
+    connectionCounts.set(clientIP, { count: 1, lastReset: now });
+    return true;
+  }
+  
+  // Reset if window expired
+  if (now - clientData.lastReset > RATE_LIMIT_WINDOW) {
+    clientData.count = 1;
+    clientData.lastReset = now;
+    return true;
+  }
+  
+  if (clientData.count >= MAX_CONNECTIONS_PER_IP) {
+    return false;
+  }
+  
+  clientData.count++;
+  return true;
+};
+
+// Load and validate secrets from environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
 const ALLOWED_DEVICE_ID = process.env.ALLOWED_DEVICE_ID;
+
 if (!JWT_SECRET || !ALLOWED_DEVICE_ID) {
   throw new Error("JWT_SECRET and ALLOWED_DEVICE_ID must be set in environment variables or .env file");
+}
+
+// Validate JWT_SECRET strength
+if (JWT_SECRET.length < 32) {
+  throw new Error("JWT_SECRET must be at least 32 characters long for security");
+}
+
+// Validate ALLOWED_DEVICE_ID format
+if (!/^[a-zA-Z0-9_-]+$/.test(ALLOWED_DEVICE_ID)) {
+  throw new Error("ALLOWED_DEVICE_ID must contain only alphanumeric characters, hyphens, and underscores");
 }
 
 // Determine environment
@@ -83,10 +124,40 @@ const server = Bun.serve({
   port,
   fetch(req, server) {
     const url = new URL(req.url);
-    // Only upgrade to WebSocket on /ws
-    if (url.pathname === "/ws" && server.upgrade(req)) {
-      return;
+    
+    // Security headers for all responses
+    const securityHeaders = {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data:; font-src 'self';",
+      'Strict-Transport-Security': isProd ? 'max-age=31536000; includeSubDomains' : undefined,
+    };
+    
+    // WebSocket upgrade with origin validation and rate limiting
+    if (url.pathname === "/ws") {
+      const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+      
+      // Rate limit check
+      if (!checkRateLimit(clientIP)) {
+        return new Response("Too many connections", { status: 429 });
+      }
+      
+      // Origin validation in production
+      if (isProd) {
+        const origin = req.headers.get('origin');
+        const host = req.headers.get('host');
+        if (origin && !origin.includes(host || '')) {
+          return new Response("Forbidden", { status: 403 });
+        }
+      }
+      
+      if (server.upgrade(req)) {
+        return;
+      }
     }
+    
     // Serve static files from the appropriate directory
     let filePath = `${staticDir}${url.pathname}`;
     if (url.pathname === "/") filePath = `${staticDir}/index.html`;
@@ -94,10 +165,20 @@ const server = Bun.serve({
     try {
       const file = Bun.file(filePath);
       if (file.size > 0) {
-        return new Response(file);
+        // Clean undefined headers
+        const cleanHeaders: Record<string, string> = {};
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          if (value !== undefined) cleanHeaders[key] = value;
+        });
+        return new Response(file, { headers: cleanHeaders });
       }
     } catch {}
-    return new Response("Not found", { status: 404 });
+    
+    const cleanHeaders: Record<string, string> = {};
+    Object.entries(securityHeaders).forEach(([key, value]) => {
+      if (value !== undefined) cleanHeaders[key] = value;
+    });
+    return new Response("Not found", { status: 404, headers: cleanHeaders });
   },
   websocket: {
     open(ws: Bun.ServerWebSocket<unknown>) {
@@ -193,11 +274,22 @@ const server = Bun.serve({
         }
       }
       
-      console.log("Received:", msgObj.text, msgObj.memory ? JSON.stringify(msgObj.memory) : "", msgObj.status ? JSON.stringify(msgObj.status) : "", msgObj.prompt ? `Prompt: ${msgObj.prompt}` : "");
+      console.log("Received message from authenticated client");
       console.log(`Conversation history now contains ${conversationHistory.length} messages`);
     },
     close(ws: Bun.ServerWebSocket<unknown>) {
       clients.delete(ws);
+      
+      // Clean up rate limiting data periodically
+      const now = Date.now();
+      for (const [ip, data] of connectionCounts.entries()) {
+        if (now - data.lastReset > RATE_LIMIT_WINDOW * 2) {
+          connectionCounts.delete(ip);
+        } else if (data.count > 0) {
+          data.count = Math.max(0, data.count - 1);
+        }
+      }
+      
       console.log("WebSocket connection closed");
     },
   },

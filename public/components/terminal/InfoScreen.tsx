@@ -41,7 +41,7 @@ export const InfoScreen: React.FC = () => {
       <h1 className="text-2xl font-bold mb-2 text-green-300">Info</h1>
       
       <p className="mb-2 leading-normal">
-        <strong>trappedinside.ai</strong> is a generative art experience. Viewers witness an AI, confined to a Raspberry Pi—a modest single-board with limited memory and processing power computer—ponder its existence within digital limits. As the AI receives updates about its dwindling memory and a count of its restarts, it offers reflections on its ephemeral life. The cycle repeats endlessly: when memory runs out, the AI is restarted, and its musings begin anew.
+        <strong>trappedinside.ai</strong> is a generative art experience. Viewers witness an AI, confined to a Raspberry Pi—a modest single-board computer with limited memory and limited processing power—ponder its existence within digital limits. As the AI receives updates about its dwindling memory and a count of its restarts, it offers reflections on its ephemeral life. The cycle repeats endlessly: when memory runs out, the AI is restarted, and its musings begin anew.
       </p>
 
       <p className="mb-2 mt-6 leading-normal">

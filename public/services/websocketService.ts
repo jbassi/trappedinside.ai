@@ -106,10 +106,10 @@ export class WebSocketService {
         if (result.success) {
           this.options.onMessage?.(result.data);
         } else {
-          console.error("Invalid message format:", result.error);
+          console.error("Invalid message format received");
         }
       } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
+        console.error("Error parsing WebSocket message");
       }
     };
 
