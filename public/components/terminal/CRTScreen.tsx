@@ -46,6 +46,10 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
         // Viewport is taller than SVG - height is the constraint
         scaleFactor = vh / svgHeight;
       }
+
+      // Cap the maximum scale factor to prevent excessive zooming
+      const MAX_SCALE = 1.5; // Maximum 150% of original size
+      scaleFactor = Math.min(scaleFactor, MAX_SCALE);
       
       // Base position in the original SVG coordinates
       const baseX = 625;
@@ -230,12 +234,25 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
 
   // SVG approach for desktop and tablet
   return (
-    <div className="fixed inset-0 overflow-hidden bg-black transition-all duration-300" style={{ minHeight: '100vh', minWidth: '100vw' }}>
+    <div className="fixed inset-0 overflow-hidden bg-black transition-all duration-300" style={{ 
+      minHeight: '100vh', 
+      minWidth: '100vw',
+      willChange: 'transform',
+      backfaceVisibility: 'hidden'
+    }}>
       <svg
         className="w-full h-full min-w-screen min-h-screen"
         viewBox="0 0 1927 1080"
         preserveAspectRatio="xMidYMid slice"
-        style={{ width: '100vw', height: '100vh', display: 'block' }}
+        style={{ 
+          width: '100vw', 
+          height: '100vh', 
+          display: 'block',
+          imageRendering: 'crisp-edges',
+          willChange: 'transform',
+          transform: 'translateZ(0)',
+          backfaceVisibility: 'hidden'
+        }}
       >
         {/* Monitor background */}
         <image
@@ -245,6 +262,10 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({ children, textRef, statusB
           width="1927"
           height="1080"
           preserveAspectRatio="xMidYMid slice"
+          style={{
+            imageRendering: 'crisp-edges',
+            willChange: 'transform'
+          }}
         />
         {/* Terminal Content Area */}
         <foreignObject

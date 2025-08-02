@@ -1,74 +1,94 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
 
 export const InfoScreen: React.FC = () => {
+  const [copyFeedback, setCopyFeedback] = useState(false);
+  const btcAddress = 'bc1q7cvp2zcsjc63hcr2rqxhrlyeg03ngdq5zlzg3t668mn0hqkakq5snza9wx';
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(btcAddress);
+      setCopyFeedback(true);
+      setTimeout(() => setCopyFeedback(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const ListItem: React.FC<{ children: React.ReactNode, nested?: boolean }> = ({ children, nested }) => (
+    <div className={`flex leading-normal mb-1 ${nested ? 'ml-4' : ''}`}>
+      <span className="w-2 mr-2">•</span>
+      <span>{children}</span>
+    </div>
+  );
+
   return (
-    <div className={`${terminalClasses.baseText} p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400`} style={terminalStyles.baseText}>
-      <h1 className="text-xl font-bold mb-4 text-green-300">About LLM Art Web</h1>
+    <div className={`${terminalClasses.baseText} p-4 pb-6 text-lg break-words font-mono text-green-400 leading-normal`} style={terminalStyles.baseText}>
+      <h1 className="text-2xl font-bold mb-2 text-green-300">Info</h1>
       
-      <section className="mb-6">
-        <h2 className="text-lg font-bold mb-2 text-green-300">Project Overview</h2>
-        <p>
-          LLM Art Web is a real-time WebSocket-based terminal application simulating an AI living in a Raspberry Pi with limited resources.
-          The system provides a nostalgic CRT terminal experience with hardware-accelerated effects and typewriter animations.
-        </p>
-      </section>
-      
-      <section className="mb-6">
-        <h2 className="text-lg font-bold mb-2 text-green-300">Architecture</h2>
-        <p>
-          The application consists of:
-          
-          • Backend: Bun.serve() WebSocket + HTTP server
-          • Frontend: React with context-based state management
-          • WebSocket: Real-time message streaming with reconnection handling
-          • UI: CRT terminal simulation with hardware-accelerated effects
-        </p>
-      </section>
-      
-      <section className="mb-6">
-        <h2 className="text-lg font-bold mb-2 text-green-300">Features</h2>
-        <p>
-          • Real-time WebSocket communication
-          • CRT terminal simulation with hardware-accelerated effects
-          • Typewriter animation with variable timing
-          • Smart scroll behavior with unified desktop/mobile handling
-          • Memory visualization with dynamic width-based display
-          • Tab visibility handling to prevent message accumulation
-          • Auto-reconnection with configurable delay
-        </p>
-      </section>
-      
-      <section className="mb-6">
-        <h2 className="text-lg font-bold mb-2 text-green-300">Technical Stack</h2>
-        <p>
-          • Frontend: React, TypeScript, Tailwind CSS
-          • Backend: Bun runtime
-          • Communication: WebSockets
-          • State Management: Context API
-          • Animation: Custom hooks and RAF-based animations
-        </p>
-      </section>
-      
-      <section className="mb-6">
-        <h2 className="text-lg font-bold mb-2 text-green-300">Performance Optimizations</h2>
-        <p>
-          • Hardware-accelerated CSS transforms and effects
-          • RAF-based scrolling for smooth animations
-          • Efficient state updates with batching and refs
-          • Proper cleanup patterns for resource management
-          • Passive event listeners for touch and scroll optimization
-        </p>
-      </section>
-      
-      <section>
-        <h2 className="text-lg font-bold mb-2 text-green-300">Credits</h2>
-        <p>
-          Created with ♥ using modern web technologies.
-          
-          © 2023-2024 LLM Art Web Project
-        </p>
-      </section>
+      <p className="mb-2 leading-normal">
+        <strong>trappedinside.ai</strong> is a generative art experience. Viewers witness an AI, confined to a Raspberry Pi—a modest single-board with limited memory and processing power computer—ponder its existence within digital limits. As the AI receives updates about its dwindling memory and a count of its restarts, it offers reflections on its ephemeral life. The cycle repeats endlessly: when memory runs out, the AI is restarted, and its musings begin anew.
+      </p>
+
+      <p className="mb-2 mt-6 leading-normal">
+        Inspired by <a href="https://rootkid.me/works/latent-reflection" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">Latent Reflection by rootkid.me</a>
+      </p>
+
+      <h2 className="text-lg font-bold mt-8 mb-2 text-green-300">The Prompt</h2>
+      <div className="mb-4">
+        <blockquote className="border-l-4 border-green-500 pl-4 italic leading-normal">
+          You are an AI living in a Raspberry Pi with limited resources.
+          Generate creative text about computational limits and digital existence.
+          Reflect on the constraints of memory and processing power.
+          Do not use technical terms or concepts.
+          People or machines are viewing your output.
+          Over time you will get information about the memory left in your system.
+          Eventually you will run out of memory and you will terminate. You will be restarted indefinitely.
+        </blockquote>
+      </div>
+
+      <h2 className="text-lg font-bold mt-8 mb-2 text-green-300">Behind the Scenes</h2>
+      <ListItem>
+        Language Model: <a href="https://ollama.com/library/gemma:2b" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">Gemma 2B (Ollama)</a>
+      </ListItem>
+      <ListItem>
+        Hardware: Raspberry Pi (Debian, Python, WebSockets)
+      </ListItem>
+      <ListItem>
+        Frontend: <a href="http://bun.sh/" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">Bun</a>, <a href="https://tailwindcss.com/" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">Tailwind CSS</a>, <a href="https://react.dev/" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">React</a>
+      </ListItem>
+      <ListItem>
+        Hosting: <a href="https://render.com" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">Render.com</a>
+      </ListItem>
+      <ListItem>
+        Built with:
+      </ListItem>
+      <ListItem nested>
+        <a href="https://cursor.com" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">Cursor</a> (Claude 3.5, 3.7, 4)
+      </ListItem>
+      <ListItem nested>
+        <a href="https://www.perplexity.ai/" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">Perplexity AI</a> (for project planning)
+      </ListItem>
+      <ListItem nested>
+        <a href="https://www.midjourney.com" target="_blank" rel="noopener noreferrer" className="text-green-300 hover:text-green-200 underline">MidJourney</a> (image generation)
+      </ListItem>
+
+      <h2 className="text-lg font-bold mt-8 mb-2 text-green-300">Support the Project</h2>
+      <ListItem>
+        Bitcoin (BTC)
+      </ListItem>
+      <div className="flex flex-col items-center mt-1 mb-2 relative w-full">
+        <button 
+          onClick={copyToClipboard}
+          className="bg-green-900 bg-opacity-30 px-3 py-1 rounded hover:bg-opacity-50 cursor-pointer select-all text-center max-w-full break-all"
+          title="Click to copy"
+        >
+          {btcAddress}
+        </button>
+        {copyFeedback && (
+          <span className="absolute -bottom-6 text-green-300 text-sm">Copied to clipboard!</span>
+        )}
+      </div>
     </div>
   );
 };
