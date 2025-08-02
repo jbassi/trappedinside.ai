@@ -13,6 +13,7 @@ export const useTerminalAnimation = () => {
     isProcessing,
     setIsProcessing,
     isRestarting,
+    selectedTab,
     queueRef,
     animatingRef,
     processingRef,
@@ -25,6 +26,9 @@ export const useTerminalAnimation = () => {
 
   // Cursor blinking effect - controlled by animation state
   useEffect(() => {
+    // Only blink cursor when in terminal tab
+    if (selectedTab !== 'terminal') return;
+    
     // Clear any existing interval
     if (cursorIntervalRef.current) {
       clearInterval(cursorIntervalRef.current);
@@ -46,7 +50,7 @@ export const useTerminalAnimation = () => {
         clearInterval(cursorIntervalRef.current);
       }
     };
-  }, [isAnimating, isProcessing, isRestarting, setCursorVisible, cursorIntervalRef]);
+  }, [isAnimating, isProcessing, isRestarting, setCursorVisible, cursorIntervalRef, selectedTab]);
 
   // Helper to animate in new output - simplified version
   const animateOutput = useCallback((output: string) => {
@@ -77,8 +81,10 @@ export const useTerminalAnimation = () => {
           return newLines;
         });
         
-        // Scroll to bottom if needed (only if user hasn't scrolled up)
-        scrollToBottomIfNeeded();
+        // Only scroll if in terminal tab
+        if (selectedTab === 'terminal') {
+          scrollToBottomIfNeeded();
+        }
         
         i += 1;
         if (i < output.length) {
@@ -93,7 +99,7 @@ export const useTerminalAnimation = () => {
       }
       step();
     });
-  }, [setIsAnimating, setCursorVisible, setLines, animatingRef, restartingRef, scrollToBottomIfNeeded]);
+  }, [setIsAnimating, setCursorVisible, setLines, animatingRef, restartingRef, scrollToBottomIfNeeded, selectedTab]);
 
   // Process a single text chunk with newlines
   const processTextChunk = useCallback(async (text: string) => {
@@ -123,7 +129,11 @@ export const useTerminalAnimation = () => {
       if (i > 0 || (i === 0 && hasLeadingNewline)) {
         setLines(prev => [...prev, PROMPT]);
         await new Promise(r => setTimeout(r, 50)); // Small delay for newline
-        scrollToBottomIfNeeded();
+        
+        // Only scroll if in terminal tab
+        if (selectedTab === 'terminal') {
+          scrollToBottomIfNeeded();
+        }
       }
       
       // Get the current line (safely)
@@ -141,9 +151,13 @@ export const useTerminalAnimation = () => {
     if (hasTrailingNewline && !(textLines.length > 0 && textLines[textLines.length - 1] === "")) {
       setLines(prev => [...prev, PROMPT]);
       await new Promise(r => setTimeout(r, 50));
-      scrollToBottomIfNeeded();
+      
+      // Only scroll if in terminal tab
+      if (selectedTab === 'terminal') {
+        scrollToBottomIfNeeded();
+      }
     }
-  }, [animateOutput, setLines, scrollToBottomIfNeeded, restartingRef, PROMPT]);
+  }, [animateOutput, setLines, scrollToBottomIfNeeded, restartingRef, PROMPT, selectedTab]);
 
   // Animation queue processor
   const processQueue = useCallback(async () => {

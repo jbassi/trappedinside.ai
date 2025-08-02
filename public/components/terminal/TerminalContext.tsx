@@ -45,6 +45,7 @@ interface TerminalContextType {
   
   // Refs
   textRef: React.RefObject<HTMLDivElement | null>;
+  infoTextRef: React.RefObject<HTMLDivElement | null>;
   queueRef: React.MutableRefObject<string[]>;
   animatingRef: React.MutableRefObject<boolean>;
   processingRef: React.MutableRefObject<boolean>;
@@ -104,6 +105,7 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
   
   // Refs
   const textRef = useRef<HTMLDivElement>(null);
+  const infoTextRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<string[]>([]);
   const animatingRef = useRef(false);
   const processingRef = useRef(false);
@@ -159,6 +161,7 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
     
     // Refs
     textRef,
+    infoTextRef,
     queueRef,
     animatingRef,
     processingRef,

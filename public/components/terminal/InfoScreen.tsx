@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
+import { useTerminal } from './TerminalContext';
 
 export const InfoScreen: React.FC = () => {
+  const { infoTextRef } = useTerminal();
   const [copyFeedback, setCopyFeedback] = useState(false);
   const btcAddress = 'bc1q7cvp2zcsjc63hcr2rqxhrlyeg03ngdq5zlzg3t668mn0hqkakq5snza9wx';
+
+  // Ensure InfoScreen always starts at the top when mounted
+  // useLayoutEffect runs synchronously after DOM mutations but before browser painting
+  useLayoutEffect(() => {
+    if (infoTextRef.current) {
+      infoTextRef.current.scrollTop = 0;
+    }
+  }, []);
 
   const copyToClipboard = async () => {
     try {
@@ -23,7 +33,11 @@ export const InfoScreen: React.FC = () => {
   );
 
   return (
-    <div className={`${terminalClasses.baseText} p-4 pb-6 text-lg break-words font-mono text-green-400 leading-normal`} style={terminalStyles.baseText}>
+    <div 
+      ref={infoTextRef}
+      className={`${terminalClasses.baseText} p-4 pb-6 text-lg break-words font-mono text-green-400 leading-normal`} 
+      style={terminalStyles.baseText}
+    >
       <h1 className="text-2xl font-bold mb-2 text-green-300">Info</h1>
       
       <p className="mb-2 leading-normal">

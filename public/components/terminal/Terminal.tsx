@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
 import { CRTScreen } from './CRTScreen';
 import { StatusBar } from './StatusBar';
 import { TaskBar } from './TaskBar';
@@ -20,12 +20,17 @@ export const Terminal: React.FC = () => {
     lastMemory,
     llmPrompt,
     textRef,
+    infoTextRef,
     isTouchDeviceRef,
     queueRef,
     PROMPT,
     selectedTab,
-    setSelectedTab
+    setSelectedTab,
+    userScrolledUp
   } = useTerminal();
+
+  // Track tab changes for scroll positioning
+  const prevTabRef = useRef<typeof selectedTab>(selectedTab);
 
   const { processQueue } = useTerminalAnimation();
   
@@ -87,39 +92,54 @@ export const Terminal: React.FC = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [processQueue, queueRef]);
   
-  // Handle scroll to top/bottom
+  // Handle scroll position when tab changes using useLayoutEffect
+  // This runs synchronously after DOM mutations but before browser painting
+  useLayoutEffect(() => {
+    // Only run if the tab actually changed
+    if (prevTabRef.current !== selectedTab) {
+      if (selectedTab === 'terminal' && textRef.current) {
+        // If switching to terminal tab, always scroll to bottom
+        textRef.current.scrollTop = textRef.current.scrollHeight;
+      } else if (selectedTab === 'info' && infoTextRef.current) {
+        // If switching to info tab, always scroll to top
+        infoTextRef.current.scrollTop = 0;
+      }
+      
+      // Update previous tab reference
+      prevTabRef.current = selectedTab;
+    }
+  }, [selectedTab, textRef, infoTextRef]);
+  
+  // Handle scroll to top/bottom for terminal content
   const handleScrollToTop = () => {
-    if (textRef.current) {
+    if (selectedTab === 'terminal' && textRef.current) {
       textRef.current.scrollTop = 0;
+    } else if (selectedTab === 'info' && infoTextRef.current) {
+      infoTextRef.current.scrollTop = 0;
     }
   };
   
   const handleScrollToBottom = () => {
-    if (textRef.current) {
+    if (selectedTab === 'terminal' && textRef.current) {
       textRef.current.scrollTop = textRef.current.scrollHeight;
+    } else if (selectedTab === 'info' && infoTextRef.current) {
+      infoTextRef.current.scrollTop = infoTextRef.current.scrollHeight;
     }
   };
   
   // Handle tab change
   const handleTabChange = (tab: typeof selectedTab) => {
+    // Just update the selected tab - scrolling will be handled by the useLayoutEffect
     setSelectedTab(tab);
-    
-    // Use setTimeout to ensure the DOM has updated before scrolling
-    setTimeout(() => {
-      if (tab === 'terminal') {
-        // If switching to terminal tab, scroll to bottom
-        handleScrollToBottom();
-      } else if (tab === 'info') {
-        // If switching to info tab, scroll to top
-        handleScrollToTop();
-      }
-    }, 0);
   };
 
+  // Get the appropriate ref based on the selected tab
+  const activeRef = selectedTab === 'info' ? infoTextRef : textRef;
+
   return (
-    <TerminalSizeProvider textRef={textRef}>
+    <TerminalSizeProvider textRef={activeRef}>
       <CRTScreen 
-        textRef={textRef}
+        textRef={activeRef}
         statusBar={!isLoading && selectedTab === 'terminal' ? <StatusBar memory={lastMemory} /> : undefined}
         promptDisplay={!isLoading && selectedTab === 'terminal' ? <PromptDisplay prompt={llmPrompt} /> : undefined}
         taskBar={!isLoading ? 

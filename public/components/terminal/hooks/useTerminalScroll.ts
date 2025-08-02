@@ -10,31 +10,38 @@ export const useTerminalScroll = () => {
     activelyDragging,
     setActivelyDragging,
     textRef,
+    infoTextRef,
+    selectedTab,
     prevScrollTopRef,
     prevScrollHeightRef
   } = useTerminal();
 
+  // Get the active ref based on the selected tab
+  const activeRef = selectedTab === 'info' ? infoTextRef : textRef;
+
   // Helper function to check if at bottom
   const checkIfAtBottom = useCallback(() => {
-    if (!textRef.current) return true;
+    if (!activeRef.current) return true;
     
-    const { scrollTop, scrollHeight, clientHeight } = textRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = activeRef.current;
     return scrollTop + clientHeight >= scrollHeight - 30;
-  }, [textRef]);
+  }, [activeRef]);
 
   // Helper function to scroll to bottom if needed
   const scrollToBottomIfNeeded = useCallback(() => {
-    if (!textRef.current) return;
+    // Only auto-scroll the terminal content, not the info screen
+    if (selectedTab !== 'terminal' || !textRef.current) return;
     
     // Only auto-scroll if user hasn't scrolled up AND isn't actively dragging
     if (!userScrolledUp && !activelyDragging && checkIfAtBottom()) {
       textRef.current.scrollTop = textRef.current.scrollHeight + 30;
     }
-  }, [textRef, userScrolledUp, activelyDragging, checkIfAtBottom]);
+  }, [textRef, userScrolledUp, activelyDragging, selectedTab, checkIfAtBottom]);
 
   // Unified scroll handler for both desktop and mobile
   const handleScroll = useCallback(() => {
-    if (!textRef.current) return;
+    // Only track scroll behavior for the terminal tab
+    if (selectedTab !== 'terminal' || !textRef.current) return;
     
     const { scrollTop, scrollHeight } = textRef.current;
     const wasAtBottom = isAtBottom;
@@ -60,12 +67,14 @@ export const useTerminalScroll = () => {
     if (!wasAtBottom && isNowAtBottom && scrollingDown) {
       setUserScrolledUp(false);
     }
-  }, [isAtBottom, setIsAtBottom, setUserScrolledUp, checkIfAtBottom, textRef, prevScrollTopRef, prevScrollHeightRef]);
+  }, [isAtBottom, setIsAtBottom, setUserScrolledUp, checkIfAtBottom, textRef, selectedTab, prevScrollTopRef, prevScrollHeightRef]);
 
-  // Set up scroll event listener
+  // Set up scroll event listener for terminal content
   useEffect(() => {
+    // Only set up scroll handlers for the terminal content
+    if (selectedTab !== 'terminal' || !textRef.current) return;
+    
     const element = textRef.current;
-    if (!element) return;
     
     // Add touch event listeners to detect active dragging
     const handleTouchStart = () => {
@@ -102,7 +111,7 @@ export const useTerminalScroll = () => {
       element.removeEventListener('touchend', handleTouchEnd);
       element.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [handleScroll, textRef, activelyDragging, setActivelyDragging]);
+  }, [handleScroll, textRef, activelyDragging, setActivelyDragging, selectedTab]);
 
   return {
     isAtBottom,
