@@ -13,7 +13,7 @@ export const terminalStyles = {
   // Terminal text with stronger glow
   glowText: {
     color: '#4ade80',
-    fontFamily: 'monospace', 
+    fontFamily: 'monospace',
     textShadow: '0 0 8px rgba(0,255,0,0.7)',
     fontSize: 'clamp(14px, 2.5vw, 16px)',
   } as CSSProperties,

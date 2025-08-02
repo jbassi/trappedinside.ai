@@ -6,9 +6,12 @@ interface BarBaseProps {
   className?: string;
 }
 
-export const BarBase: React.FC<BarBaseProps> = ({ children, className = "" }) => {
+export const BarBase: React.FC<BarBaseProps> = ({ children, className = '' }) => {
   return (
-    <div className={`w-full ${terminalClasses.baseText} ${className}`} style={terminalStyles.baseText}>
+    <div
+      className={`w-full ${terminalClasses.baseText} ${className}`}
+      style={terminalStyles.baseText}
+    >
       <div className="flex items-center justify-between bg-green-500 text-black px-2 py-1 h-[26px] sm:h-[30px]">
         {children}
       </div>
@@ -23,17 +26,17 @@ interface BarButtonProps {
   className?: string;
 }
 
-export const BarButton: React.FC<BarButtonProps> = ({ 
-  children, 
-  onClick, 
-  selected = false, 
-  className = "" 
+export const BarButton: React.FC<BarButtonProps> = ({
+  children,
+  onClick,
+  selected = false,
+  className = '',
 }) => {
-  const baseClasses = "px-2 py-0.5 text-xs sm:text-base font-mono transition-colors duration-150";
-  const selectedClasses = selected 
-    ? "bg-black text-green-500 font-bold" 
-    : "hover:bg-green-600 active:bg-green-600 cursor-pointer touch-action-manipulation";
-  
+  const baseClasses = 'px-2 py-0.5 text-xs sm:text-base font-mono transition-colors duration-150';
+  const selectedClasses = selected
+    ? 'bg-black text-green-500 font-bold'
+    : 'hover:bg-green-600 active:bg-green-600 cursor-pointer touch-action-manipulation';
+
   return (
     <button
       onClick={onClick}

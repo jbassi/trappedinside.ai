@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // Define the message schema
 export const MessageSchema = z.object({
@@ -52,7 +52,7 @@ export class WebSocketService {
     this.url = url;
     this.options = {
       reconnectDelay: 100,
-      ...options
+      ...options,
     };
   }
 
@@ -85,7 +85,7 @@ export class WebSocketService {
       clearTimeout(this.loadingTimeout);
     }
     this.loadingTimeout = setTimeout(() => {
-      this.options.onError?.(new Event("timeout"));
+      this.options.onError?.(new Event('timeout'));
       this.loadingTimeout = null;
     }, 10000); // 10 second timeout
 
@@ -106,10 +106,10 @@ export class WebSocketService {
         if (result.success) {
           this.options.onMessage?.(result.data);
         } else {
-          console.error("Invalid message format received");
+          console.error('Invalid message format received');
         }
       } catch (error) {
-        console.error("Error parsing WebSocket message");
+        console.error('Error parsing WebSocket message');
       }
     };
 
@@ -118,12 +118,12 @@ export class WebSocketService {
         clearTimeout(this.loadingTimeout);
         this.loadingTimeout = null;
       }
-      
+
       // Only call onClose if not intentionally disconnecting
       if (!this.isDisconnecting) {
         this.options.onClose?.();
       }
-      
+
       // Only auto-reconnect if not manually disconnecting
       if (!this.isDisconnecting && !this.isReconnecting) {
         if (this.reconnectTimeout) {
@@ -133,7 +133,7 @@ export class WebSocketService {
           this.connect();
         }, this.options.reconnectDelay);
       }
-      
+
       this.ws = null;
     };
 
@@ -143,7 +143,7 @@ export class WebSocketService {
         this.loadingTimeout = null;
       }
       this.options.onError?.(error);
-      
+
       // Close connection on error to trigger reconnect
       if (this.ws) {
         this.ws.close();
@@ -159,12 +159,12 @@ export class WebSocketService {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
-    
+
     if (this.loadingTimeout) {
       clearTimeout(this.loadingTimeout);
       this.loadingTimeout = null;
     }
-    
+
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -180,7 +180,7 @@ export class WebSocketService {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
     } else {
-      console.warn("WebSocket not connected");
+      console.warn('WebSocket not connected');
     }
   }
 }

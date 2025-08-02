@@ -11,14 +11,14 @@ interface TaskBarProps {
   onScrollToBottom?: () => void;
 }
 
-export const TaskBar: React.FC<TaskBarProps> = ({ 
+export const TaskBar: React.FC<TaskBarProps> = ({
   selectedTab = 'terminal',
   onTabChange,
   onScrollToTop,
-  onScrollToBottom 
+  onScrollToBottom,
 }) => {
   const { terminalWidth } = useTerminalSize();
-  
+
   // Match the StatusBar's responsive sizing
   const getResponsiveLayout = () => {
     if (terminalWidth < 40) {
@@ -31,22 +31,22 @@ export const TaskBar: React.FC<TaskBarProps> = ({
       };
     }
   };
-  
+
   const { compact } = getResponsiveLayout();
-  
+
   // Handle scroll button clicks
   const handleScrollToTop = () => {
     if (onScrollToTop) {
       onScrollToTop();
     }
   };
-  
+
   const handleScrollToBottom = () => {
     if (onScrollToBottom) {
       onScrollToBottom();
     }
   };
-  
+
   return (
     <BarBase>
       {/* Left side - Tab buttons */}
@@ -54,14 +54,14 @@ export const TaskBar: React.FC<TaskBarProps> = ({
         <BarButton
           selected={selectedTab === 'terminal'}
           onClick={() => onTabChange?.('terminal')}
-          className={compact ? "px-1 py-0.5" : ""}
+          className={compact ? 'px-1 py-0.5' : ''}
         >
           Terminal
         </BarButton>
         <BarButton
           selected={selectedTab === 'info'}
           onClick={() => onTabChange?.('info')}
-          className={compact ? "px-1 py-0.5" : ""}
+          className={compact ? 'px-1 py-0.5' : ''}
         >
           Info
         </BarButton>
@@ -69,19 +69,19 @@ export const TaskBar: React.FC<TaskBarProps> = ({
 
       {/* Right side - Navigation buttons */}
       <div className="flex items-center gap-1">
-        <BarButton 
+        <BarButton
           onClick={handleScrollToTop}
-          className={compact ? "px-1 py-0.5" : ""}
+          className={compact ? 'px-1 py-0.5' : ''}
           aria-label="Scroll to top"
         >
-          {compact ? "↑" : "To top"}
+          {compact ? '↑' : 'To top'}
         </BarButton>
-        <BarButton 
+        <BarButton
           onClick={handleScrollToBottom}
-          className={compact ? "px-1 py-0.5" : ""}
+          className={compact ? 'px-1 py-0.5' : ''}
           aria-label="Scroll to bottom"
         >
-          {compact ? "↓" : "To bottom"}
+          {compact ? '↓' : 'To bottom'}
         </BarButton>
       </div>
     </BarBase>

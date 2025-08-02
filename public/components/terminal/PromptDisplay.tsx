@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from 'react';
 import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
 import { useTerminalSize } from '../context/TerminalSizeContext';
 
@@ -21,7 +21,7 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
       // Create a test element to measure character width in this exact container
       const testElement = document.createElement('div');
       const containerStyles = getComputedStyle(containerRef.current);
-      
+
       testElement.style.fontFamily = containerStyles.fontFamily;
       testElement.style.fontSize = containerStyles.fontSize;
       testElement.style.fontWeight = containerStyles.fontWeight;
@@ -31,20 +31,20 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
       testElement.style.whiteSpace = 'pre';
       testElement.style.top = '-9999px';
       testElement.textContent = '#'.repeat(100);
-      
+
       document.body.appendChild(testElement);
       const testWidth = testElement.offsetWidth;
       document.body.removeChild(testElement);
-      
+
       // Calculate character count based on actual container width
       const containerWidth = containerRef.current.offsetWidth;
       const charWidth = testWidth / 100;
-      
+
       // More conservative padding calculation for mobile
       // Mobile: px-4 (32px) + scrollbar space + browser margins + safety buffer
       const isMobile = window.innerWidth <= 768;
       let paddingBuffer = isMobile ? 16 : 8; // Much less aggressive
-      
+
       // Additional mobile-specific adjustments
       if (isMobile) {
         // Account for potential viewport scaling issues
@@ -52,21 +52,21 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
         if (viewportScale !== 1) {
           paddingBuffer = Math.ceil(paddingBuffer * viewportScale);
         }
-        
+
         // Add smaller buffer for very small screens
         if (containerWidth < 350) {
           paddingBuffer += 4; // Reduced from 8
         }
       }
-      
+
       // Account for container padding and add safety buffer
       const availableWidth = Math.max(containerWidth - paddingBuffer, 100); // Ensure minimum
       const calculatedWidth = Math.floor(availableWidth / charWidth);
-      
+
       // Ensure minimum width but be less conservative
       const minWidth = isMobile ? 15 : 12; // Reduced from 25
       const maxWidth = Math.floor(containerWidth / (charWidth * 0.9)); // Increased from 0.8 to 0.9
-      
+
       const finalWidth = Math.max(Math.min(calculatedWidth, maxWidth), minWidth);
       setActualWidth(finalWidth);
     };
@@ -103,14 +103,14 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
 
   const effectiveWidth = actualWidth;
   const contentWidth = effectiveWidth - 4; // Account for "# " and " #"
-  
+
   const wrapText = (text: string, maxWidth: number): string[] => {
     if (!text || text.trim() === '' || maxWidth <= 0) return [''];
-    
+
     const words = text.split(' ');
     const lines: string[] = [];
     let currentLine = '';
-    
+
     for (const word of words) {
       const testLine = currentLine ? `${currentLine} ${word}` : word;
       if (testLine.length <= maxWidth) {
@@ -138,46 +138,46 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
 
   // Create header line with centered PROMPT
   const createHeaderLine = (): string => {
-    const promptText = " PROMPT ";
+    const promptText = ' PROMPT ';
     if (effectiveWidth < promptText.length) {
-      return "#".repeat(effectiveWidth);
+      return '#'.repeat(effectiveWidth);
     }
-    
+
     const remainingSpace = effectiveWidth - promptText.length;
     const leftPadding = Math.floor(remainingSpace / 2);
     const rightPadding = remainingSpace - leftPadding;
-    
-    return "#".repeat(leftPadding) + promptText + "#".repeat(rightPadding);
+
+    return '#'.repeat(leftPadding) + promptText + '#'.repeat(rightPadding);
   };
 
   // Create content lines with borders and proper spacing
   const createContentLine = (content: string): string => {
     const paddedContent = content.padEnd(contentWidth, ' ');
-    return "# " + paddedContent + " #";
+    return '# ' + paddedContent + ' #';
   };
 
   // Create footer line
   const createFooterLine = (): string => {
-    return "#".repeat(effectiveWidth);
+    return '#'.repeat(effectiveWidth);
   };
 
   // Build all lines
   const lines: string[] = [];
-  
+
   // Header
   lines.push(createHeaderLine());
-  
+
   // Content lines
   const wrappedText = wrapText(prompt, contentWidth);
   for (const textLine of wrappedText) {
     lines.push(createContentLine(textLine));
   }
-  
+
   // Footer
   lines.push(createFooterLine());
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`${terminalClasses.baseText} mb-2 sm:mb-4`}
       style={{
@@ -192,23 +192,25 @@ export const PromptDisplay: React.FC<PromptDisplayProps> = ({ prompt }) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center', // Center horizontally
-        justifyContent: 'center' // Center vertically if needed
+        justifyContent: 'center', // Center vertically if needed
       }}
     >
-      <div style={{
-        display: 'inline-block',
-        textAlign: 'left' // Keep text left-aligned within the centered block
-      }}>
+      <div
+        style={{
+          display: 'inline-block',
+          textAlign: 'left', // Keep text left-aligned within the centered block
+        }}
+      >
         {lines.map((line, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className="font-mono"
             style={{
               display: 'block',
               overflow: 'hidden',
               whiteSpace: 'pre',
               textOverflow: 'clip', // Clean cut if overflow occurs
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
             }}
           >
             {line}

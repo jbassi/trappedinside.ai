@@ -1,16 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 
-export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isLoading: boolean = false) {
+export function useTerminalWidth(
+  containerRef: React.RefObject<HTMLElement>,
+  isLoading: boolean = false
+) {
   const [terminalWidth, setTerminalWidth] = useState(80);
   const [widthVersion, setWidthVersion] = useState(0);
 
   const measureCharacterWidth = useCallback((): number => {
     if (!containerRef.current) return 9.6;
-    
+
     // Create a temporary element to measure character width using the exact same styles
     const testElement = document.createElement('span');
     const containerStyles = getComputedStyle(containerRef.current);
-    
+
     // Copy all relevant font styles from the container
     testElement.style.fontFamily = containerStyles.fontFamily;
     testElement.style.fontSize = containerStyles.fontSize;
@@ -22,7 +25,7 @@ export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isL
     testElement.style.whiteSpace = 'pre';
     testElement.style.top = '-9999px';
     testElement.textContent = '#';
-    
+
     // Append to the same container to inherit styles properly
     containerRef.current.appendChild(testElement);
     const charWidth = testElement.getBoundingClientRect().width;
@@ -37,13 +40,13 @@ export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isL
       const paddingLeft = parseFloat(getComputedStyle(containerRef.current).paddingLeft) || 0;
       const paddingRight = parseFloat(getComputedStyle(containerRef.current).paddingRight) || 0;
       const availableWidth = containerWidth - paddingLeft - paddingRight;
-      
+
       const charWidth = measureCharacterWidth();
       const estimatedChars = Math.floor(availableWidth / charWidth);
-      
+
       if (estimatedChars !== terminalWidth) {
         setTerminalWidth(estimatedChars);
-        setWidthVersion(prev => prev + 1);
+        setWidthVersion((prev) => prev + 1);
       }
     }
   }, [containerRef, terminalWidth, measureCharacterWidth]);
@@ -66,10 +69,10 @@ export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isL
       };
       window.addEventListener('load', onLoad);
     }
-    
+
     window.addEventListener('resize', calculateWidthSafely);
     window.addEventListener('orientationchange', calculateWidthSafely);
-    
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.contentRect.width > 0) {
@@ -78,11 +81,11 @@ export function useTerminalWidth(containerRef: React.RefObject<HTMLElement>, isL
         }
       }
     });
-    
+
     if (containerRef.current) {
       observer.observe(containerRef.current);
     }
-    
+
     return () => {
       window.removeEventListener('resize', calculateWidthSafely);
       window.removeEventListener('orientationchange', calculateWidthSafely);

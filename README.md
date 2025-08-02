@@ -1,9 +1,11 @@
 # Info
+
 **trappedinside.ai** is a generative art experience. Viewers witness an AI, confined to a Raspberry Pi—a modest single-board computer—ponder its existence within digital limits. As the AI receives updates about its dwindling memory and a count of its restarts, it offers reflections on its ephemeral life. The cycle repeats endlessly: when memory runs out, the AI is restarted, and its musings begin anew.
 
-Inspired by [Latent Reflection by rootkid.me](https://rootkid.me/works/latent-reflection)  
+Inspired by [Latent Reflection by rootkid.me](https://rootkid.me/works/latent-reflection)
 
 ## The Prompt
+
 > You are an AI living in a Raspberry Pi with limited resources.
 > Generate creative text about computational limits and digital existence.
 > Reflect on the constraints of memory and processing power.
@@ -13,14 +15,16 @@ Inspired by [Latent Reflection by rootkid.me](https://rootkid.me/works/latent-re
 > Eventually you will run out of memory and you will terminate. You will be restarted indefinitely.
 
 ## Behind the Scenes
+
 - **Language Model:** [Gemma 2B (Ollama)](https://ollama.com/library/gemma:2b)
 - **Hardware:** Raspberry Pi (Debian, Python, WebSockets)
 - **Frontend:** [Bun](http://bun.sh/), [Tailwind CSS](https://tailwindcss.com/), [React](https://react.dev/)
 - **Hosting:** Render.com
-- **Built with:**  
-  - [Cursor](https://cursor.com) (Claude 3.5, 3.7, 4)  
-  - [Perplexity AI](https://www.perplexity.ai/) (for project planning)  
+- **Built with:**
+  - [Cursor](https://cursor.com) (Claude 3.5, 3.7, 4)
+  - [Perplexity AI](https://www.perplexity.ai/) (for project planning)
   - [MidJourney](https://www.midjourney.com) (image generation)
 
 ## Support the Project
+
 **Bitcoin (BTC):** `bc1q7cvp2zcsjc63hcr2rqxhrlyeg03ngdq5zlzg3t668mn0hqkakq5snza9wx`

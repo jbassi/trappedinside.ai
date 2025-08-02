@@ -15,7 +15,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
   const available_mb = memory?.available_mb ?? 0;
   const total_mb = memory?.total_mb ?? 0;
   const percent_used = memory?.percent_used ?? 0;
-  
+
   // Responsive layout calculation - always try to keep on one line
   const getResponsiveLayout = () => {
     if (terminalWidth < 40) {
@@ -44,16 +44,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
       };
     }
   };
-  
+
   const { barWidth, showFullText, abbreviateLabel } = getResponsiveLayout();
-  
+
   // Ensure percent_used is within valid range and calculate filled width properly
   const safePercentUsed = Math.max(0, Math.min(100, percent_used));
   const filledWidth = Math.max(0, Math.round((safePercentUsed / 100) * barWidth));
   const emptyWidth = Math.max(0, barWidth - filledWidth);
-  
+
   const formatMemoryText = () => {
-    const used_gb = (total_mb * safePercentUsed / 100 / 1024);
+    const used_gb = (total_mb * safePercentUsed) / 100 / 1024;
     if (showFullText) {
       return `Used ${safePercentUsed.toFixed(1)}% (${used_gb.toFixed(1)}GB)`;
     } else if (abbreviateLabel) {
@@ -64,7 +64,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
   };
 
   const getLabel = () => {
-    return "Memory";
+    return 'Memory';
   };
 
   return (
@@ -72,11 +72,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
       <div className="flex items-center justify-between bg-green-500 text-black px-2 py-1">
         <span className="flex-shrink-0">{getLabel()}</span>
         <span className="flex-1 mx-0.5 text-center overflow-hidden font-mono whitespace-nowrap">
-          {'█'.repeat(filledWidth)}{'▒'.repeat(emptyWidth)}
+          {'█'.repeat(filledWidth)}
+          {'▒'.repeat(emptyWidth)}
         </span>
-        <span className="flex-shrink-0 text-right text-xs sm:text-base">
-          {formatMemoryText()}
-        </span>
+        <span className="flex-shrink-0 text-right text-xs sm:text-base">{formatMemoryText()}</span>
         <span className="flex-shrink-0 border-l border-black ml-2 pl-2 text-xs sm:text-base">
           Restarts: {numRestarts ?? 0}
         </span>

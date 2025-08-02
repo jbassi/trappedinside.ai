@@ -26,20 +26,20 @@ export const Terminal: React.FC = () => {
     PROMPT,
     selectedTab,
     setSelectedTab,
-    userScrolledUp
+    userScrolledUp,
   } = useTerminal();
 
   // Track tab changes for scroll positioning
   const prevTabRef = useRef<typeof selectedTab>(selectedTab);
 
   const { processQueue } = useTerminalAnimation();
-  
+
   // Initialize WebSocket connection
   useWebSocket();
-  
+
   // State to track queue length for triggering processQueue
   const [queueLength, setQueueLength] = useState(0);
-  
+
   // Check queue length periodically to detect new messages
   useEffect(() => {
     const checkQueueInterval = setInterval(() => {
@@ -47,10 +47,10 @@ export const Terminal: React.FC = () => {
         setQueueLength(queueRef.current.length);
       }
     }, 100);
-    
+
     return () => clearInterval(checkQueueInterval);
   }, [queueRef, queueLength]);
-  
+
   // Process queue when queue length changes
   useEffect(() => {
     if (queueLength > 0 && document.visibilityState === 'visible') {
@@ -58,14 +58,14 @@ export const Terminal: React.FC = () => {
       setQueueLength(0);
     }
   }, [queueLength, processQueue]);
-  
+
   // Detect if device has touch capabilities
   useEffect(() => {
     const detectTouchDevice = () => {
       // Use existing mobile detection utilities
       const hasTouch = hasTouchCapabilities();
       const isMobile = isMobileDevice();
-      
+
       // Consider it a touch device if it has touch capability AND is identified as mobile
       isTouchDeviceRef.current = hasTouch && isMobile;
     };
@@ -73,7 +73,7 @@ export const Terminal: React.FC = () => {
     detectTouchDevice();
     window.addEventListener('resize', detectTouchDevice);
     window.addEventListener('orientationchange', detectTouchDevice);
-    
+
     return () => {
       window.removeEventListener('resize', detectTouchDevice);
       window.removeEventListener('orientationchange', detectTouchDevice);
@@ -87,11 +87,11 @@ export const Terminal: React.FC = () => {
         processQueue();
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [processQueue, queueRef]);
-  
+
   // Handle scroll position when tab changes using useLayoutEffect
   // This runs synchronously after DOM mutations but before browser painting
   useLayoutEffect(() => {
@@ -104,12 +104,12 @@ export const Terminal: React.FC = () => {
         // If switching to info tab, always scroll to top
         infoTextRef.current.scrollTop = 0;
       }
-      
+
       // Update previous tab reference
       prevTabRef.current = selectedTab;
     }
   }, [selectedTab, textRef, infoTextRef]);
-  
+
   // Handle scroll to top/bottom for terminal content
   const handleScrollToTop = () => {
     if (selectedTab === 'terminal' && textRef.current) {
@@ -118,7 +118,7 @@ export const Terminal: React.FC = () => {
       infoTextRef.current.scrollTop = 0;
     }
   };
-  
+
   const handleScrollToBottom = () => {
     if (selectedTab === 'terminal' && textRef.current) {
       textRef.current.scrollTop = textRef.current.scrollHeight;
@@ -126,7 +126,7 @@ export const Terminal: React.FC = () => {
       infoTextRef.current.scrollTop = infoTextRef.current.scrollHeight;
     }
   };
-  
+
   // Handle tab change
   const handleTabChange = (tab: typeof selectedTab) => {
     // Just update the selected tab - scrolling will be handled by the useLayoutEffect
@@ -138,29 +138,39 @@ export const Terminal: React.FC = () => {
 
   return (
     <TerminalSizeProvider textRef={activeRef}>
-      <CRTScreen 
+      <CRTScreen
         textRef={activeRef}
-        statusBar={!isLoading && selectedTab === 'terminal' ? <StatusBar memory={lastMemory} /> : undefined}
-        promptDisplay={!isLoading && selectedTab === 'terminal' ? <PromptDisplay prompt={llmPrompt} /> : undefined}
-        taskBar={!isLoading ? 
-          <TaskBar 
-            selectedTab={selectedTab} 
-            onTabChange={handleTabChange}
-            onScrollToTop={handleScrollToTop}
-            onScrollToBottom={handleScrollToBottom}
-          /> : undefined
+        statusBar={
+          !isLoading && selectedTab === 'terminal' ? <StatusBar memory={lastMemory} /> : undefined
+        }
+        promptDisplay={
+          !isLoading && selectedTab === 'terminal' ? (
+            <PromptDisplay prompt={llmPrompt} />
+          ) : undefined
+        }
+        taskBar={
+          !isLoading ? (
+            <TaskBar
+              selectedTab={selectedTab}
+              onTabChange={handleTabChange}
+              onScrollToTop={handleScrollToTop}
+              onScrollToBottom={handleScrollToBottom}
+            />
+          ) : undefined
         }
         loadingSpinner={isLoading ? <LoadingSpinner /> : undefined}
       >
-        {!isLoading && selectedTab === 'terminal' && lines.map((line, i) => (
-          <TerminalLine
-            key={i}
-            line={line}
-            isLastLine={i === lines.length - 1}
-            cursorVisible={cursorVisible}
-            prompt={PROMPT}
-          />
-        ))}
+        {!isLoading &&
+          selectedTab === 'terminal' &&
+          lines.map((line, i) => (
+            <TerminalLine
+              key={i}
+              line={line}
+              isLastLine={i === lines.length - 1}
+              cursorVisible={cursorVisible}
+              prompt={PROMPT}
+            />
+          ))}
         {!isLoading && selectedTab === 'info' && <InfoScreen />}
       </CRTScreen>
     </TerminalSizeProvider>

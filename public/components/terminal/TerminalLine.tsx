@@ -8,11 +8,11 @@ interface TerminalLineProps {
   prompt: string;
 }
 
-export const TerminalLine: React.FC<TerminalLineProps> = ({ 
-  line, 
-  isLastLine, 
-  cursorVisible, 
-  prompt 
+export const TerminalLine: React.FC<TerminalLineProps> = ({
+  line,
+  isLastLine,
+  cursorVisible,
+  prompt,
 }) => {
   const isPromptLine = line.startsWith(prompt);
   const lineContent = isPromptLine ? line.slice(prompt.length) : line;
@@ -21,12 +21,18 @@ export const TerminalLine: React.FC<TerminalLineProps> = ({
   return (
     <div className="flex items-start min-h-[1.5em]">
       <span className={`${terminalClasses.baseText} select-none`} style={terminalStyles.baseText}>
-        {isPromptLine ? prompt.trim() : ""}
+        {isPromptLine ? prompt.trim() : ''}
       </span>
-      <span className={`ml-2 whitespace-pre-line ${terminalClasses.baseText}`} style={terminalStyles.baseText}>
+      <span
+        className={`ml-2 whitespace-pre-line ${terminalClasses.baseText}`}
+        style={terminalStyles.baseText}
+      >
         {lineContent}
         {showCursor && (
-          <span className={`${terminalClasses.baseText} ${cursorVisible ? 'opacity-100' : 'opacity-0'}`} style={terminalStyles.baseText}>
+          <span
+            className={`${terminalClasses.baseText} ${cursorVisible ? 'opacity-100' : 'opacity-0'}`}
+            style={terminalStyles.baseText}
+          >
             █
           </span>
         )}
