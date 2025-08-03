@@ -35,14 +35,24 @@ export const BarButton: React.FC<BarButtonProps> = ({
   const baseClasses = 'px-2 py-0.5 text-xs sm:text-base font-mono transition-colors duration-150';
   const selectedClasses = selected
     ? 'bg-black text-green-500 font-bold'
-    : 'hover:bg-green-600 active:bg-green-600 cursor-pointer touch-action-manipulation';
+    : 'hover:bg-green-600 active:bg-green-600 cursor-pointer touch-action-manipulation select-none';
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (onClick) {
+      onClick();
+    }
+    // Ensure the button loses focus after touch
+    (e.target as HTMLElement).blur();
+  };
 
   return (
     <button
       onClick={onClick}
+      onTouchEnd={handleTouchEnd}
       className={`${baseClasses} ${selectedClasses} ${className}`}
       type="button"
-      style={{ WebkitTapHighlightColor: 'transparent' }}
+      style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
     >
       {children}
     </button>
