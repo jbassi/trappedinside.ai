@@ -32,7 +32,7 @@ export const PiImage: React.FC<PiImageProps> = ({ size, landscapeSize = 'h-12' }
   return (
     <div className="w-full relative bg-black/95 flex justify-center items-center min-h-0 pt-2 pb-2">
       <img
-        src="/images/pi-no-background.png"
+        src="/pi-no-background.png"
         alt="Raspberry Pi"
         className={`${actualSize} w-auto object-contain min-h-0 text-green-400`}
         style={{
