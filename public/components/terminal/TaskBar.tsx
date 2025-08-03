@@ -1,7 +1,5 @@
 import React from 'react';
 import { BarBase, BarButton } from './BarBase';
-import { useTerminalSize } from '../context/TerminalSizeContext';
-
 export type TaskBarTab = 'terminal' | 'info';
 
 interface TaskBarProps {
@@ -17,23 +15,6 @@ export const TaskBar: React.FC<TaskBarProps> = ({
   onScrollToTop,
   onScrollToBottom,
 }) => {
-  const { terminalWidth } = useTerminalSize();
-
-  // Match the StatusBar's responsive sizing
-  const getResponsiveLayout = () => {
-    if (terminalWidth < 40) {
-      return {
-        compact: true,
-      };
-    } else {
-      return {
-        compact: false,
-      };
-    }
-  };
-
-  const { compact } = getResponsiveLayout();
-
   // Handle scroll button clicks
   const handleScrollToTop = () => {
     if (onScrollToTop) {
@@ -54,14 +35,14 @@ export const TaskBar: React.FC<TaskBarProps> = ({
         <BarButton
           selected={selectedTab === 'terminal'}
           onClick={() => onTabChange?.('terminal')}
-          className={compact ? 'px-1 py-0.5' : ''}
+          className="px-3 py-0.5"
         >
           Terminal
         </BarButton>
         <BarButton
           selected={selectedTab === 'info'}
           onClick={() => onTabChange?.('info')}
-          className={compact ? 'px-1 py-0.5' : ''}
+          className="px-3 py-0.5"
         >
           Info
         </BarButton>
@@ -71,17 +52,17 @@ export const TaskBar: React.FC<TaskBarProps> = ({
       <div className="flex items-center gap-1">
         <BarButton
           onClick={handleScrollToTop}
-          className={compact ? 'px-1 py-0.5' : ''}
+          className="!px-6 py-0.5 w-[15rem] text-center"
           aria-label="Scroll to top"
         >
-          {compact ? '↑' : 'To top'}
+          &nbsp;&nbsp;&nbsp;↑&nbsp;&nbsp;&nbsp;
         </BarButton>
         <BarButton
           onClick={handleScrollToBottom}
-          className={compact ? 'px-1 py-0.5' : ''}
+          className="!px-6 py-0.5 w-[15rem] text-center"
           aria-label="Scroll to bottom"
         >
-          {compact ? '↓' : 'To bottom'}
+          &nbsp;&nbsp;&nbsp;↓&nbsp;&nbsp;&nbsp;
         </BarButton>
       </div>
     </BarBase>
