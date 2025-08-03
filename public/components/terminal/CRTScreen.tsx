@@ -1,6 +1,6 @@
 import React, { type RefObject, useState, useEffect } from 'react';
-import { PiAsciiArt } from './PiAsciiArt';
 import { isMobileDevice } from '../../utils/mobileUtils';
+import { PiImage } from './PiImage';
 
 interface CRTScreenProps {
   children: React.ReactNode;
@@ -149,94 +149,101 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
   if (!useSVGApproach) {
     return (
       <div className="fixed inset-0 flex flex-col bg-black overflow-hidden transition-all duration-300">
-        {/* Pi ASCII Art Header - only show when not loading */}
-        {!loadingSpinner && <PiAsciiArt />}
-
-        {/* Terminal Container */}
-        <div className="flex-1 relative flex flex-col min-h-0">
-          {/* CRT Screen Effects Overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `
-                linear-gradient(transparent 50%, rgba(0,255,0,0.03) 50%),
-                radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%)
-              `,
-              backgroundSize: '100% 4px, 100% 100%',
-              zIndex: 20,
-            }}
-          />
-
-          {/* Terminal Content Area */}
-          <div
-            className="relative flex-1 flex flex-col min-h-0"
-            style={{
-              background: `
-                radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%),
-                linear-gradient(45deg, rgba(0,255,0,0.02) 0%, transparent 50%, rgba(0,255,0,0.02) 100%)
-              `,
-              boxShadow: 'inset 0 0 50px rgba(0,255,0,0.1)',
-              zIndex: 15,
-            }}
-          >
-            {/* Fixed memory bar at top */}
+        {/* Main content container with explicit ordering */}
+        <div className="flex flex-col h-full">
+          {/* Terminal Container - explicitly first in DOM order */}
+          <div className="flex-1 relative flex flex-col min-h-0">
+            {/* CRT Screen Effects Overlay */}
             <div
-              className="sticky top-0 p-2 bg-black/95"
+              className="absolute inset-0 pointer-events-none"
               style={{
-                zIndex: 25,
-                backdropFilter: 'blur(2px)',
-              }}
-            >
-              {statusBar}
-            </div>
-
-            {/* Scrollable terminal content with prompt display */}
-            <div
-              ref={textRef}
-              className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
-              style={{
-                fontFamily: 'monospace',
-                textShadow: '0 0 5px rgba(0,255,0,0.5)',
+                background: `
+                  linear-gradient(transparent 50%, rgba(0,255,0,0.03) 50%),
+                  radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.2) 100%)
+                `,
+                backgroundSize: '100% 4px, 100% 100%',
                 zIndex: 20,
-                overflowAnchor: 'auto',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-                WebkitOverflowScrolling: 'touch',
-                fontSize: 'clamp(1rem, 3vw, 1.5rem)',
-                lineHeight: '1.6',
-                willChange: 'scroll-position',
-                contain: 'layout style paint',
-                position: 'relative',
-                scrollBehavior: 'auto', // Explicitly disable smooth scrolling
-                paddingBottom: '20px', // Extra padding for TaskBar at bottom
               }}
-            >
-              {/* Prompt display that scrolls with content */}
-              {promptDisplay}
-              {children}
-            </div>
+            />
 
-            {/* Fixed task bar at bottom */}
+            {/* Terminal Content Area */}
             <div
-              className="sticky bottom-0 p-2 bg-black/95"
+              className="relative flex-1 flex flex-col min-h-0"
               style={{
-                zIndex: 25,
-                backdropFilter: 'blur(2px)',
+                background: `
+                  radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%),
+                  linear-gradient(45deg, rgba(0,255,0,0.02) 0%, transparent 50%, rgba(0,255,0,0.02) 100%)
+                `,
+                boxShadow: 'inset 0 0 50px rgba(0,255,0,0.1)',
+                zIndex: 15,
               }}
             >
-              {taskBar}
-            </div>
-
-            {/* Loading spinner overlay */}
-            {loadingSpinner && (
+              {/* Fixed memory bar at top */}
               <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ zIndex: 100 }}
+                className="sticky top-0 p-2 bg-black/95"
+                style={{
+                  zIndex: 25,
+                  backdropFilter: 'blur(2px)',
+                }}
               >
-                {loadingSpinner}
+                {statusBar}
               </div>
-            )}
+
+              {/* Scrollable terminal content with prompt display */}
+              <div
+                ref={textRef}
+                className="p-4 pb-6 text-lg whitespace-pre-line break-words font-mono text-green-400 overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden terminal-content"
+                style={{
+                  fontFamily: 'monospace',
+                  textShadow: '0 0 5px rgba(0,255,0,0.5)',
+                  zIndex: 20,
+                  overflowAnchor: 'auto',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch',
+                  fontSize: 'clamp(1rem, 3vw, 1.5rem)',
+                  lineHeight: '1.6',
+                  willChange: 'scroll-position',
+                  contain: 'layout style paint',
+                  position: 'relative',
+                  scrollBehavior: 'auto', // Explicitly disable smooth scrolling
+                  paddingBottom: '20px', // Extra padding for TaskBar at bottom
+                }}
+              >
+                {/* Prompt display that scrolls with content */}
+                {promptDisplay}
+                {children}
+              </div>
+
+              {/* Fixed task bar at bottom */}
+              <div
+                className="sticky bottom-0 p-2 bg-black/95"
+                style={{
+                  zIndex: 25,
+                  backdropFilter: 'blur(2px)',
+                }}
+              >
+                {taskBar}
+              </div>
+
+              {/* Loading spinner overlay */}
+              {loadingSpinner && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center"
+                  style={{ zIndex: 100 }}
+                >
+                  {loadingSpinner}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Pi Image - explicitly last in DOM order */}
+          {!loadingSpinner && (
+            <div className="w-full mt-auto" style={{ order: 999 }}>
+              <PiImage size="h-24 sm:h-36 md:h-36" landscapeSize="h-20" />
+            </div>
+          )}
         </div>
       </div>
     );
