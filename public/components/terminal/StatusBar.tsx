@@ -12,7 +12,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({ memory }) => {
   const { terminalWidth } = useTerminalSize();
   const { numRestarts } = useTerminal();
 
-  const available_mb = memory?.available_mb ?? 0;
   const total_mb = memory?.total_mb ?? 0;
   const percent_used = memory?.percent_used ?? 0;
 

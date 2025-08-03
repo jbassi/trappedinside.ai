@@ -124,7 +124,7 @@ const sendHistoryToClient = (ws: Bun.ServerWebSocket<unknown>) => {
   }
 };
 
-const server = Bun.serve({
+Bun.serve({
   port,
   fetch(req, server) {
     const url = new URL(req.url);
@@ -178,7 +178,9 @@ const server = Bun.serve({
         });
         return new Response(file, { headers: cleanHeaders });
       }
-    } catch {}
+    } catch (err) {
+      // File not found or other error, continue to 404 response
+    }
 
     const cleanHeaders: Record<string, string> = {};
     Object.entries(securityHeaders).forEach(([key, value]) => {

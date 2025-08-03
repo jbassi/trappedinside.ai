@@ -26,7 +26,6 @@ export const Terminal: React.FC = () => {
     PROMPT,
     selectedTab,
     setSelectedTab,
-    userScrolledUp,
   } = useTerminal();
 
   // Track tab changes for scroll positioning

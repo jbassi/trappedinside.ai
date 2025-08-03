@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { terminalStyles, terminalClasses } from '../../styles/terminalStyles';
+import { terminalClasses } from '../../styles/terminalStyles';
 import { isMobileDevice } from '../../utils/mobileUtils';
 
 export const PiAsciiArt: React.FC = () => {

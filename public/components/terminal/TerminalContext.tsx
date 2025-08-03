@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Memory, Status } from '../../types/types';
+import type { Memory } from '../../types/types';
 import type { TaskBarTab } from './TaskBar';
 
 // Define the context type

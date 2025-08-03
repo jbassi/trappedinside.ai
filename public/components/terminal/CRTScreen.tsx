@@ -64,10 +64,6 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
       const baseWidth = 696;
       const baseHeight = 550;
 
-      // Calculate the center point of the terminal in the original SVG
-      const centerX = baseX + baseWidth / 2;
-      const centerY = baseY + baseHeight / 2;
-
       // Calculate the visible portion of the SVG
       const visibleSvgWidth = vw / scaleFactor;
       const visibleSvgHeight = vh / scaleFactor;
@@ -85,8 +81,8 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
       const maxY = visibleSvgY + visibleSvgHeight - baseHeight - padding;
 
       // Adjust terminal position to stay in view
-      let adjustedX = Math.max(minX, Math.min(maxX, baseX));
-      let adjustedY = Math.max(minY, Math.min(maxY, baseY));
+      const adjustedX = Math.max(minX, Math.min(maxX, baseX));
+      const adjustedY = Math.max(minY, Math.min(maxY, baseY));
 
       // Set the terminal dimensions
       setTerminalDimensions({
@@ -121,7 +117,6 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
   useEffect(() => {
     const checkDevice = () => {
       const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
 
       // Use direct approach for mobile devices or small viewport
       if (isMobileDevice() || vw < MOBILE_BREAKPOINT) {
@@ -152,11 +147,12 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
         {/* Main content container with explicit ordering */}
         <div className="flex flex-col h-full p-2">
           {/* Terminal Container - explicitly first in DOM order */}
-          <div 
+          <div
             className="flex-1 relative flex flex-col min-h-0 border-2 border-green-500 rounded-lg overflow-hidden"
             style={{
-              boxShadow: '0 0 10px rgba(74, 222, 128, 0.5)'
-            }}>
+              boxShadow: '0 0 10px rgba(74, 222, 128, 0.5)',
+            }}
+          >
             {/* CRT Screen Effects Overlay */}
             <div
               className="absolute inset-0 pointer-events-none rounded-lg"
