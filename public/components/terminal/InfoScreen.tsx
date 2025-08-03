@@ -41,7 +41,7 @@ export const InfoScreen: React.FC = () => {
       className={`${terminalClasses.baseText} px-4 pt-0 pb-6 text-lg break-words font-mono text-green-400 leading-normal`}
       style={terminalStyles.baseText}
     >
-      <h1 className="text-2xl font-bold mb-2 text-green-300">Info</h1>
+      <h1 className="text-2xl font-bold mb-2 text-green-300">About the Project</h1>
 
       <p className="mb-2 leading-normal">
         <strong>trappedinside.ai</strong> is a generative art experience. Viewers witness an AI,
@@ -160,6 +160,17 @@ export const InfoScreen: React.FC = () => {
           className="text-green-300 hover:text-green-200 underline"
         >
           MidJourney
+        </a>{' '}
+        (image generation)
+      </ListItem>
+      <ListItem nested>
+        <a
+          href="https://github.com/Stability-AI/stablediffusion"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-green-300 hover:text-green-200 underline"
+        >
+          Stable Diffusion XL (SDXL)
         </a>{' '}
         (image generation)
       </ListItem>
