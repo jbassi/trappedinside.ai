@@ -150,12 +150,16 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
     return (
       <div className="fixed inset-0 flex flex-col bg-black overflow-hidden transition-all duration-300">
         {/* Main content container with explicit ordering */}
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full p-2">
           {/* Terminal Container - explicitly first in DOM order */}
-          <div className="flex-1 relative flex flex-col min-h-0">
+          <div 
+            className="flex-1 relative flex flex-col min-h-0 border-2 border-green-500 rounded-lg overflow-hidden"
+            style={{
+              boxShadow: '0 0 10px rgba(74, 222, 128, 0.5)'
+            }}>
             {/* CRT Screen Effects Overlay */}
             <div
-              className="absolute inset-0 pointer-events-none"
+              className="absolute inset-0 pointer-events-none rounded-lg"
               style={{
                 background: `
                   linear-gradient(transparent 50%, rgba(0,255,0,0.03) 50%),
@@ -168,7 +172,7 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
 
             {/* Terminal Content Area */}
             <div
-              className="relative flex-1 flex flex-col min-h-0"
+              className="relative flex-1 flex flex-col min-h-0 rounded-lg"
               style={{
                 background: `
                   radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%),

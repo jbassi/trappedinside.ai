@@ -38,7 +38,7 @@ export const InfoScreen: React.FC = () => {
   return (
     <div
       ref={infoTextRef}
-      className={`${terminalClasses.baseText} p-4 pb-6 text-lg break-words font-mono text-green-400 leading-normal`}
+      className={`${terminalClasses.baseText} px-4 pt-0 pb-6 text-lg break-words font-mono text-green-400 leading-normal`}
       style={terminalStyles.baseText}
     >
       <h1 className="text-2xl font-bold mb-2 text-green-300">Info</h1>
