@@ -31,65 +31,15 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
   // Update terminal dimensions based on viewport size
   useEffect(() => {
     const updateDimensions = () => {
-      // Get viewport dimensions
-      const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-      const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-
-      // Original SVG dimensions
-      const svgWidth = 1927;
-      const svgHeight = 1080;
-
-      // Calculate the scaling factor based on how the SVG is being displayed
-      // When using preserveAspectRatio="xMidYMid slice", the SVG scales to cover the viewport
-      const svgAspectRatio = svgWidth / svgHeight;
-      const viewportAspectRatio = vw / vh;
-
-      let scaleFactor;
-
-      if (viewportAspectRatio > svgAspectRatio) {
-        // Viewport is wider than SVG - width is the constraint
-        scaleFactor = vw / svgWidth;
-      } else {
-        // Viewport is taller than SVG - height is the constraint
-        scaleFactor = vh / svgHeight;
-      }
-
-      // Cap the maximum scale factor to prevent excessive zooming
-      const MAX_SCALE = 1.5; // Maximum 150% of original size
-      scaleFactor = Math.min(scaleFactor, MAX_SCALE);
-
-      // Base position in the original SVG coordinates
-      const baseX = 625;
-      const baseY = 125;
-      const baseWidth = 696;
-      const baseHeight = 550;
-
-      // Calculate the visible portion of the SVG
-      const visibleSvgWidth = vw / scaleFactor;
-      const visibleSvgHeight = vh / scaleFactor;
-
-      // Calculate the visible SVG's top-left corner
-      const visibleSvgX = (svgWidth - visibleSvgWidth) / 2;
-      const visibleSvgY = (svgHeight - visibleSvgHeight) / 2;
-
-      // Ensure terminal is always visible by keeping it within the visible SVG area
-      // with some padding to avoid edges
-      const padding = 50;
-      const minX = visibleSvgX + padding;
-      const maxX = visibleSvgX + visibleSvgWidth - baseWidth - padding;
-      const minY = visibleSvgY + padding;
-      const maxY = visibleSvgY + visibleSvgHeight - baseHeight - padding;
-
-      // Adjust terminal position to stay in view
-      const adjustedX = Math.max(minX, Math.min(maxX, baseX));
-      const adjustedY = Math.max(minY, Math.min(maxY, baseY));
-
-      // Set the terminal dimensions
+      // Keep terminal coordinates fixed in SVG viewBox space so it always
+      // aligns with the background image. The SVG scales uniformly and the
+      // internal coordinate system remains consistent, so we should not
+      // shift the terminal based on viewport cropping.
       setTerminalDimensions({
-        x: adjustedX,
-        y: adjustedY,
-        width: baseWidth,
-        height: baseHeight,
+        x: 625,
+        y: 125,
+        width: 696,
+        height: 550,
         borderRadius: 24,
       });
     };
