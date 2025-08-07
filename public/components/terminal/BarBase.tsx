@@ -33,9 +33,12 @@ export const BarButton: React.FC<BarButtonProps> = ({
   className = '',
 }) => {
   const baseClasses = 'px-2 py-0.5 text-xs sm:text-base font-mono transition-colors duration-150';
+
+  const [isMouseHovering, setIsMouseHovering] = React.useState(false);
+
   const selectedClasses = selected
     ? 'bg-black text-green-500 font-bold'
-    : 'hover:bg-green-600 active:bg-green-600 cursor-pointer touch-action-manipulation select-none';
+    : `${isMouseHovering ? 'bg-green-600' : ''} active:bg-green-600 cursor-pointer touch-action-manipulation select-none`;
 
   const blurTarget = (el: EventTarget & HTMLElement) => {
     // Ensure the button loses focus to prevent sticky :active on iOS Safari
@@ -52,6 +55,16 @@ export const BarButton: React.FC<BarButtonProps> = ({
     blurTarget(e.currentTarget);
   };
 
+  const handlePointerEnter = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === 'mouse') {
+      setIsMouseHovering(true);
+    }
+  };
+
+  const handlePointerLeave = () => {
+    setIsMouseHovering(false);
+  };
+
   const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
     blurTarget(e.currentTarget);
   };
@@ -61,6 +74,8 @@ export const BarButton: React.FC<BarButtonProps> = ({
       onClick={onClick}
       onTouchEnd={handleTouchEnd}
       onPointerUp={handlePointerUp}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       onMouseUp={handleMouseUp}
       className={`${baseClasses} ${selectedClasses} ${className}`}
       type="button"
