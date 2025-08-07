@@ -5,7 +5,7 @@ import { useTerminal } from './TerminalContext';
 export const InfoScreen: React.FC = () => {
   const { infoTextRef } = useTerminal();
   const [copyFeedback, setCopyFeedback] = useState(false);
-  const btcAddress = 'bc1q7cvp2zcsjc63hcr2rqxhrlyeg03ngdq5zlzg3t668mn0hqkakq5snza9wx';
+  const btcAddress = 'bc1qmcr7v7g8yg37crz5ss773rt34nm9ahltzetkp4';
 
   // Ensure InfoScreen always starts at the top when mounted
   // useLayoutEffect runs synchronously after DOM mutations but before browser painting
