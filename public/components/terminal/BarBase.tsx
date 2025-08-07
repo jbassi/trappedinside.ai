@@ -37,19 +37,31 @@ export const BarButton: React.FC<BarButtonProps> = ({
     ? 'bg-black text-green-500 font-bold'
     : 'hover:bg-green-600 active:bg-green-600 cursor-pointer touch-action-manipulation select-none';
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
-    if (onClick) {
-      onClick();
+  const blurTarget = (el: EventTarget & HTMLElement) => {
+    // Ensure the button loses focus to prevent sticky :active on iOS Safari
+    if (el && typeof el.blur === 'function') {
+      el.blur();
     }
-    // Ensure the button loses focus after touch
-    (e.target as HTMLElement).blur();
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLButtonElement>) => {
+    blurTarget(e.currentTarget);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    blurTarget(e.currentTarget);
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    blurTarget(e.currentTarget);
   };
 
   return (
     <button
       onClick={onClick}
       onTouchEnd={handleTouchEnd}
+      onPointerUp={handlePointerUp}
+      onMouseUp={handleMouseUp}
       className={`${baseClasses} ${selectedClasses} ${className}`}
       type="button"
       style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
