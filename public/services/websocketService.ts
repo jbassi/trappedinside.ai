@@ -47,6 +47,7 @@ export class WebSocketService {
   private loadingTimeout: NodeJS.Timeout | null = null;
   private isReconnecting: boolean = false;
   private isDisconnecting: boolean = false;
+  private suppressAutoReconnectOnce: boolean = false;
 
   constructor(url: string, options: WebSocketOptions) {
     this.url = url;
@@ -61,6 +62,7 @@ export class WebSocketService {
     // Only reconnect if not already in progress
     if (!this.isReconnecting) {
       this.isReconnecting = true;
+      this.suppressAutoReconnectOnce = true; // prevent the onclose auto-reconnect for this cycle
       this.disconnect();
       this.connect();
     }
@@ -124,14 +126,19 @@ export class WebSocketService {
         this.options.onClose?.();
       }
 
-      // Only auto-reconnect if not manually disconnecting
+      // Auto-reconnect logic with suppression for intentional reconnects
       if (!this.isDisconnecting && !this.isReconnecting) {
-        if (this.reconnectTimeout) {
-          clearTimeout(this.reconnectTimeout);
+        if (this.suppressAutoReconnectOnce) {
+          // Consume the one-time suppression to avoid duplicate connects
+          this.suppressAutoReconnectOnce = false;
+        } else {
+          if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+          }
+          this.reconnectTimeout = setTimeout(() => {
+            this.connect();
+          }, this.options.reconnectDelay);
         }
-        this.reconnectTimeout = setTimeout(() => {
-          this.connect();
-        }, this.options.reconnectDelay);
       }
 
       this.ws = null;
@@ -170,9 +177,9 @@ export class WebSocketService {
       this.ws = null;
     }
 
-    // Reset flags after cleanup
+    // Note: Do not reset isReconnecting here to avoid racing with onclose
+    // Allow onopen to clear isReconnecting, and onclose will check suppression flag
     this.isDisconnecting = false;
-    this.isReconnecting = false;
   }
 
   // Send message to WebSocket server

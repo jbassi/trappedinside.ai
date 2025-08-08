@@ -58,6 +58,7 @@ interface TerminalContextType {
   prevScrollTopRef: React.MutableRefObject<number>;
   prevScrollHeightRef: React.MutableRefObject<number>;
   isTouchDeviceRef: React.MutableRefObject<boolean>;
+  animationGenerationRef: React.MutableRefObject<number>;
 
   // Constants
   PROMPT: string;
@@ -119,6 +120,7 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
   const prevScrollTopRef = useRef<number>(0);
   const prevScrollHeightRef = useRef<number>(0);
   const isTouchDeviceRef = useRef<boolean>(false);
+  const animationGenerationRef = useRef<number>(0);
 
   // Context value
   const contextValue: TerminalContextType = {
@@ -175,6 +177,7 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
     prevScrollTopRef,
     prevScrollHeightRef,
     isTouchDeviceRef,
+    animationGenerationRef,
 
     // Constants
     PROMPT,

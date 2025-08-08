@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { CRTScreen } from './CRTScreen';
 import { StatusBar } from './StatusBar';
 import { TaskBar } from './TaskBar';
@@ -22,7 +22,6 @@ export const Terminal: React.FC = () => {
     textRef,
     infoTextRef,
     isTouchDeviceRef,
-    queueRef,
     PROMPT,
     selectedTab,
     setSelectedTab,
@@ -35,28 +34,6 @@ export const Terminal: React.FC = () => {
 
   // Initialize WebSocket connection
   useWebSocket();
-
-  // State to track queue length for triggering processQueue
-  const [queueLength, setQueueLength] = useState(0);
-
-  // Check queue length periodically to detect new messages
-  useEffect(() => {
-    const checkQueueInterval = setInterval(() => {
-      if (queueRef.current.length > queueLength) {
-        setQueueLength(queueRef.current.length);
-      }
-    }, 100);
-
-    return () => clearInterval(checkQueueInterval);
-  }, [queueRef, queueLength]);
-
-  // Process queue when queue length changes
-  useEffect(() => {
-    if (queueLength > 0 && document.visibilityState === 'visible') {
-      processQueue();
-      setQueueLength(0);
-    }
-  }, [queueLength, processQueue]);
 
   // Detect if device has touch capabilities
   useEffect(() => {
@@ -78,18 +55,6 @@ export const Terminal: React.FC = () => {
       window.removeEventListener('orientationchange', detectTouchDevice);
     };
   }, [isTouchDeviceRef]);
-
-  // Process queue when document becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && queueRef.current.length > 0) {
-        processQueue();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [processQueue, queueRef]);
 
   // Handle scroll position when tab changes using useLayoutEffect
   // This runs synchronously after DOM mutations but before browser painting

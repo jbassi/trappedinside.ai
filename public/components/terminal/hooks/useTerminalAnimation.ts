@@ -19,6 +19,7 @@ export const useTerminalAnimation = () => {
     processingRef,
     restartingRef,
     cursorIntervalRef,
+    animationGenerationRef,
     PROMPT,
   } = useTerminal();
 
@@ -55,6 +56,7 @@ export const useTerminalAnimation = () => {
   // Helper to animate in new output - simplified version
   const animateOutput = useCallback(
     (output: string) => {
+      const generationAtStart = animationGenerationRef.current;
       return new Promise<void>((resolve) => {
         if (output.length === 0) {
           resolve();
@@ -67,8 +69,12 @@ export const useTerminalAnimation = () => {
 
         let i = 0;
         function step() {
-          // Stop animation immediately if restarting or tab is not visible
-          if (restartingRef.current || document.visibilityState !== 'visible') {
+          // Stop animation immediately if restarting, tab not visible, or generation changed
+          if (
+            restartingRef.current ||
+            document.visibilityState !== 'visible' ||
+            generationAtStart !== animationGenerationRef.current
+          ) {
             animatingRef.current = false;
             setIsAnimating(false);
             resolve();
@@ -109,12 +115,14 @@ export const useTerminalAnimation = () => {
       restartingRef,
       scrollToBottomIfNeeded,
       selectedTab,
+      animationGenerationRef,
     ]
   );
 
   // Process a single text chunk with newlines
   const processTextChunk = useCallback(
     async (text: string) => {
+      const generationAtStart = animationGenerationRef.current;
       if (!text) return;
 
       // Normalize line endings
@@ -134,13 +142,14 @@ export const useTerminalAnimation = () => {
       // Process each line
       for (let i = 0; i < textLines.length; i++) {
         // Check if we're restarting
-        if (restartingRef.current) break;
+        if (restartingRef.current || generationAtStart !== animationGenerationRef.current) break;
 
         // For lines after the first one, or if there's a leading newline,
         // add a new prompt line before processing the content
         if (i > 0 || (i === 0 && hasLeadingNewline)) {
           setLines((prev) => [...prev, PROMPT]);
           await new Promise((r) => setTimeout(r, 50)); // Small delay for newline
+          if (generationAtStart !== animationGenerationRef.current) break;
 
           // Only scroll if in terminal tab
           if (selectedTab === 'terminal') {
@@ -154,7 +163,9 @@ export const useTerminalAnimation = () => {
         // Animate the line content (even if empty, to preserve spacing)
         if (currentLine.length > 0) {
           await animateOutput(currentLine);
+          if (generationAtStart !== animationGenerationRef.current) break;
           await new Promise((r) => setTimeout(r, 50)); // Small delay after content
+          if (generationAtStart !== animationGenerationRef.current) break;
         }
       }
 
@@ -163,6 +174,7 @@ export const useTerminalAnimation = () => {
       if (hasTrailingNewline && !(textLines.length > 0 && textLines[textLines.length - 1] === '')) {
         setLines((prev) => [...prev, PROMPT]);
         await new Promise((r) => setTimeout(r, 50));
+        if (generationAtStart !== animationGenerationRef.current) return;
 
         // Only scroll if in terminal tab
         if (selectedTab === 'terminal') {
@@ -170,18 +182,33 @@ export const useTerminalAnimation = () => {
         }
       }
     },
-    [animateOutput, setLines, scrollToBottomIfNeeded, restartingRef, PROMPT, selectedTab]
+    [
+      animateOutput,
+      setLines,
+      scrollToBottomIfNeeded,
+      restartingRef,
+      PROMPT,
+      selectedTab,
+      animationGenerationRef,
+    ]
   );
 
   // Animation queue processor
   const processQueue = useCallback(async () => {
+    const generationAtStart = animationGenerationRef.current;
     if (processingRef.current || restartingRef.current) return;
+    // Defer processing until tab is visible to avoid dropped/partial animations
+    if (document.visibilityState !== 'visible') return;
 
     processingRef.current = true;
     setIsProcessing(true);
 
     try {
-      while (queueRef.current.length > 0 && !restartingRef.current) {
+      while (
+        queueRef.current.length > 0 &&
+        !restartingRef.current &&
+        generationAtStart === animationGenerationRef.current
+      ) {
         const chunk = queueRef.current.shift();
         if (chunk === undefined) continue;
 
@@ -191,7 +218,33 @@ export const useTerminalAnimation = () => {
       processingRef.current = false;
       setIsProcessing(false);
     }
-  }, [queueRef, processingRef, restartingRef, setIsProcessing, processTextChunk]);
+  }, [
+    queueRef,
+    processingRef,
+    restartingRef,
+    setIsProcessing,
+    processTextChunk,
+    animationGenerationRef,
+  ]);
+
+  // When tab becomes visible, resume processing if there is queued content
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === 'visible' &&
+        queueRef.current.length > 0 &&
+        !processingRef.current &&
+        !restartingRef.current
+      ) {
+        setTimeout(() => {
+          processQueue();
+        }, 0);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [processQueue, queueRef, processingRef, restartingRef]);
 
   // Monitor the queue and process when items are added
   useEffect(() => {

@@ -15,6 +15,11 @@ export const useWebSocket = () => {
     setIsLoading,
     setIsRestarting,
     setNumRestarts,
+    setIsAtBottom,
+    setUserScrolledUp,
+    setActivelyDragging,
+    setSelectedTab,
+    setCursorVisible,
     queueRef,
     animatingRef,
     processingRef,
@@ -28,6 +33,10 @@ export const useWebSocket = () => {
     textRef,
     setIsAnimating,
     setIsProcessing,
+    cursorIntervalRef,
+    prevScrollTopRef,
+    prevScrollHeightRef,
+    animationGenerationRef,
   } = useTerminal();
 
   // Keep WebSocket service reference
@@ -360,6 +369,13 @@ export const useWebSocket = () => {
     setIsAnimating(false);
     setIsProcessing(false);
 
+    // Reset UI state to mimic hard reload
+    setSelectedTab('terminal');
+    setCursorVisible(true);
+    setIsAtBottom(true);
+    setUserScrolledUp(false);
+    setActivelyDragging(false);
+
     // Reset refs
     queueRef.current = [];
     animatingRef.current = false;
@@ -369,6 +385,25 @@ export const useWebSocket = () => {
     historyLoadedRef.current = false;
     loadingStartTimeRef.current = Date.now();
     waitingForFirstMessageAfterRestartRef.current = false;
+
+    // Clear any pending loading timeout
+    if (minLoadingTimeRef.current) {
+      clearTimeout(minLoadingTimeRef.current);
+      minLoadingTimeRef.current = null;
+    }
+
+    // Reset scroll tracking
+    prevScrollTopRef.current = 0;
+    prevScrollHeightRef.current = 0;
+
+    // Ensure no stale cursor intervals remain
+    if (cursorIntervalRef.current) {
+      clearInterval(cursorIntervalRef.current);
+      cursorIntervalRef.current = null;
+    }
+
+    // Invalidate any in-flight animations/processing loops
+    animationGenerationRef.current += 1;
 
     // Reset message tracking
     lastMessageRef.current = '';
@@ -382,6 +417,11 @@ export const useWebSocket = () => {
     setIsRestarting,
     setIsAnimating,
     setIsProcessing,
+    setSelectedTab,
+    setCursorVisible,
+    setIsAtBottom,
+    setUserScrolledUp,
+    setActivelyDragging,
     PROMPT,
     DEFAULT_LLM_PROMPT,
   ]);
@@ -415,34 +455,20 @@ export const useWebSocket = () => {
     // Connect to WebSocket server
     wsService.connect();
 
-    // Handle tab visibility changes
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // Clear any existing reconnect timeout
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = null;
-        }
-
-        // Reset state after a brief delay to ensure clean slate
-        reconnectTimeoutRef.current = setTimeout(() => {
-          resetState();
-
-          // Force WebSocket reconnection to get fresh history
-          if (wsServiceRef.current) {
-            wsServiceRef.current.reconnect();
-          }
-
-          reconnectTimeoutRef.current = null;
-        }, 100);
+    // Explicitly avoid resetting on simple visibility changes.
+    // We handle true BFCache restores with a full reload in public/index.tsx.
+    const handlePageHide = () => {
+      // Proactively disconnect to avoid stale state while in BFCache/hidden
+      if (wsServiceRef.current) {
+        wsServiceRef.current.disconnect();
       }
     };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
 
     // Cleanup on unmount
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // No visibility/pageshow listeners registered
+      window.removeEventListener('pagehide', handlePageHide);
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
