@@ -37,15 +37,18 @@ export const useWebSocket = () => {
     prevScrollTopRef,
     prevScrollHeightRef,
     animationGenerationRef,
+    setQueueSignal,
   } = useTerminal();
+
 
   // Keep WebSocket service reference
   const wsServiceRef = useRef<WebSocketService | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Track last received message to prevent duplicates
+  // Track last received message/chunk for overlap handling
   const lastMessageRef = useRef<string>('');
-  const messageHashesRef = useRef<Set<string>>(new Set());
+  const lastChunkRef = useRef<string>('');
+  const lastChunkTimeRef = useRef<number>(0);
   const fullTextBufferRef = useRef<string>('');
 
   // Track if we're waiting for a message after restart
@@ -84,54 +87,47 @@ export const useWebSocket = () => {
     loadingStartTimeRef.current = Date.now();
   }, [setIsLoading, isLoadingRef, loadingStartTimeRef]);
 
-  // Helper function to check for duplicate or overlapping messages
+  // Helper function to handle overlapping messages (no dedupe of exact repeats)
   const checkAndProcessMessage = useCallback((text: string): string | null => {
     if (!text || text.length === 0) return null;
 
-    // Add to full text buffer for overlap detection
-    const fullText = fullTextBufferRef.current + text;
-
-    // Check for exact duplicates
-    const messageHash = text.trim().substring(0, 50);
-    if (messageHashesRef.current.has(messageHash)) {
+    // Drop exact immediate retransmits (same chunk within a short window)
+    const now = Date.now();
+    if (text === lastChunkRef.current && now - lastChunkTimeRef.current < 750) {
       return null;
     }
 
-    // Check for overlapping content (text that's already in our buffer)
+    // Overlap detection only against last chunk to avoid false positives
     let newContent = text;
-
-    // If we have previous content, check for overlaps
-    if (fullTextBufferRef.current.length > 0) {
-      // Look for overlapping segments (at least 10 chars to avoid false positives)
-      for (
-        let overlapSize = Math.min(text.length, fullTextBufferRef.current.length);
-        overlapSize >= 10;
-        overlapSize--
-      ) {
-        const endOfBuffer = fullTextBufferRef.current.substring(
-          fullTextBufferRef.current.length - overlapSize
-        );
-        const startOfNewText = text.substring(0, overlapSize);
-
-        // If we found an overlap
-        if (endOfBuffer === startOfNewText) {
-          // Only keep the part after the overlap
-          newContent = text.substring(overlapSize);
-          console.log(`Found overlap of ${overlapSize} chars in message processing`);
+    const previousChunk = lastChunkRef.current;
+    if (previousChunk.length > 0) {
+      const maxOverlap = Math.min(text.length, previousChunk.length);
+      // Require a minimum overlap size to consider trimming
+      const minOverlap = 10;
+      for (let overlapSize = maxOverlap; overlapSize >= minOverlap; overlapSize--) {
+        const endOfPrev = previousChunk.substring(previousChunk.length - overlapSize);
+        const startOfNew = text.substring(0, overlapSize);
+        if (endOfPrev === startOfNew) {
+          // If new text has extra beyond the overlap, trim the overlap prefix
+          if (text.length > overlapSize) {
+            newContent = text.substring(overlapSize);
+          } else {
+            // Exact repeat of the overlapped part: keep as-is (do not drop)
+            newContent = text;
+          }
           break;
         }
       }
     }
 
-    // Update our tracking
-    fullTextBufferRef.current = fullText;
-    messageHashesRef.current.add(messageHash);
-
-    // Limit set size to prevent memory growth
-    if (messageHashesRef.current.size > 30) {
-      const messagesArray = Array.from(messageHashesRef.current);
-      messageHashesRef.current = new Set(messagesArray.slice(-15));
+    // Update buffer with only the truly new content
+    if (newContent.length > 0) {
+      fullTextBufferRef.current = fullTextBufferRef.current + newContent;
     }
+
+    // Update lastChunk for next comparison
+    lastChunkRef.current = text;
+    lastChunkTimeRef.current = now;
 
     // Limit buffer size to prevent memory growth
     if (fullTextBufferRef.current.length > 5000) {
@@ -140,7 +136,6 @@ export const useWebSocket = () => {
       );
     }
 
-    // Return the non-duplicate content (or null if everything was a duplicate)
     return newContent.length > 0 ? newContent : null;
   }, []);
 
@@ -149,7 +144,8 @@ export const useWebSocket = () => {
     (messages: Message[]) => {
       // Reset message tracking on history load
       lastMessageRef.current = '';
-      messageHashesRef.current.clear();
+      lastChunkRef.current = '';
+      lastChunkTimeRef.current = 0;
       fullTextBufferRef.current = '';
 
       // Build the complete conversation from history
@@ -272,7 +268,8 @@ export const useWebSocket = () => {
 
               // Reset message tracking
               lastMessageRef.current = '';
-              messageHashesRef.current.clear();
+              lastChunkRef.current = '';
+              lastChunkTimeRef.current = 0;
               fullTextBufferRef.current = '';
 
               // Show loading spinner for all restarts
@@ -322,8 +319,11 @@ export const useWebSocket = () => {
             const newContent = checkAndProcessMessage(msg.text);
 
             // Only queue non-duplicate content
-            if (newContent) {
+             if (newContent) {
               queueRef.current.push(newContent);
+
+              // Signal queue update for animation hook to process promptly
+              setQueueSignal((s) => s + 1);
 
               // If we're waiting for first message after restart and received text,
               // we can now hide the loading spinner
@@ -407,7 +407,8 @@ export const useWebSocket = () => {
 
     // Reset message tracking
     lastMessageRef.current = '';
-    messageHashesRef.current.clear();
+    lastChunkRef.current = '';
+    lastChunkTimeRef.current = 0;
     fullTextBufferRef.current = '';
   }, [
     setLines,

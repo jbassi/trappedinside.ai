@@ -60,6 +60,10 @@ interface TerminalContextType {
   isTouchDeviceRef: React.MutableRefObject<boolean>;
   animationGenerationRef: React.MutableRefObject<number>;
 
+  // Queue signaling for cross-hook coordination
+  queueSignal: number;
+  setQueueSignal: React.Dispatch<React.SetStateAction<number>>;
+
   // Constants
   PROMPT: string;
   DEFAULT_LLM_PROMPT: string;
@@ -122,6 +126,9 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
   const isTouchDeviceRef = useRef<boolean>(false);
   const animationGenerationRef = useRef<number>(0);
 
+  // Signal to notify when queue has been updated (so other hooks can react)
+  const [queueSignal, setQueueSignal] = useState<number>(0);
+
   // Context value
   const contextValue: TerminalContextType = {
     // Terminal state
@@ -178,6 +185,10 @@ export const TerminalProvider: React.FC<TerminalProviderProps> = ({ children }) 
     prevScrollHeightRef,
     isTouchDeviceRef,
     animationGenerationRef,
+
+    // Queue signaling
+    queueSignal,
+    setQueueSignal,
 
     // Constants
     PROMPT,

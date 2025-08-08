@@ -21,6 +21,7 @@ export const useTerminalAnimation = () => {
     cursorIntervalRef,
     animationGenerationRef,
     PROMPT,
+    queueSignal,
   } = useTerminal();
 
   const { scrollToBottomIfNeeded } = useTerminalScroll();
@@ -75,6 +76,15 @@ export const useTerminalAnimation = () => {
             document.visibilityState !== 'visible' ||
             generationAtStart !== animationGenerationRef.current
           ) {
+            // If tab became hidden, fast-append the remaining characters to avoid loss
+            if (document.visibilityState !== 'visible' && i < output.length) {
+              const remaining = output.slice(i);
+              setLines((prev) => {
+                const newLines = [...prev];
+                newLines[newLines.length - 1] += remaining;
+                return newLines;
+              });
+            }
             animatingRef.current = false;
             setIsAnimating(false);
             resolve();
@@ -125,33 +135,41 @@ export const useTerminalAnimation = () => {
       const generationAtStart = animationGenerationRef.current;
       if (!text) return;
 
-      // Normalize line endings
-      const normalizedText = text.replace(/\r\n/g, '\n');
-
-      // Normalize consecutive newlines to prevent excessive empty lines
-      // Replace sequences of more than 2 newlines with exactly 2
-      const cleanedText = normalizedText.replace(/\n{3,}/g, '\n\n');
-
-      // Check for leading/trailing newlines
-      const hasLeadingNewline = cleanedText.startsWith('\n');
-      const hasTrailingNewline = cleanedText.endsWith('\n');
+      // Normalize line endings (handle CRLF and lone CR)
+      const cleanedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
       // Split by newlines, preserving empty lines
       const textLines = cleanedText.split('\n');
+
+      // Count leading empty segments to represent exact leading newlines
+      let leadingEmptyCount = 0;
+      while (leadingEmptyCount < textLines.length && textLines[leadingEmptyCount] === '') {
+        leadingEmptyCount += 1;
+      }
 
       // Process each line
       for (let i = 0; i < textLines.length; i++) {
         // Check if we're restarting
         if (restartingRef.current || generationAtStart !== animationGenerationRef.current) break;
 
-        // For lines after the first one, or if there's a leading newline,
-        // add a new prompt line before processing the content
-        if (i > 0 || (i === 0 && hasLeadingNewline)) {
+        // Insert newlines:
+        // - For each leading empty segment, we need a new prompt line
+        // - For remaining segments, add a new prompt line BEFORE segments after the first content
+        if (i < leadingEmptyCount) {
+          // We're in the leading empty region: push a prompt per empty segment
           setLines((prev) => [...prev, PROMPT]);
-          await new Promise((r) => setTimeout(r, 50)); // Small delay for newline
+          await new Promise((r) => setTimeout(r, 50));
           if (generationAtStart !== animationGenerationRef.current) break;
-
-          // Only scroll if in terminal tab
+          if (selectedTab === 'terminal') {
+            scrollToBottomIfNeeded();
+          }
+          // No content to animate for empty segment, continue
+          continue;
+        } else if (i > leadingEmptyCount) {
+          // After first non-empty segment, each subsequent segment starts on a new prompt line
+          setLines((prev) => [...prev, PROMPT]);
+          await new Promise((r) => setTimeout(r, 50));
+          if (generationAtStart !== animationGenerationRef.current) break;
           if (selectedTab === 'terminal') {
             scrollToBottomIfNeeded();
           }
@@ -160,7 +178,7 @@ export const useTerminalAnimation = () => {
         // Get the current line (safely)
         const currentLine = textLines[i] || '';
 
-        // Animate the line content (even if empty, to preserve spacing)
+        // Animate the line content when non-empty
         if (currentLine.length > 0) {
           await animateOutput(currentLine);
           if (generationAtStart !== animationGenerationRef.current) break;
@@ -169,18 +187,7 @@ export const useTerminalAnimation = () => {
         }
       }
 
-      // Add a final newline if the text ended with one
-      // But only if we haven't already added a newline for an empty last line
-      if (hasTrailingNewline && !(textLines.length > 0 && textLines[textLines.length - 1] === '')) {
-        setLines((prev) => [...prev, PROMPT]);
-        await new Promise((r) => setTimeout(r, 50));
-        if (generationAtStart !== animationGenerationRef.current) return;
-
-        // Only scroll if in terminal tab
-        if (selectedTab === 'terminal') {
-          scrollToBottomIfNeeded();
-        }
-      }
+      // No extra newline needed here; loop already accounted for every '\n'
     },
     [
       animateOutput,
@@ -246,15 +253,15 @@ export const useTerminalAnimation = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [processQueue, queueRef, processingRef, restartingRef]);
 
-  // Monitor the queue and process when items are added
+  // Monitor the queue via signal and process when items are added
   useEffect(() => {
     if (queueRef.current.length > 0 && !processingRef.current && !restartingRef.current) {
-      // Use setTimeout to avoid potential state update issues
       setTimeout(() => {
         processQueue();
       }, 0);
     }
-  }, [queueRef.current.length, processQueue, processingRef, restartingRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queueSignal]);
 
   return {
     animateOutput,
