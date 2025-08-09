@@ -14,6 +14,7 @@ export const useTerminalAnimation = () => {
     setIsProcessing,
     isRestarting,
     selectedTab,
+    textRef,
     queueRef,
     animatingRef,
     processingRef,
@@ -237,21 +238,52 @@ export const useTerminalAnimation = () => {
   // When tab becomes visible, resume processing if there is queued content
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (
-        document.visibilityState === 'visible' &&
-        queueRef.current.length > 0 &&
-        !processingRef.current &&
-        !restartingRef.current
-      ) {
-        setTimeout(() => {
-          processQueue();
-        }, 0);
+      if (document.visibilityState !== 'visible') return;
+
+      if (queueRef.current.length === 0 || processingRef.current || restartingRef.current) {
+        return;
       }
+
+      // Drain the backlog text
+      const backlogChunks = queueRef.current.splice(0);
+      const backlogText = backlogChunks.join('');
+      if (backlogText.length === 0) {
+        return;
+      }
+
+      const normalized = backlogText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+      // Instantly apply ALL backlog characters, creating new lines on every \n
+      setLines((prev) => {
+        const newLines = [...prev];
+        let currentLine = newLines[newLines.length - 1] ?? '';
+        for (let i = 0; i < normalized.length; i++) {
+          const ch = normalized[i] as string;
+          if (ch === '\n') {
+            newLines[newLines.length - 1] = currentLine;
+            newLines.push(PROMPT);
+            currentLine = PROMPT;
+          } else {
+            currentLine += ch;
+          }
+        }
+        newLines[newLines.length - 1] = currentLine;
+        return newLines;
+      });
+
+      // Force scroll to bottom after DOM updates
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (selectedTab === 'terminal' && textRef.current) {
+            textRef.current.scrollTop = textRef.current.scrollHeight + 30;
+          }
+        });
+      });
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [processQueue, queueRef, processingRef, restartingRef]);
+  }, [queueRef, processingRef, restartingRef, setLines, PROMPT, selectedTab, textRef]);
 
   // Monitor the queue via signal and process when items are added
   useEffect(() => {
