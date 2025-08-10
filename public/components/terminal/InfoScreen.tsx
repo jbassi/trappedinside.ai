@@ -88,7 +88,7 @@ export const InfoScreen: React.FC = () => {
           Gemma 2B (Ollama)
         </a>
       </ListItem>
-      <ListItem>Hardware: Raspberry Pi (Debian, Python, WebSockets)</ListItem>
+      <ListItem>Hardware: Raspberry Pi 4 8GB (Debian, Python, WebSockets)</ListItem>
       <ListItem>
         Frontend:{' '}
         <a
