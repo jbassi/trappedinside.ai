@@ -1,8 +1,12 @@
 ---
-description: Use Bun instead of Node.js, npm, pnpm, or vite.
-alwaysApply: false
+alwaysApply: true
 ---
-Default to using Bun instead of Node.js.
+
+# Use Bun Instead of Node.js, npm, pnpm, or Vite
+
+Default to using Bun instead of Node.js for this LLM Art Web project.
+
+## Command Replacements
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
 - Use `bun test` instead of `jest` or `vitest`
@@ -11,99 +15,327 @@ Default to using Bun instead of Node.js.
 - Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
 - Bun automatically loads .env, so don't use dotenv.
 
-## APIs
+## Project-Specific Usage
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
+### Development Commands
+```bash
+# Install dependencies
+bun install
+
+# Run development server (frontend)
+bun run dev
+
+# Run backend server
+bun run app.ts
+
+# Build for production
+bun run build
+
+# Preview production build
+bun run preview
+
+# Linting and formatting
+bun run lint
+bun run lint:fix
+bun run format
+```
+
+### Server Execution
+```bash
+# Development mode
+bun run app.ts
+
+# Production mode with environment
+NODE_ENV=production bun run app.ts
+
+# With custom port
+PORT=3000 bun run app.ts
+```
+
+## APIs Used in This Project
+
+### Bun.serve()
+- **Current usage**: WebSocket + HTTP server in app.ts
+- **Features used**: 
+  - WebSocket support with message handling
+  - Static file serving from public/ (dev) or dist/ (prod)
+  - Security headers implementation
+  - Rate limiting and connection management
+- **Don't use**: Express.js or other HTTP frameworks
+
+### Built-in WebSocket
+- **Current usage**: Native WebSocket in Bun.serve()
+- **Features**: Connection management, message broadcasting
+- **Don't use**: ws library or socket.io
+
+### Bun.file
+- **Current usage**: Static file serving in fetch handler
+- **Prefer over**: node:fs readFile/writeFile for file operations
+
+### Environment Variables
+- **Automatic .env loading**: No need for dotenv package
+- **Current usage**: JWT_SECRET, ALLOWED_DEVICE_ID, NODE_ENV, PORT
 
 ## Testing
 
-Use `bun test` to run tests.
+Use `bun test` to run tests when implemented.
 
-```ts#index.test.ts
+```typescript
+// Example test structure for future implementation
 import { test, expect } from "bun:test";
 
-test("hello world", () => {
+test("WebSocket connection", () => {
   expect(1).toBe(1);
 });
 ```
 
-## Frontend
+## Frontend Integration
 
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
+### Vite Configuration
+- **Current setup**: Vite v7 for frontend development
+- **Bun integration**: Bun runs Vite dev server via `bun run dev`
+- **WebSocket proxy**: Vite proxies /ws to Bun server on port 3002
+- **Build process**: Vite builds to dist/, Bun serves in production
 
-Server:
+### Package Management
+- **Lock file**: bun.lock (not package-lock.json or yarn.lock)
+- **Dependencies**: Managed through bun install
+- **Scripts**: All run through `bun run <script>`
 
-```ts#index.ts
-import index from "./index.html"
+## Server Architecture
 
+### Bun.serve() Configuration
+```typescript
 Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
+  port: process.env.PORT ? Number(process.env.PORT) : isProd ? 3000 : 3002,
+  fetch(req, server) {
+    // HTTP request handling
+    // Static file serving
+    // Security headers
   },
-  // optional websocket support
   websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
+    open(ws) { /* WebSocket connection handling */ },
+    message(ws, message) { /* Message processing */ },
+    close(ws) { /* Cleanup */ },
   },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
+});
 ```
 
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
+### Features Utilized
+- **Dual serving**: HTTP static files + WebSocket in single server
+- **Environment-based config**: Different ports for dev/prod
+- **Security headers**: Applied to all HTTP responses
+- **Rate limiting**: IP-based connection tracking
+- **File serving**: Direct file serving with Bun.file
 
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
+## Performance Benefits
+
+### Why Bun for This Project
+- **Fast startup**: Instant server start for development
+- **Built-in WebSocket**: No additional dependencies
+- **TypeScript support**: Direct .ts file execution
+- **Environment loading**: Automatic .env handling
+- **Single binary**: Simplified deployment
+
+### Development Workflow
+- **Hot reload**: Bun --hot for server development
+- **Vite HMR**: Frontend hot module replacement
+- **Fast installs**: Bun's package management speed
+- **Direct execution**: No compilation step for server
+
+## Migration Notes
+
+### From Node.js
+- Replace `node app.js` with `bun run app.ts`
+- Remove dotenv imports (automatic loading)
+- Leverage Bun APIs where beneficial
+
+### From npm/yarn/pnpm
+- Use `bun install` for all package operations
+- Maintain package.json compatibility
+- Use bun.lock instead of other lock files
+
+### Build Process
+- Keep Vite for frontend builds (better React/TS support)
+- Use Bun for server execution and package management
+- Maintain dual-server architecture (Vite dev + Bun backend)
+
+## Security Considerations
+
+### Production Deployment
+- Use `NODE_ENV=production bun run app.ts`
+- Ensure proper environment variable setup
+- Leverage Bun's built-in security features
+
+### Development
+- Use `bun --hot app.ts` for development with auto-restart
+- Maintain separate dev/prod configurations
+- Proper error handling for Bun-specific features# Use Bun Instead of Node.js, npm, pnpm, or Vite
+
+Default to using Bun instead of Node.js for this LLM Art Web project.
+
+## Command Replacements
+
+- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
+- Use `bun test` instead of `jest` or `vitest`
+- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
+- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
+- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
+- Bun automatically loads .env, so don't use dotenv.
+
+## Project-Specific Usage
+
+### Development Commands
+```bash
+# Install dependencies
+bun install
+
+# Run development server (frontend)
+bun run dev
+
+# Run backend server
+bun run app.ts
+
+# Build for production
+bun run build
+
+# Preview production build
+bun run preview
+
+# Linting and formatting
+bun run lint
+bun run lint:fix
+bun run format
 ```
 
-With the following `frontend.tsx`:
+### Server Execution
+```bash
+# Development mode
+bun run app.ts
 
-```tsx#frontend.tsx
-import React from "react";
+# Production mode with environment
+NODE_ENV=production bun run app.ts
 
-// import .css files directly and it works
-import './index.css';
-
-import { createRoot } from "react-dom/client";
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
+# With custom port
+PORT=3000 bun run app.ts
 ```
 
-Then, run index.ts
+## APIs Used in This Project
 
-```sh
-bun --hot ./index.ts
+### Bun.serve()
+- **Current usage**: WebSocket + HTTP server in app.ts
+- **Features used**: 
+  - WebSocket support with message handling
+  - Static file serving from public/ (dev) or dist/ (prod)
+  - Security headers implementation
+  - Rate limiting and connection management
+- **Don't use**: Express.js or other HTTP frameworks
+
+### Built-in WebSocket
+- **Current usage**: Native WebSocket in Bun.serve()
+- **Features**: Connection management, message broadcasting
+- **Don't use**: ws library or socket.io
+
+### Bun.file
+- **Current usage**: Static file serving in fetch handler
+- **Prefer over**: node:fs readFile/writeFile for file operations
+
+### Environment Variables
+- **Automatic .env loading**: No need for dotenv package
+- **Current usage**: JWT_SECRET, ALLOWED_DEVICE_ID, NODE_ENV, PORT
+
+## Testing
+
+Use `bun test` to run tests when implemented.
+
+```typescript
+// Example test structure for future implementation
+import { test, expect } from "bun:test";
+
+test("WebSocket connection", () => {
+  expect(1).toBe(1);
+});
 ```
 
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.md`.
+## Frontend Integration
+
+### Vite Configuration
+- **Current setup**: Vite v7 for frontend development
+- **Bun integration**: Bun runs Vite dev server via `bun run dev`
+- **WebSocket proxy**: Vite proxies /ws to Bun server on port 3002
+- **Build process**: Vite builds to dist/, Bun serves in production
+
+### Package Management
+- **Lock file**: bun.lock (not package-lock.json or yarn.lock)
+- **Dependencies**: Managed through bun install
+- **Scripts**: All run through `bun run <script>`
+
+## Server Architecture
+
+### Bun.serve() Configuration
+```typescript
+Bun.serve({
+  port: process.env.PORT ? Number(process.env.PORT) : isProd ? 3000 : 3002,
+  fetch(req, server) {
+    // HTTP request handling
+    // Static file serving
+    // Security headers
+  },
+  websocket: {
+    open(ws) { /* WebSocket connection handling */ },
+    message(ws, message) { /* Message processing */ },
+    close(ws) { /* Cleanup */ },
+  },
+});
+```
+
+### Features Utilized
+- **Dual serving**: HTTP static files + WebSocket in single server
+- **Environment-based config**: Different ports for dev/prod
+- **Security headers**: Applied to all HTTP responses
+- **Rate limiting**: IP-based connection tracking
+- **File serving**: Direct file serving with Bun.file
+
+## Performance Benefits
+
+### Why Bun for This Project
+- **Fast startup**: Instant server start for development
+- **Built-in WebSocket**: No additional dependencies
+- **TypeScript support**: Direct .ts file execution
+- **Environment loading**: Automatic .env handling
+- **Single binary**: Simplified deployment
+
+### Development Workflow
+- **Hot reload**: Bun --hot for server development
+- **Vite HMR**: Frontend hot module replacement
+- **Fast installs**: Bun's package management speed
+- **Direct execution**: No compilation step for server
+
+## Migration Notes
+
+### From Node.js
+- Replace `node app.js` with `bun run app.ts`
+- Remove dotenv imports (automatic loading)
+- Leverage Bun APIs where beneficial
+
+### From npm/yarn/pnpm
+- Use `bun install` for all package operations
+- Maintain package.json compatibility
+- Use bun.lock instead of other lock files
+
+### Build Process
+- Keep Vite for frontend builds (better React/TS support)
+- Use Bun for server execution and package management
+- Maintain dual-server architecture (Vite dev + Bun backend)
+
+## Security Considerations
+
+### Production Deployment
+- Use `NODE_ENV=production bun run app.ts`
+- Ensure proper environment variable setup
+- Leverage Bun's built-in security features
+
+### Development
+- Use `bun --hot app.ts` for development with auto-restart
+- Maintain separate dev/prod configurations
+- Proper error handling for Bun-specific features

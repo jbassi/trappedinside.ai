@@ -2,8 +2,6 @@
 alwaysApply: true
 ---
 
-
-
 # LLM Art Web Project Rules
 
 This is a real-time WebSocket-based terminal application simulating an AI living in a Raspberry Pi with limited resources.
@@ -16,26 +14,31 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Broadcasting pattern**: All connected clients receive streamed messages
 - **Dual serving mode**: `public/` in dev, `dist/` in production
 - **Environment-based configuration** with fallback defaults
+- **Enhanced security headers** including CSP, HSTS, and XSS protection
+- **Rate limiting** with 10 connections per IP per minute
+- **Conversation history management** with automatic cleanup (max 1000 messages)
 
 ### Frontend Structure
 - **Context-based state management** with TerminalContext provider
 - **Custom hooks architecture** for modular functionality
 - **WebSocket service layer** for connection management
 - **CRT terminal simulation** with hardware-accelerated effects
+- **Dual rendering modes**: SVG for desktop, direct for mobile
 - **Typewriter animation** with variable timing (25-50ms per character)
 - **Smart scroll behavior** with unified desktop/mobile handling
+- **Tab system** with Terminal and Info screens
 - **Tab visibility handling** to prevent message accumulation
-- **Utility-first styling** with Tailwind CSS
-- **Fast development** with Vite HMR and WebSocket proxy
+- **Utility-first styling** with Tailwind CSS v4
+- **Fast development** with Vite v7 HMR and WebSocket proxy
 
 ### Development Guidelines
 
 #### Build Tools
-- **Use Vite** for development and production builds
+- **Use Vite v7** for development and production builds
   - Development server on port 3001
   - WebSocket proxy to backend on port 3002
   - Production builds to dist/ directory
-- **Use Tailwind CSS** for styling
+- **Use Tailwind CSS v4** for styling
   - Utility-first approach
   - Responsive design patterns
   - Component-specific styles
@@ -56,13 +59,16 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 
 ### Core Components
 - **Terminal**: Main component orchestrating all functionality
-- **CRTScreen**: Hardware-accelerated CRT effects
+- **CRTScreen**: Hardware-accelerated CRT effects with dual rendering modes
 - **StatusBar**: Dynamic width-based memory visualization
+- **TaskBar**: Tab navigation and scroll controls
 - **PromptDisplay**: Centered, bordered ASCII box
 - **TerminalLine**: Individual lines with cursor support
+- **InfoScreen**: Information display tab with project details
 
 ### Context and Hooks
 - **TerminalContext**: Centralized state and shared functionality
+- **TerminalSizeContext**: Dynamic terminal width calculation
 - **useTerminalScroll**: Unified scroll behavior management
 - **useTerminalAnimation**: Text animation and queue processing
 - **useWebSocket**: WebSocket connection and message handling
@@ -79,11 +85,12 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Animation Control**: Cursor blinking, text animation
 - **Scroll Behavior**: Position tracking, auto-scroll
 - **WebSocket State**: Connection status, message queue
+- **Tab Management**: Terminal/Info tab selection
 
 ### Custom Hooks
-- **Scroll Management**: Position tracking and auto-scroll
-- **Animation Control**: Typewriter effect and cursor
-- **WebSocket Handling**: Connection and messages
+- **Scroll Management**: Position tracking and auto-scroll with touch handling
+- **Animation Control**: Typewriter effect and cursor with generation tracking
+- **WebSocket Handling**: Connection, messages, and overlap detection
 - **Queue Processing**: Message animation coordination
 
 ## Performance Patterns
@@ -93,6 +100,7 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Hardware acceleration**: CSS transforms and effects
 - **Efficient updates**: State batching and refs
 - **Cleanup patterns**: Proper resource management
+- **Generation tracking**: Prevents stale animations
 
 ### Event Handling
 - **Passive listeners**: Touch and scroll optimization
@@ -105,10 +113,14 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 ### Message Format
 ```typescript
 interface ServerMessage {
-  text: string;
-  memory?: { available_mb: number; percent_used: number; total_mb: number };
-  status?: { is_restarting: boolean };
-  prompt?: string;
+  type: 'history' | 'live';
+  messages: Array<{
+    text: string;
+    memory?: { available_mb: number; percent_used: number; total_mb: number };
+    status?: { is_restarting: boolean; num_restarts?: number };
+    prompt?: string;
+    timestamp?: number;
+  }>;
 }
 ```
 
@@ -117,6 +129,7 @@ interface ServerMessage {
 - **Loading states**: Connection status tracking
 - **Message validation**: Zod schema parsing
 - **Queue management**: Ordered message processing
+- **Overlap detection**: Prevents duplicate content
 
 ## Development Guidelines
 
@@ -151,16 +164,23 @@ interface ServerMessage {
 ```
 public/
   ├── components/
-  │   ├── terminal/
-  │   │   ├── Terminal.tsx
-  │   │   ├── CRTScreen.tsx
-  │   │   ├── TerminalContext.tsx
-  │   │   └── hooks/
-  │   │       ├── useTerminalScroll.ts
-  │   │       ├── useTerminalAnimation.ts
-  │   │       └── useWebSocket.ts
+  │   ├── context/
+  │   │   └── TerminalSizeContext.tsx
+  │   └── terminal/
+  │       ├── Terminal.tsx
+  │       ├── CRTScreen.tsx
+  │       ├── TerminalContext.tsx
+  │       ├── TaskBar.tsx
+  │       ├── StatusBar.tsx
+  │       ├── InfoScreen.tsx
+  │       └── hooks/
+  │           ├── useTerminalScroll.ts
+  │           ├── useTerminalAnimation.ts
+  │           └── useWebSocket.ts
   ├── services/
   │   └── websocketService.ts
+  ├── types/
+  │   └── types.ts
   └── utils/
       └── mobileUtils.ts
 ```
@@ -171,6 +191,23 @@ public/
 - **Service layer**: External concerns
 - **Clear separation**: Component responsibilities
 - **Type safety**: TypeScript and Zod
+
+## Mobile Optimization
+
+### Device Detection
+- **Multi-criteria detection**: User agent + screen size + touch
+- **Responsive breakpoints**: 768px mobile threshold
+- **Orientation change support**: Automatic re-detection
+
+### Rendering Modes
+- **SVG approach**: Desktop/tablet with monitor background
+- **Direct approach**: Mobile devices with responsive layout
+- **Touch optimization**: Proper touch event handling
+
+### Performance Considerations
+- **Touch-friendly interactions**: Proper drag detection
+- **Viewport-aware sizing**: Dynamic font scaling
+- **Hardware acceleration**: CSS transforms and effects
 
 ## Maintenance Guidelines
 
@@ -188,16 +225,12 @@ public/
 - **Note changes**: Mobile considerations
 - **Keep in sync**: Update both docs
 
-7. **Account for container padding** in character width calculations
-8. **Use passive event listeners** for performance
-9. **Implement debouncing** with device-specific timing
-10. **Test on both mobile and desktop** for scroll behavior
-
-9. **Implement debouncing** with device-specific timing
-10. **Test on both mobile and desktop** for scroll behavior
-
-
-# LLM Art Web Project Rules
+### Security Considerations
+- **Environment validation**: JWT_SECRET, ALLOWED_DEVICE_ID
+- **Rate limiting**: 10 connections per IP per minute
+- **Origin validation**: Production environment only
+- **Security headers**: CSP, HSTS, XSS protection
+- **Message validation**: Zod schema checking# LLM Art Web Project Rules
 
 This is a real-time WebSocket-based terminal application simulating an AI living in a Raspberry Pi with limited resources.
 
@@ -209,26 +242,31 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Broadcasting pattern**: All connected clients receive streamed messages
 - **Dual serving mode**: `public/` in dev, `dist/` in production
 - **Environment-based configuration** with fallback defaults
+- **Enhanced security headers** including CSP, HSTS, and XSS protection
+- **Rate limiting** with 10 connections per IP per minute
+- **Conversation history management** with automatic cleanup (max 1000 messages)
 
 ### Frontend Structure
 - **Context-based state management** with TerminalContext provider
 - **Custom hooks architecture** for modular functionality
 - **WebSocket service layer** for connection management
 - **CRT terminal simulation** with hardware-accelerated effects
+- **Dual rendering modes**: SVG for desktop, direct for mobile
 - **Typewriter animation** with variable timing (25-50ms per character)
 - **Smart scroll behavior** with unified desktop/mobile handling
+- **Tab system** with Terminal and Info screens
 - **Tab visibility handling** to prevent message accumulation
-- **Utility-first styling** with Tailwind CSS
-- **Fast development** with Vite HMR and WebSocket proxy
+- **Utility-first styling** with Tailwind CSS v4
+- **Fast development** with Vite v7 HMR and WebSocket proxy
 
 ### Development Guidelines
 
 #### Build Tools
-- **Use Vite** for development and production builds
+- **Use Vite v7** for development and production builds
   - Development server on port 3001
   - WebSocket proxy to backend on port 3002
   - Production builds to dist/ directory
-- **Use Tailwind CSS** for styling
+- **Use Tailwind CSS v4** for styling
   - Utility-first approach
   - Responsive design patterns
   - Component-specific styles
@@ -249,13 +287,16 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 
 ### Core Components
 - **Terminal**: Main component orchestrating all functionality
-- **CRTScreen**: Hardware-accelerated CRT effects
+- **CRTScreen**: Hardware-accelerated CRT effects with dual rendering modes
 - **StatusBar**: Dynamic width-based memory visualization
+- **TaskBar**: Tab navigation and scroll controls
 - **PromptDisplay**: Centered, bordered ASCII box
 - **TerminalLine**: Individual lines with cursor support
+- **InfoScreen**: Information display tab with project details
 
 ### Context and Hooks
 - **TerminalContext**: Centralized state and shared functionality
+- **TerminalSizeContext**: Dynamic terminal width calculation
 - **useTerminalScroll**: Unified scroll behavior management
 - **useTerminalAnimation**: Text animation and queue processing
 - **useWebSocket**: WebSocket connection and message handling
@@ -272,11 +313,12 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Animation Control**: Cursor blinking, text animation
 - **Scroll Behavior**: Position tracking, auto-scroll
 - **WebSocket State**: Connection status, message queue
+- **Tab Management**: Terminal/Info tab selection
 
 ### Custom Hooks
-- **Scroll Management**: Position tracking and auto-scroll
-- **Animation Control**: Typewriter effect and cursor
-- **WebSocket Handling**: Connection and messages
+- **Scroll Management**: Position tracking and auto-scroll with touch handling
+- **Animation Control**: Typewriter effect and cursor with generation tracking
+- **WebSocket Handling**: Connection, messages, and overlap detection
 - **Queue Processing**: Message animation coordination
 
 ## Performance Patterns
@@ -286,6 +328,7 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 - **Hardware acceleration**: CSS transforms and effects
 - **Efficient updates**: State batching and refs
 - **Cleanup patterns**: Proper resource management
+- **Generation tracking**: Prevents stale animations
 
 ### Event Handling
 - **Passive listeners**: Touch and scroll optimization
@@ -298,10 +341,14 @@ This is a real-time WebSocket-based terminal application simulating an AI living
 ### Message Format
 ```typescript
 interface ServerMessage {
-  text: string;
-  memory?: { available_mb: number; percent_used: number; total_mb: number };
-  status?: { is_restarting: boolean };
-  prompt?: string;
+  type: 'history' | 'live';
+  messages: Array<{
+    text: string;
+    memory?: { available_mb: number; percent_used: number; total_mb: number };
+    status?: { is_restarting: boolean; num_restarts?: number };
+    prompt?: string;
+    timestamp?: number;
+  }>;
 }
 ```
 
@@ -310,6 +357,7 @@ interface ServerMessage {
 - **Loading states**: Connection status tracking
 - **Message validation**: Zod schema parsing
 - **Queue management**: Ordered message processing
+- **Overlap detection**: Prevents duplicate content
 
 ## Development Guidelines
 
@@ -344,16 +392,23 @@ interface ServerMessage {
 ```
 public/
   ├── components/
-  │   ├── terminal/
-  │   │   ├── Terminal.tsx
-  │   │   ├── CRTScreen.tsx
-  │   │   ├── TerminalContext.tsx
-  │   │   └── hooks/
-  │   │       ├── useTerminalScroll.ts
-  │   │       ├── useTerminalAnimation.ts
-  │   │       └── useWebSocket.ts
+  │   ├── context/
+  │   │   └── TerminalSizeContext.tsx
+  │   └── terminal/
+  │       ├── Terminal.tsx
+  │       ├── CRTScreen.tsx
+  │       ├── TerminalContext.tsx
+  │       ├── TaskBar.tsx
+  │       ├── StatusBar.tsx
+  │       ├── InfoScreen.tsx
+  │       └── hooks/
+  │           ├── useTerminalScroll.ts
+  │           ├── useTerminalAnimation.ts
+  │           └── useWebSocket.ts
   ├── services/
   │   └── websocketService.ts
+  ├── types/
+  │   └── types.ts
   └── utils/
       └── mobileUtils.ts
 ```
@@ -364,6 +419,23 @@ public/
 - **Service layer**: External concerns
 - **Clear separation**: Component responsibilities
 - **Type safety**: TypeScript and Zod
+
+## Mobile Optimization
+
+### Device Detection
+- **Multi-criteria detection**: User agent + screen size + touch
+- **Responsive breakpoints**: 768px mobile threshold
+- **Orientation change support**: Automatic re-detection
+
+### Rendering Modes
+- **SVG approach**: Desktop/tablet with monitor background
+- **Direct approach**: Mobile devices with responsive layout
+- **Touch optimization**: Proper touch event handling
+
+### Performance Considerations
+- **Touch-friendly interactions**: Proper drag detection
+- **Viewport-aware sizing**: Dynamic font scaling
+- **Hardware acceleration**: CSS transforms and effects
 
 ## Maintenance Guidelines
 
@@ -381,10 +453,9 @@ public/
 - **Note changes**: Mobile considerations
 - **Keep in sync**: Update both docs
 
-7. **Account for container padding** in character width calculations
-8. **Use passive event listeners** for performance
-9. **Implement debouncing** with device-specific timing
-10. **Test on both mobile and desktop** for scroll behavior
-
-9. **Implement debouncing** with device-specific timing
-10. **Test on both mobile and desktop** for scroll behavior
+### Security Considerations
+- **Environment validation**: JWT_SECRET, ALLOWED_DEVICE_ID
+- **Rate limiting**: 10 connections per IP per minute
+- **Origin validation**: Production environment only
+- **Security headers**: CSP, HSTS, XSS protection
+- **Message validation**: Zod schema checking
