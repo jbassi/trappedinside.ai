@@ -25,6 +25,43 @@ Inspired by [Latent Reflection by rootkid.me](https://rootkid.me/works/latent-re
   - [Perplexity AI](https://www.perplexity.ai/) (for project planning)
   - [MidJourney](https://www.midjourney.com) (image generation)
 
+
+## Development Commands
+
+Install dependencies:
+
+```bash
+bun install
+```
+
+Development mode (starts both frontend dev server and backend):
+
+```bash
+# Frontend dev server (port 3001 with WebSocket proxy to backend)
+bun run dev
+
+# Backend server (port 3002 in dev, 3000 in prod)
+bun run app.ts
+```
+
+Production build:
+
+```bash
+bun run build
+bun run preview
+```
+
+Code quality:
+
+```bash
+# Linting
+bun run lint
+bun run lint:fix
+
+# Formatting
+bun run format
+```
+
 ## Support the Project
 
 **Bitcoin (BTC):** `bc1q7cvp2zcsjc63hcr2rqxhrlyeg03ngdq5zlzg3t668mn0hqkakq5snza9wx`

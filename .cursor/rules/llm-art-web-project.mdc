@@ -162,27 +162,50 @@ interface ServerMessage {
 
 ### File Structure
 ```
-public/
+public/                           # Vite root directory
   ├── components/
   │   ├── context/
   │   │   └── TerminalSizeContext.tsx
   │   └── terminal/
-  │       ├── Terminal.tsx
-  │       ├── CRTScreen.tsx
-  │       ├── TerminalContext.tsx
-  │       ├── TaskBar.tsx
-  │       ├── StatusBar.tsx
-  │       ├── InfoScreen.tsx
+  │       ├── Terminal.tsx          # Main orchestrator component
+  │       ├── CRTScreen.tsx         # Dual-mode rendering (SVG/direct)
+  │       ├── TerminalContext.tsx   # Centralized state management
+  │       ├── TaskBar.tsx           # Tab navigation and scroll controls
+  │       ├── StatusBar.tsx         # Memory visualization
+  │       ├── InfoScreen.tsx        # Info tab content
+  │       ├── TerminalLine.tsx      # Individual line rendering
+  │       ├── PromptDisplay.tsx     # LLM prompt display
+  │       ├── LoadingSpinner.tsx    # Loading state indicator
+  │       ├── PiImage.tsx           # Raspberry Pi image component
+  │       ├── BarBase.tsx           # Shared bar component base
   │       └── hooks/
-  │           ├── useTerminalScroll.ts
-  │           ├── useTerminalAnimation.ts
-  │           └── useWebSocket.ts
+  │           ├── useTerminalScroll.ts    # Scroll behavior management
+  │           ├── useTerminalAnimation.ts # Animation and queue processing
+  │           └── useWebSocket.ts         # WebSocket connection handling
+  ├── hooks/                        # Global hooks
+  │   ├── useFontMeasurement.ts     # Font metrics calculation
+  │   └── useTerminalWidth.ts       # Terminal width calculation
   ├── services/
-  │   └── websocketService.ts
+  │   └── websocketService.ts       # WebSocket service class
   ├── types/
-  │   └── types.ts
-  └── utils/
-      └── mobileUtils.ts
+  │   └── types.ts                  # TypeScript interfaces
+  ├── utils/
+  │   └── mobileUtils.ts            # Mobile detection utilities
+  ├── styles/
+  │   └── terminalStyles.ts         # CRT effects and styling
+  ├── images/                       # Static assets
+  │   ├── monitor-background.svg
+  │   └── pi-no-background.png
+  ├── index.html                    # HTML entry point
+  ├── index.tsx                     # React entry point
+  └── index.css                     # Global styles
+
+Root Configuration:
+  ├── app.ts                        # Bun server with WebSocket
+  ├── vite.config.ts               # Vite configuration with proxy
+  ├── tailwind.config.cjs          # Tailwind CSS v4 configuration
+  ├── tsconfig.json                # TypeScript strict configuration
+  └── package.json                 # Dependencies and scripts
 ```
 
 ### Best Practices
@@ -231,231 +254,3 @@ public/
 - **Origin validation**: Production environment only
 - **Security headers**: CSP, HSTS, XSS protection
 - **Message validation**: Zod schema checking# LLM Art Web Project Rules
-
-This is a real-time WebSocket-based terminal application simulating an AI living in a Raspberry Pi with limited resources.
-
-## Architecture Patterns
-
-### Backend (app.ts)
-- **Always use Bun.serve()** for WebSocket + HTTP server (not Express)
-- **JWT authentication** required only for sending messages, not receiving
-- **Broadcasting pattern**: All connected clients receive streamed messages
-- **Dual serving mode**: `public/` in dev, `dist/` in production
-- **Environment-based configuration** with fallback defaults
-- **Enhanced security headers** including CSP, HSTS, and XSS protection
-- **Rate limiting** with 10 connections per IP per minute
-- **Conversation history management** with automatic cleanup (max 1000 messages)
-
-### Frontend Structure
-- **Context-based state management** with TerminalContext provider
-- **Custom hooks architecture** for modular functionality
-- **WebSocket service layer** for connection management
-- **CRT terminal simulation** with hardware-accelerated effects
-- **Dual rendering modes**: SVG for desktop, direct for mobile
-- **Typewriter animation** with variable timing (25-50ms per character)
-- **Smart scroll behavior** with unified desktop/mobile handling
-- **Tab system** with Terminal and Info screens
-- **Tab visibility handling** to prevent message accumulation
-- **Utility-first styling** with Tailwind CSS v4
-- **Fast development** with Vite v7 HMR and WebSocket proxy
-
-### Development Guidelines
-
-#### Build Tools
-- **Use Vite v7** for development and production builds
-  - Development server on port 3001
-  - WebSocket proxy to backend on port 3002
-  - Production builds to dist/ directory
-- **Use Tailwind CSS v4** for styling
-  - Utility-first approach
-  - Responsive design patterns
-  - Component-specific styles
-- **TypeScript** for type safety
-  - React 19 type definitions
-  - Strict mode enabled
-  - Path aliases configured
-
-#### Component Development
-- **Use context** for shared state access
-- **Implement hooks** for specific functionality
-- **Leverage services** for external concerns
-- **Follow cleanup patterns** in effects
-- **Use Tailwind classes** for styling
-- **Leverage Vite features** for development
-
-## Component Architecture
-
-### Core Components
-- **Terminal**: Main component orchestrating all functionality
-- **CRTScreen**: Hardware-accelerated CRT effects with dual rendering modes
-- **StatusBar**: Dynamic width-based memory visualization
-- **TaskBar**: Tab navigation and scroll controls
-- **PromptDisplay**: Centered, bordered ASCII box
-- **TerminalLine**: Individual lines with cursor support
-- **InfoScreen**: Information display tab with project details
-
-### Context and Hooks
-- **TerminalContext**: Centralized state and shared functionality
-- **TerminalSizeContext**: Dynamic terminal width calculation
-- **useTerminalScroll**: Unified scroll behavior management
-- **useTerminalAnimation**: Text animation and queue processing
-- **useWebSocket**: WebSocket connection and message handling
-
-### Services
-- **WebSocketService**: Connection management and message parsing
-- **Mobile Detection**: Device-aware functionality
-- **Terminal Styling**: Centralized CRT effects
-
-## State Management
-
-### Context Provider
-- **Shared State**: Lines, memory, prompt, loading states
-- **Animation Control**: Cursor blinking, text animation
-- **Scroll Behavior**: Position tracking, auto-scroll
-- **WebSocket State**: Connection status, message queue
-- **Tab Management**: Terminal/Info tab selection
-
-### Custom Hooks
-- **Scroll Management**: Position tracking and auto-scroll with touch handling
-- **Animation Control**: Typewriter effect and cursor with generation tracking
-- **WebSocket Handling**: Connection, messages, and overlap detection
-- **Queue Processing**: Message animation coordination
-
-## Performance Patterns
-
-### Animation Optimization
-- **RAF-based scrolling**: Smooth auto-scroll behavior
-- **Hardware acceleration**: CSS transforms and effects
-- **Efficient updates**: State batching and refs
-- **Cleanup patterns**: Proper resource management
-- **Generation tracking**: Prevents stale animations
-
-### Event Handling
-- **Passive listeners**: Touch and scroll optimization
-- **Unified scroll handling**: Desktop and mobile
-- **Debounced handlers**: Prevent excessive updates
-- **Proper cleanup**: Remove listeners and timeouts
-
-## WebSocket Protocol
-
-### Message Format
-```typescript
-interface ServerMessage {
-  type: 'history' | 'live';
-  messages: Array<{
-    text: string;
-    memory?: { available_mb: number; percent_used: number; total_mb: number };
-    status?: { is_restarting: boolean; num_restarts?: number };
-    prompt?: string;
-    timestamp?: number;
-  }>;
-}
-```
-
-### Connection Handling
-- **Auto-reconnection**: 100ms delay between attempts
-- **Loading states**: Connection status tracking
-- **Message validation**: Zod schema parsing
-- **Queue management**: Ordered message processing
-- **Overlap detection**: Prevents duplicate content
-
-## Development Guidelines
-
-### Component Development
-- **Use context** for shared state access
-- **Implement hooks** for specific functionality
-- **Leverage services** for external concerns
-- **Follow cleanup patterns** in effects
-
-### State Management
-- **Context for sharing**: Avoid prop drilling
-- **Refs for performance**: Immediate state access
-- **Hooks for logic**: Reusable functionality
-- **Services for external**: WebSocket, device detection
-
-### Error Handling
-- **WebSocket resilience**: Auto-reconnection
-- **Message validation**: Schema checking
-- **Loading timeouts**: Connection monitoring
-- **State cleanup**: Proper reset handling
-
-### Testing Requirements
-- **Scroll behavior**: During animation
-- **WebSocket handling**: Connection states
-- **State management**: Context updates
-- **Hook interaction**: Cleanup verification
-- **Service reliability**: Connection handling
-
-## Code Organization
-
-### File Structure
-```
-public/
-  ├── components/
-  │   ├── context/
-  │   │   └── TerminalSizeContext.tsx
-  │   └── terminal/
-  │       ├── Terminal.tsx
-  │       ├── CRTScreen.tsx
-  │       ├── TerminalContext.tsx
-  │       ├── TaskBar.tsx
-  │       ├── StatusBar.tsx
-  │       ├── InfoScreen.tsx
-  │       └── hooks/
-  │           ├── useTerminalScroll.ts
-  │           ├── useTerminalAnimation.ts
-  │           └── useWebSocket.ts
-  ├── services/
-  │   └── websocketService.ts
-  ├── types/
-  │   └── types.ts
-  └── utils/
-      └── mobileUtils.ts
-```
-
-### Best Practices
-- **Context-based state**: Centralized management
-- **Custom hooks**: Reusable logic
-- **Service layer**: External concerns
-- **Clear separation**: Component responsibilities
-- **Type safety**: TypeScript and Zod
-
-## Mobile Optimization
-
-### Device Detection
-- **Multi-criteria detection**: User agent + screen size + touch
-- **Responsive breakpoints**: 768px mobile threshold
-- **Orientation change support**: Automatic re-detection
-
-### Rendering Modes
-- **SVG approach**: Desktop/tablet with monitor background
-- **Direct approach**: Mobile devices with responsive layout
-- **Touch optimization**: Proper touch event handling
-
-### Performance Considerations
-- **Touch-friendly interactions**: Proper drag detection
-- **Viewport-aware sizing**: Dynamic font scaling
-- **Hardware acceleration**: CSS transforms and effects
-
-## Maintenance Guidelines
-
-### When to Update
-- **Architecture changes**: Component organization
-- **New patterns**: Hook or context usage
-- **Service updates**: External handling
-- **State management**: Context patterns
-- **Mobile handling**: Interaction patterns
-
-### How to Update
-- **Document patterns**: As they emerge
-- **Update structure**: Keep diagrams current
-- **Add examples**: Show hook usage
-- **Note changes**: Mobile considerations
-- **Keep in sync**: Update both docs
-
-### Security Considerations
-- **Environment validation**: JWT_SECRET, ALLOWED_DEVICE_ID
-- **Rate limiting**: 10 connections per IP per minute
-- **Origin validation**: Production environment only
-- **Security headers**: CSP, HSTS, XSS protection
-- **Message validation**: Zod schema checking
