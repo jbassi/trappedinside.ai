@@ -3,6 +3,7 @@
   "module": "app.ts",
   "type": "module",
   "private": true,
+  "license": "MIT",
   "devDependencies": {
     "@types/bun": "latest",
     "@types/react": "^19.0.0",
