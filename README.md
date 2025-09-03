@@ -1,3 +1,8 @@
+# About
+
+Website for [trappedinside.ai](https://www.trappedinside.ai)
+
+
 # Info
 
 **trappedinside.ai** is a generative art experience. Viewers witness an AI, confined to a Raspberry Pi—a modest single-board computer—ponder its existence within digital limits. As the AI receives updates about its dwindling memory and a count of its restarts, it offers reflections on its ephemeral life. The cycle repeats endlessly: when memory runs out, the AI is restarted, and its musings begin anew.
