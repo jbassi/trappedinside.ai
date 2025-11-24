@@ -4,8 +4,7 @@ import { useTerminal } from './TerminalContext';
 
 export const InfoScreen: React.FC = () => {
   const { infoTextRef } = useTerminal();
-  const [copyFeedback, setCopyFeedback] = useState(false);
-  const btcAddress = 'bc1qmcr7v7g8yg37crz5ss773rt34nm9ahltzetkp4';
+
 
   // Ensure InfoScreen always starts at the top when mounted
   // useLayoutEffect runs synchronously after DOM mutations but before browser painting
@@ -15,15 +14,7 @@ export const InfoScreen: React.FC = () => {
     }
   }, []);
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(btcAddress);
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
+
 
   const ListItem: React.FC<{ children: React.ReactNode; nested?: boolean }> = ({
     children,
@@ -175,20 +166,7 @@ export const InfoScreen: React.FC = () => {
         (image generation)
       </ListItem>
 
-      <h2 className="text-lg font-bold mt-8 mb-2 text-green-300">Support the Project</h2>
-      <ListItem>Bitcoin (BTC)</ListItem>
-      <div className="flex flex-col items-center mt-1 mb-2 relative w-full">
-        <button
-          onClick={copyToClipboard}
-          className="bg-green-900 bg-opacity-30 px-3 py-1 rounded hover:bg-opacity-50 cursor-pointer select-all text-center max-w-full break-all"
-          title="Click to copy"
-        >
-          {btcAddress}
-        </button>
-        {copyFeedback && (
-          <span className="absolute -bottom-6 text-green-300 text-sm">Copied to clipboard!</span>
-        )}
-      </div>
+
     </div>
   );
 };
