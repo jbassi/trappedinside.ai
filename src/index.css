@@ -3,8 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    @apply bg-gray-50 h-full min-h-screen;
+    overscroll-behavior: none;
+  }
   body {
-    @apply bg-gray-50 min-h-screen;
     color: #222;
     font-family: Monaco, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace;
   }
